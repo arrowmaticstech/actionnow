@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ActionNow - WhatsApp Manager Agent</title>
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <link rel="icon" type="image/png" href="../assets/logo.png?a">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="icon" href="../assets/logo.png?s" type="image/png">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        'wa-green': '#25D366',
+                        'wa-dark': '#075E54',
+                        'wa-light': '#DCF8C6',
+                        'wa-bg': '#ECE5DD',
+                        'wa-gray': '#F0F2F5',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="../assets/css/main.css">
+
+</head>
+
+<body class="font-sans antialiased text-gray-800 bg-white overflow-x-hidden">
+
+    <!-- Navbar -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-100 transition-all duration-300"
+        id="navbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div onclick='javascript:location.href="/" ' class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-2.5">
+                    <div
+                        class="w-9 h-9 bg-wa-green rounded-xl flex items-center justify-center shadow-md shadow-wa-green/30">
+                        <img class="logo-image" src="../assets/logo.png?s" />
+                    </div>
+                    <span class="font-bold text-xl tracking-tight text-gray-900">Action<span
+                            class="text-wa-green">Now</span></span>
+                </div>
+                <div id="header-middle-menu" class="hidden md:flex items-center gap-8">
+                    <a href="#features"
+                        class="text-sm font-medium text-gray-600 hover:text-wa-dark transition-colors">Features</a>
+                    <a href="#how-it-works"
+                        class="text-sm font-medium text-gray-600 hover:text-wa-dark transition-colors">How It Works</a>
+                    <a href="#demo" class="text-sm font-medium text-gray-600 hover:text-wa-dark transition-colors">Live
+                        Demo</a>
+                    <a href="#pricing"
+                        class="text-sm font-medium text-gray-600 hover:text-wa-dark transition-colors">Pricing</a>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button
+                        class="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-700 hover:text-wa-dark transition-colors">
+                        Sign In
+                    </button>
+
+                    <button
+                        onclick="window.location.hostname === 'localhost'?window.open('start/index.html', '_self'):window.open('start/', '_self')"
+                        class="inline-flex items-center gap-2 px-5 py-2.5 bg-wa-dark text-white text-sm font-semibold rounded-xl hover:bg-wa-dark/90 transition-all shadow-lg shadow-wa-dark/20 hover:shadow-xl hover:shadow-wa-dark/25 active:scale-95">
+                        Get Started
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                    <button class="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors" id="mobileMenuBtn">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile menu -->
+        <div class="md:hidden hidden bg-white border-t border-gray-100" id="mobileMenu">
+            <div class="px-4 py-3 space-y-2">
+                <a href="#features"
+                    class="block px-3 py-2.5 text-sm font-medium text-gray-600 rounded-lg hover:bg-wa-gray transition-colors">Features</a>
+                <a href="#how-it-works"
+                    class="block px-3 py-2.5 text-sm font-medium text-gray-600 rounded-lg hover:bg-wa-gray transition-colors">How
+                    It Works</a>
+                <a href="#demo"
+                    class="block px-3 py-2.5 text-sm font-medium text-gray-600 rounded-lg hover:bg-wa-gray transition-colors">Live
+                    Demo</a>
+                <a href="#pricing"
+                    class="block px-3 py-2.5 text-sm font-medium text-gray-600 rounded-lg hover:bg-wa-gray transition-colors">Pricing</a>
+            </div>
+        </div>
+    </nav>
+    <section id="demo" class="py-20 sm:py-28">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-wa-green font-semibold text-sm tracking-wider uppercase">Live Config Demo</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-3">Configure Your Agent</h2>
+                <p class="text-gray-500 mt-4 text-lg">See how easy it is to set up your WhatsApp manager. Try the
+                    interactive demo below.</p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-10 items-start">
+                <!-- Config Panel -->
+                <div class="bg-white rounded-2xl border border-gray-200 shadow-xl shadow-gray-100 overflow-hidden">
+                    <div class="bg-wa-dark px-6 py-4 flex items-center gap-3">
+                        <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-400"></div>
+                        <span class="text-white/80 text-sm font-medium ml-3">Agent Configuration Panel</span>
+                    </div>
+                    <div class="p-6 space-y-8">
+
+                        <!-- 1. From (the where) -->
+                        <div class="space-y-3">
+                            <h3
+                                class="main-form-header text-base font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                                <i data-lucide="map-pin" class="w-4 h-4 text-wa-green"></i> From: (the where)
+                            </h3>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                    <i data-lucide="users" class="w-4 h-4 text-gray-400"></i> Groups to Monitor
+                                </label>
+                                <div class="space-y-2" id="groupList">
+                                    <div class="flex items-center gap-2 bg-wa-gray rounded-lg px-3 py-2.5">
+                                        <span class="text-sm text-gray-600 flex-1 truncate">🏢 Marketing Team</span>
+                                        <span
+                                            class="text-xs text-wa-green font-medium bg-wa-light px-2 py-0.5 rounded-full">Active</span>
+                                        <button
+                                            class="text-gray-400 hover:text-red-500 transition-colors p-1 remove-group"><i
+                                                data-lucide="x" class="w-4 h-4"></i></button>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-wa-gray rounded-lg px-3 py-2.5">
+                                        <span class="text-sm text-gray-600 flex-1 truncate">💼 Sales Pipeline</span>
+                                        <span
+                                            class="text-xs text-wa-green font-medium bg-wa-light px-2 py-0.5 rounded-full">Active</span>
+                                        <button
+                                            class="text-gray-400 hover:text-red-500 transition-colors p-1 remove-group"><i
+                                                data-lucide="x" class="w-4 h-4"></i></button>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-wa-gray rounded-lg px-3 py-2.5">
+                                        <span class="text-sm text-gray-600 flex-1 truncate">🎯 Product Launch</span>
+                                        <span
+                                            class="text-xs text-wa-green font-medium bg-wa-light px-2 py-0.5 rounded-full">Active</span>
+                                        <button
+                                            class="text-gray-400 hover:text-red-500 transition-colors p-1 remove-group"><i
+                                                data-lucide="x" class="w-4 h-4"></i></button>
+                                    </div>
+                                </div>
+                                <button
+                                    class="mt-3 flex items-center gap-2 text-sm font-medium text-wa-green hover:text-wa-dark transition-colors"
+                                    id="addGroupBtn">
+                                    <i data-lucide="plus-circle" class="w-4 h-4"></i> Add another group
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 2. To (the who) -->
+                        <div class="space-y-3">
+                            <h3
+                                class="main-form-header text-base font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                                <i data-lucide="send" class="w-4 h-4 text-wa-green"></i> To: (the who)
+                            </h3>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                    <i data-lucide="phone" class="w-4 h-4 text-gray-400"></i> Boss Report Numbers
+                                </label>
+                                <div class="space-y-2" id="bossNumberList">
+                                    <div class="flex items-center gap-2 bg-wa-gray rounded-lg px-4 py-3">
+                                        <span class="text-sm text-gray-400">+</span>
+                                        <input type="text" value="60 (10) 224-4896"
+                                            class="bg-transparent border-0 text-sm text-gray-700 flex-1 focus:outline-none boss-number-input">
+                                        <span
+                                            class="text-xs text-wa-green font-medium bg-wa-light px-2 py-0.5 rounded-full">Verified</span>
+                                        <button
+                                            class="text-gray-400 hover:text-red-500 transition-colors p-1 remove-boss-number"><i
+                                                data-lucide="x" class="w-4 h-4"></i></button>
+                                    </div>
+                                </div>
+                                <button
+                                    class="mt-3 flex items-center gap-2 text-sm font-medium text-wa-green hover:text-wa-dark transition-colors"
+                                    id="addBossNumberBtn">
+                                    <i data-lucide="plus-circle" class="w-4 h-4"></i> Add another number
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 3. What to look for? -->
+                        <div class="space-y-4">
+                            <h3
+                                class="main-form-header text-base font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                                <i data-lucide="search" class="w-4 h-4 text-wa-green"></i> What to look for?
+                            </h3>
+
+                            <!-- Keywords -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                    <i data-lucide="tag" class="w-4 h-4 text-gray-400"></i> Content Info (Keywords)
+                                </label>
+                                <div class="flex flex-wrap gap-2 mb-3" id="keywordTags">
+                                    <span
+                                        class="inline-flex items-center gap-1 bg-wa-light text-wa-dark text-xs font-medium px-3 py-1.5 rounded-full">
+                                        deadline <button class="hover:text-red-500 transition-colors remove-keyword"><i
+                                                data-lucide="x" class="w-3 h-3"></i></button>
+                                    </span>
+                                    <span
+                                        class="inline-flex items-center gap-1 bg-wa-light text-wa-dark text-xs font-medium px-3 py-1.5 rounded-full">
+                                        urgent <button class="hover:text-red-500 transition-colors remove-keyword"><i
+                                                data-lucide="x" class="w-3 h-3"></i></button>
+                                    </span>
+                                    <span
+                                        class="inline-flex items-center gap-1 bg-wa-light text-wa-dark text-xs font-medium px-3 py-1.5 rounded-full">
+                                        Q4 report <button class="hover:text-red-500 transition-colors remove-keyword"><i
+                                                data-lucide="x" class="w-3 h-3"></i></button>
+                                    </span>
+                                    <span
+                                        class="inline-flex items-center gap-1 bg-wa-light text-wa-dark text-xs font-medium px-3 py-1.5 rounded-full">
+                                        @boss <button class="hover:text-red-500 transition-colors remove-keyword"><i
+                                                data-lucide="x" class="w-3 h-3"></i></button>
+                                    </span>
+                                </div>
+                                <div class="flex gap-2">
+                                    <input type="text" placeholder="Add keyword..."
+                                        class="flex-1 bg-wa-gray border-0 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-wa-green focus:outline-none"
+                                        id="keywordInput">
+                                    <button
+                                        class="px-4 py-2.5 bg-wa-green text-white text-sm font-semibold rounded-lg hover:bg-wa-green/90 transition-colors active:scale-95"
+                                        id="addKeywordBtn">Add</button>
+                                </div>
+                            </div>
+
+                            <!-- Content Types -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                    <i data-lucide="file-text" class="w-4 h-4 text-gray-400"></i> Content Types
+                                </label>
+                                <div class="flex flex-wrap gap-3">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" checked
+                                            class="w-4 h-4 rounded border-gray-300 text-wa-green focus:ring-wa-green">
+                                        <span class="text-sm text-gray-600">Text</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" checked
+                                            class="w-4 h-4 rounded border-gray-300 text-wa-green focus:ring-wa-green">
+                                        <span class="text-sm text-gray-600">Audio</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" checked
+                                            class="w-4 h-4 rounded border-gray-300 text-wa-green focus:ring-wa-green">
+                                        <span class="text-sm text-gray-600">Images</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox"
+                                            class="w-4 h-4 rounded border-gray-300 text-wa-green focus:ring-wa-green">
+                                        <span class="text-sm text-gray-600">Documents</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 4. When to check and send -->
+                        <div class="space-y-4">
+                            <h3
+                                class="main-form-header text-base font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                                <i data-lucide="clock" class="w-4 h-4 text-wa-green"></i> When to check and send
+                            </h3>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <!-- Start Time -->
+                                <div>
+                                    <label
+                                        class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                        <i data-lucide="calendar" class="w-4 h-4 text-gray-400"></i> Start From
+                                    </label>
+                                    <input type="datetime-local"
+                                        class="w-full bg-wa-gray border-0 rounded-lg px-4 py-3 text-sm text-gray-700 focus:ring-2 focus:ring-wa-green focus:outline-none cursor-pointer"
+                                        id="startTimeInput">
+                                </div>
+
+                                <!-- Interval -->
+                                <div>
+                                    <label
+                                        class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                        <i data-lucide="repeat" class="w-4 h-4 text-gray-400"></i> Time Period
+                                        (Interval)
+                                    </label>
+                                    <select
+                                        class="w-full bg-wa-gray border-0 rounded-lg px-4 py-3 text-sm text-gray-700 focus:ring-2 focus:ring-wa-green focus:outline-none cursor-pointer"
+                                        id="intervalSelect">
+                                        <option value="5">Every 5 minutes</option>
+                                        <option value="15" selected>Every 15 minutes</option>
+                                        <option value="30">Every 30 minutes</option>
+                                        <option value="60">Every 1 hour</option>
+                                        <option value="180">Every 3 hours</option>
+                                        <option value="360">Every 6 hours</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Save Button -->
+                        <div class="pt-2">
+                            <button
+                                class="w-full py-3.5 bg-wa-dark text-white font-semibold rounded-xl hover:bg-wa-dark/90 transition-all shadow-lg shadow-wa-dark/20 hover:shadow-xl active:scale-[0.98] flex items-center justify-center gap-2"
+                                id="saveConfigBtn">
+                                <i data-lucide="save" class="w-5 h-5"></i>
+                                Save Configuration
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview / Status Panel -->
+                <div class="space-y-6">
+                    <!-- Status Card -->
+                    <div class="bg-white rounded-2xl border border-gray-200 shadow-xl shadow-gray-100 p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-gray-900 flex items-center gap-2">
+                                <i data-lucide="activity" class="w-5 h-5 text-wa-green"></i>
+                                Agent Status
+                            </h3>
+                            <span class="flex items-center gap-1.5 text-sm text-wa-green font-semibold"
+                                id="statusBadge">
+                                <span class="w-2 h-2 bg-wa-green rounded-full animate-pulse"></span> Running
+                            </span>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center py-2 border-b border-gray-50">
+                                <span class="text-sm text-gray-500">Groups monitored</span>
+                                <span class="text-sm font-semibold text-gray-800" id="groupCount">3 groups</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-gray-50">
+                                <span class="text-sm text-gray-500">Check interval</span>
+                                <span class="text-sm font-semibold text-gray-800" id="displayInterval">15 min</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-gray-50">
+                                <span class="text-sm text-gray-500">Reporting to</span>
+                                <span class="text-sm font-semibold text-gray-800" id="displayNumber">
+                                    +60 (10) 224-4896</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-gray-50">
+                                <span class="text-sm text-gray-500">Keywords tracked</span>
+                                <span class="text-sm font-semibold text-gray-800" id="keywordCount">4 keywords</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2">
+                                <span class="text-sm text-gray-500">Last checked</span>
+                                <span class="text-sm font-semibold text-gray-800" id="lastChecked">Just now</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Report Card -->
+                    <div class="bg-white rounded-2xl border border-gray-200 shadow-xl shadow-gray-100 p-6">
+                        <h3 class="font-bold text-gray-900 flex items-center gap-2 mb-4">
+                            <i data-lucide="file-text" class="w-5 h-5 text-wa-green"></i>
+                            Latest Report Preview
+                        </h3>
+                        <div class="bg-wa-gray rounded-xl p-4 space-y-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-wa-green rounded-full flex items-center justify-center">
+                                    <i data-lucide="check-circle" class="w-5 h-5 text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-800">Report Generated</p>
+                                    <p class="text-xs text-gray-400">Today at 2:15 PM</p>
+                                </div>
+                            </div>
+                            <div class="bg-white rounded-lg p-3 text-sm text-gray-700 space-y-2">
+                                <p>📋 <strong>Summary for Boss:</strong></p>
+                                <ul class="space-y-1.5 text-xs text-gray-600 ml-4">
+                                    <li class="flex items-start gap-2">
+                                        <span class="text-wa-green mt-0.5">●</span>
+                                        <span>Found <strong>"deadline"</strong> mentioned 3 times in <strong>Marketing
+                                                Team</strong></span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <span class="text-wa-green mt-0.5">●</span>
+                                        <span><strong>"urgent"</strong> flagged in <strong>Sales Pipeline</strong> by
+                                            @John</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <span class="text-wa-green mt-0.5">●</span>
+                                        <span>No mentions of <strong>"Q4 report"</strong> today</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <p class="text-xs text-gray-400 text-center">Report sent to +60 (10) 224-4567 via WhatsApp
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Toast notification simulation -->
+                    <div class="bg-wa-dark text-white rounded-xl p-4 flex items-center gap-3 shadow-xl"
+                        id="toastNotification">
+                        <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="bell" class="w-5 h-5"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold">Configuration saved!</p>
+                            <p class="text-xs text-green-300">Agent is now monitoring with updated settings.</p>
+                        </div>
+                        <span class="text-xs text-white/50">Now</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-gray-400 py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+                <div>
+                    <div onclick='javascript:location.href="/" ' class="flex items-center gap-2.5 mb-4">
+                        <div class="w-9 h-9 bg-wa-green rounded-xl flex items-center justify-center">
+                            <img class="logo-image" src="../assets/logo.png?s" />
+                        </div>
+                        <span class="font-bold text-xl text-white">Action<span class="text-wa-green">Now</span></span>
+                    </div>
+                    <p class="text-sm text-gray-500">Smart WhatsApp manager agent that keeps you informed without the
+                        noise.</p>
+                </div>
+                <div>
+                    <p class="font-semibold text-white mb-4">Product</p>
+                    <ul class="space-y-2.5 text-sm">
+                        <li><a href="#" class="hover:text-wa-green transition-colors">Features</a></li>
+                        <li><a href="#" class="hover:text-wa-green transition-colors">Pricing</a></li>
+                        <li><a href="#" class="hover:text-wa-green transition-colors">API</a></li>
+                        <li><a href="#" class="hover:text-wa-green transition-colors">Changelog</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <p class="font-semibold text-white mb-4">Company</p>
+                    <ul class="space-y-2.5 text-sm">
+                        <li><a href="#" class="hover:text-wa-green transition-colors">About</a></li>
+                        <li><a href="#" class="hover:text-wa-green transition-colors">Blog</a></li>
+                        <li><a href="#" class="hover:text-wa-green transition-colors">Careers</a></li>
+                        <li><a href="#" class="hover:text-wa-green transition-colors">Contact</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <p class="font-semibold text-white mb-4">Legal</p>
+                    <ul class="space-y-2.5 text-sm">
+                        <li><a href="#" class="hover:text-wa-green transition-colors">Privacy Policy</a></li>
+                        <li><a href="#" class="hover:text-wa-green transition-colors">Terms of Service</a></li>
+                        <li><a href="#" class="hover:text-wa-green transition-colors">Cookie Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p class="text-sm text-gray-500">© 2026 ActionNow. All rights reserved.</p>
+                <div class="flex items-center gap-4">
+                    <a href="#"
+                        class="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center hover:bg-wa-green/20 hover:text-wa-green transition-all"><i
+                            data-lucide="twitter" class="w-4 h-4"></i></a>
+                    <a href="#"
+                        class="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center hover:bg-wa-green/20 hover:text-wa-green transition-all"><i
+                            data-lucide="linkedin" class="w-4 h-4"></i></a>
+                    <a href="#"
+                        class="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center hover:bg-wa-green/20 hover:text-wa-green transition-all"><i
+                            data-lucide="github" class="w-4 h-4"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="../assets/js/main.js"></script>
+    <script src="start.js"></script>
+</body>
+
+</html>

@@ -1,1 +1,932 @@
-helo
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ActionNow - WhatsApp Manager Agent</title>
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <link rel="icon" type="image/png" href="assets/logo.png?a">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="icon" href="assets/logo.png?s" type="image/png">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        'wa-green': '#25D366',
+                        'wa-dark': '#075E54',
+                        'wa-light': '#DCF8C6',
+                        'wa-bg': '#ECE5DD',
+                        'wa-gray': '#F0F2F5',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="/assets/css/main.css">
+
+</head>
+
+<body class="font-sans antialiased text-gray-800 bg-white overflow-x-hidden">
+
+    <!-- Navbar -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-100 transition-all duration-300"
+        id="navbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div   onclick='javascript:location.href="/" ' class="flex items-center gap-2.5">
+                    <div
+                        class="w-9 h-9 bg-wa-green rounded-xl flex items-center justify-center shadow-md shadow-wa-green/30">
+                        <img class="logo-image" src="assets/logo.png?s" />
+                    </div>
+                    <span class="font-bold text-xl tracking-tight text-gray-900">Action<span
+                            class="text-wa-green">Now</span></span>
+                </div>
+                <div id="header-middle-menu" class="hidden md:flex items-center gap-8">
+                    <a href="#features"
+                        class="text-sm font-medium text-gray-600 hover:text-wa-dark transition-colors">Features</a>
+                    <a href="#how-it-works"
+                        class="text-sm font-medium text-gray-600 hover:text-wa-dark transition-colors">How It Works</a>
+                    <a href="#demo" class="text-sm font-medium text-gray-600 hover:text-wa-dark transition-colors">Live
+                        Demo</a>
+                    <a href="#pricing"
+                        class="text-sm font-medium text-gray-600 hover:text-wa-dark transition-colors">Pricing</a>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button
+                        class="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-700 hover:text-wa-dark transition-colors">
+                        Sign In
+                    </button>
+
+                    <button
+                        onclick="window.location.hostname === 'localhost'?window.open('start/index.html', '_self'):window.open('start/', '_self')"
+                        class="inline-flex items-center gap-2 px-5 py-2.5 bg-wa-dark text-white text-sm font-semibold rounded-xl hover:bg-wa-dark/90 transition-all shadow-lg shadow-wa-dark/20 hover:shadow-xl hover:shadow-wa-dark/25 active:scale-95">
+                        Get Started
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                    <button class="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors" id="mobileMenuBtn">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile menu -->
+        <div class="md:hidden hidden bg-white border-t border-gray-100" id="mobileMenu">
+            <div class="px-4 py-3 space-y-2">
+                <a href="#features"
+                    class="block px-3 py-2.5 text-sm font-medium text-gray-600 rounded-lg hover:bg-wa-gray transition-colors">Features</a>
+                <a href="#how-it-works"
+                    class="block px-3 py-2.5 text-sm font-medium text-gray-600 rounded-lg hover:bg-wa-gray transition-colors">How
+                    It Works</a>
+                <a href="#demo"
+                    class="block px-3 py-2.5 text-sm font-medium text-gray-600 rounded-lg hover:bg-wa-gray transition-colors">Live
+                    Demo</a>
+                <a href="#pricing"
+                    class="block px-3 py-2.5 text-sm font-medium text-gray-600 rounded-lg hover:bg-wa-gray transition-colors">Pricing</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="pt-28 pb-16 sm:pt-36 sm:pb-24 relative overflow-hidden">
+        <!-- Background decoration -->
+        <div
+            class="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-wa-green/5 rounded-full blur-3xl -z-10">
+        </div>
+        <div class="absolute top-40 right-10 w-72 h-72 bg-wa-light/40 rounded-full blur-3xl -z-10"></div>
+        <div class="absolute bottom-20 left-10 w-60 h-60 bg-wa-dark/5 rounded-full blur-3xl -z-10"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                <!-- Left Content -->
+                <div class="text-center lg:text-left">
+                    <div
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-wa-light/60 text-wa-dark text-sm font-semibold rounded-full mb-6">
+                        <span class="w-2 h-2 bg-wa-green rounded-full animate-pulse"></span>
+                        Smart WhatsApp Automation
+                    </div>
+                    <h1
+                        class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900 leading-tight">
+                        Your WhatsApp
+                        <br>
+                        <span class="text-wa-green relative">
+                            Manager Agent
+                            <svg class="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 8" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path d="M1 7C40 2 160 2 199 7" stroke="#25D366" stroke-width="3" stroke-linecap="round"
+                                    opacity="0.5" />
+                            </svg>
+                        </span>
+                        That Never Sleeps
+                    </h1>
+                    <p class="mt-6 text-lg text-gray-500 leading-relaxed max-w-lg mx-auto lg:mx-0">
+                        ActionNow joins your WhatsApp groups, reads every message — text, audio, and images — then
+                        intelligently reports back to you. Configure once, stay informed forever.
+                    </p>
+                    <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+                        <button
+                            class="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-wa-green text-white font-semibold rounded-xl hover:bg-wa-green/90 transition-all shadow-xl shadow-wa-green/25 hover:shadow-2xl hover:shadow-wa-green/30 active:scale-95 text-base">
+                            Start Free Trial
+                            <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                        </button>
+                        <button
+                            class="inline-flex items-center justify-center gap-2 px-7 py-3.5 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl hover:border-wa-green hover:text-wa-green transition-all active:scale-95 text-base">
+                            <i data-lucide="play-circle" class="w-5 h-5"></i>
+                            Watch Demo
+                        </button>
+                    </div>
+                    <div class="mt-8 flex items-center gap-6 justify-center lg:justify-start text-sm text-gray-400">
+                        <div class="flex items-center gap-1.5">
+                            <i data-lucide="check-circle-2" class="w-4 h-4 text-wa-green"></i>
+                            <span>No credit card</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <i data-lucide="check-circle-2" class="w-4 h-4 text-wa-green"></i>
+                            <span>14-day trial</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <i data-lucide="check-circle-2" class="w-4 h-4 text-wa-green"></i>
+                            <span>Cancel anytime</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Phone Mockup -->
+                <div class="flex justify-center lg:justify-end">
+                    <div class="phone-frame w-[280px] sm:w-[320px] animate-float">
+                        <div class="phone-screen bg-wa-bg flex flex-col">
+                            <!-- Phone header -->
+                            <div class="bg-wa-dark px-4 py-3 flex items-center gap-3">
+                                <div
+                                    class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-bold">
+                                    AN</div>
+                                <div class="flex-1">
+                                    <p class="text-white text-sm font-semibold">ActionNow Agent</p>
+                                    <p class="text-green-300 text-xs">online</p>
+                                </div>
+                                <i data-lucide="more-vertical" class="w-4 h-4 text-white/70"></i>
+                            </div>
+                            <!-- Chat area -->
+                            <div class="flex-1 p-3 space-y-3 overflow-hidden">
+                                <div class="flex justify-end">
+                                    <div class="chat-bubble-boss max-w-[85%] px-3 py-2 text-sm shadow-sm">
+                                        <p class="text-gray-800">Hi Agent, report any mentions of
+                                            <strong>"deadline"</strong> in the marketing group
+                                        </p>
+                                        <span class="text-[10px] text-gray-400 mt-1 block text-right">10:32 AM</span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-start">
+                                    <div class="chat-bubble-agent max-w-[85%] px-3 py-2 text-sm shadow-sm">
+                                        <p class="text-gray-800">Got it, boss! ✅ I'll monitor the group and report back.
+                                        </p>
+                                        <span class="text-[10px] text-gray-400 mt-1 block text-right">10:32 AM</span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-start">
+                                    <div class="chat-bubble-agent max-w-[85%] px-3 py-2 text-sm shadow-sm">
+                                        <p class="text-gray-800">📋 <strong>Report:</strong> Found mention of "deadline"
+                                            at 2:15 PM by @Sarah:</p>
+                                        <p class="text-gray-600 text-xs mt-1 italic bg-gray-50 p-2 rounded">"Hey team,
+                                            the Q4 report deadline is next Friday!"</p>
+                                        <span class="text-[10px] text-gray-400 mt-1 block text-right">2:16 PM</span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-end">
+                                    <div class="chat-bubble-boss max-w-[85%] px-3 py-2 text-sm shadow-sm">
+                                        <p class="text-gray-800">Perfect, thanks! 🙌</p>
+                                        <span class="text-[10px] text-gray-400 mt-1 block text-right">2:17 PM</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Phone input bar -->
+                            <div class="bg-wa-gray px-3 py-2 flex items-center gap-2">
+                                <i data-lucide="smile" class="w-5 h-5 text-gray-400"></i>
+                                <div class="flex-1 bg-white rounded-full px-4 py-2 text-xs text-gray-400">Type a
+                                    message...</div>
+                                <div class="w-9 h-9 bg-wa-green rounded-full flex items-center justify-center">
+                                    <i data-lucide="mic" class="w-4 h-4 text-white"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trust / Stats Bar -->
+    <section class="py-10 border-y border-gray-100 bg-wa-gray/40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                <div>
+                    <p class="text-3xl sm:text-4xl font-extrabold text-wa-dark">10K+</p>
+                    <p class="text-sm text-gray-500 mt-1">Active Agents</p>
+                </div>
+                <div>
+                    <p class="text-3xl sm:text-4xl font-extrabold text-wa-dark">2M+</p>
+                    <p class="text-sm text-gray-500 mt-1">Messages Processed</p>
+                </div>
+                <div>
+                    <p class="text-3xl sm:text-4xl font-extrabold text-wa-dark">50K+</p>
+                    <p class="text-sm text-gray-500 mt-1">Groups Monitored</p>
+                </div>
+                <div>
+                    <p class="text-3xl sm:text-4xl font-extrabold text-wa-dark">99.9%</p>
+                    <p class="text-sm text-gray-500 mt-1">Uptime</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 sm:py-28">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-wa-green font-semibold text-sm tracking-wider uppercase">Features</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-3">Everything Your Agent Can Do</h2>
+                <p class="text-gray-500 mt-4 text-lg">ActionNow is packed with powerful capabilities to keep you
+                    informed without lifting a finger.</p>
+            </div>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Feature 1 -->
+                <div
+                    class="group p-7 rounded-2xl border border-gray-100 hover:border-wa-green/40 hover:shadow-xl hover:shadow-wa-green/5 transition-all duration-300 bg-white relative overflow-hidden">
+                    <div
+                        class="absolute top-0 right-0 w-24 h-24 bg-wa-green/5 rounded-bl-full -z-0 group-hover:scale-150 transition-transform duration-500">
+                    </div>
+                    <div class="w-12 h-12 bg-wa-light rounded-xl flex items-center justify-center mb-5 relative z-10">
+                        <i data-lucide="users" class="w-6 h-6 text-wa-dark"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2 relative z-10">Auto Join Groups</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed relative z-10">ActionNow automatically joins the
+                        WhatsApp groups you specify via invite links. No manual setup needed.</p>
+                </div>
+                <!-- Feature 2 -->
+                <div
+                    class="group p-7 rounded-2xl border border-gray-100 hover:border-wa-green/40 hover:shadow-xl hover:shadow-wa-green/5 transition-all duration-300 bg-white relative overflow-hidden">
+                    <div
+                        class="absolute top-0 right-0 w-24 h-24 bg-wa-green/5 rounded-bl-full -z-0 group-hover:scale-150 transition-transform duration-500">
+                    </div>
+                    <div class="w-12 h-12 bg-wa-light rounded-xl flex items-center justify-center mb-5 relative z-10">
+                        <i data-lucide="message-square-text" class="w-6 h-6 text-wa-dark"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2 relative z-10">Reads Text Messages</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed relative z-10">Scans every text message in
+                        real-time, looking for keywords, phrases, or patterns you define.</p>
+                </div>
+                <!-- Feature 3 -->
+                <div
+                    class="group p-7 rounded-2xl border border-gray-100 hover:border-wa-green/40 hover:shadow-xl hover:shadow-wa-green/5 transition-all duration-300 bg-white relative overflow-hidden">
+                    <div
+                        class="absolute top-0 right-0 w-24 h-24 bg-wa-green/5 rounded-bl-full -z-0 group-hover:scale-150 transition-transform duration-500">
+                    </div>
+                    <div class="w-12 h-12 bg-wa-light rounded-xl flex items-center justify-center mb-5 relative z-10">
+                        <i data-lucide="mic" class="w-6 h-6 text-wa-dark"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2 relative z-10">Transcribes Audio</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed relative z-10">Voice notes are automatically
+                        transcribed to text using AI, so nothing slips through the cracks.</p>
+                </div>
+                <!-- Feature 4 -->
+                <div
+                    class="group p-7 rounded-2xl border border-gray-100 hover:border-wa-green/40 hover:shadow-xl hover:shadow-wa-green/5 transition-all duration-300 bg-white relative overflow-hidden">
+                    <div
+                        class="absolute top-0 right-0 w-24 h-24 bg-wa-green/5 rounded-bl-full -z-0 group-hover:scale-150 transition-transform duration-500">
+                    </div>
+                    <div class="w-12 h-12 bg-wa-light rounded-xl flex items-center justify-center mb-5 relative z-10">
+                        <i data-lucide="image" class="w-6 h-6 text-wa-dark"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2 relative z-10">Analyzes Images</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed relative z-10">Uses AI vision to understand image
+                        content — screenshots, documents, photos — and extracts relevant info.</p>
+                </div>
+                <!-- Feature 5 -->
+                <div
+                    class="group p-7 rounded-2xl border border-gray-100 hover:border-wa-green/40 hover:shadow-xl hover:shadow-wa-green/5 transition-all duration-300 bg-white relative overflow-hidden">
+                    <div
+                        class="absolute top-0 right-0 w-24 h-24 bg-wa-green/5 rounded-bl-full -z-0 group-hover:scale-150 transition-transform duration-500">
+                    </div>
+                    <div class="w-12 h-12 bg-wa-light rounded-xl flex items-center justify-center mb-5 relative z-10">
+                        <i data-lucide="bell-ring" class="w-6 h-6 text-wa-dark"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2 relative z-10">Smart Reporting</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed relative z-10">Sends concise, actionable reports
+                        directly to your WhatsApp number at intervals you choose.</p>
+                </div>
+                <!-- Feature 6 -->
+                <div
+                    class="group p-7 rounded-2xl border border-gray-100 hover:border-wa-green/40 hover:shadow-xl hover:shadow-wa-green/5 transition-all duration-300 bg-white relative overflow-hidden">
+                    <div
+                        class="absolute top-0 right-0 w-24 h-24 bg-wa-green/5 rounded-bl-full -z-0 group-hover:scale-150 transition-transform duration-500">
+                    </div>
+                    <div class="w-12 h-12 bg-wa-light rounded-xl flex items-center justify-center mb-5 relative z-10">
+                        <i data-lucide="shield-check" class="w-6 h-6 text-wa-dark"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2 relative z-10">Privacy First</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed relative z-10">End-to-end encrypted. Only the boss
+                        receives reports. Your data stays private and secure.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="py-20 sm:py-28 bg-wa-gray/40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-wa-green font-semibold text-sm tracking-wider uppercase">How It Works</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-3">Set It Up in 3 Simple Steps</h2>
+                <p class="text-gray-500 mt-4 text-lg">From configuration to actionable reports — it takes less than 5
+                    minutes.</p>
+            </div>
+            <div class="relative max-w-4xl mx-auto">
+                <div class="step-line hidden md:block"></div>
+                <div class="grid md:grid-cols-3 gap-8 relative z-10">
+                    <div class="text-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div
+                            class="w-14 h-14 bg-wa-green text-white rounded-full flex items-center justify-center mx-auto mb-5 text-xl font-extrabold shadow-lg shadow-wa-green/25">
+                            1</div>
+                        <h3 class="font-bold text-gray-900 mb-2">Add Groups</h3>
+                        <p class="text-gray-500 text-sm">Paste invite links for the WhatsApp groups you want the agent
+                            to monitor.</p>
+                    </div>
+                    <div class="text-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div
+                            class="w-14 h-14 bg-wa-green text-white rounded-full flex items-center justify-center mx-auto mb-5 text-xl font-extrabold shadow-lg shadow-wa-green/25">
+                            2</div>
+                        <h3 class="font-bold text-gray-900 mb-2">Set Keywords</h3>
+                        <p class="text-gray-500 text-sm">Define what to look for — keywords, phrases, sender names, or
+                            content types.</p>
+                    </div>
+                    <div class="text-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div
+                            class="w-14 h-14 bg-wa-green text-white rounded-full flex items-center justify-center mx-auto mb-5 text-xl font-extrabold shadow-lg shadow-wa-green/25">
+                            3</div>
+                        <h3 class="font-bold text-gray-900 mb-2">Receive Reports</h3>
+                        <p class="text-gray-500 text-sm">Get smart summaries delivered to your WhatsApp at the intervals
+                            you choose.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Demo / Configuration Section -->
+    <section id="demo" class="py-20 sm:py-28">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-wa-green font-semibold text-sm tracking-wider uppercase">Live Config Demo</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-3">Configure Your Agent</h2>
+                <p class="text-gray-500 mt-4 text-lg">See how easy it is to set up your WhatsApp manager. Try the
+                    interactive demo below.</p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-10 items-start">
+                <!-- Config Panel -->
+                <div class="bg-white rounded-2xl border border-gray-200 shadow-xl shadow-gray-100 overflow-hidden">
+                    <div class="bg-wa-dark px-6 py-4 flex items-center gap-3">
+                        <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-400"></div>
+                        <span class="text-white/80 text-sm font-medium ml-3">Agent Configuration Panel</span>
+                    </div>
+                    <div class="p-6 space-y-8">
+
+                        <!-- 1. From (the where) -->
+                        <div class="space-y-3">
+                            <h3
+                                class="main-form-header text-base font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                                <i data-lucide="map-pin" class="w-4 h-4 text-wa-green"></i> From: (the where)
+                            </h3>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                    <i data-lucide="users" class="w-4 h-4 text-gray-400"></i> Groups to Monitor
+                                </label>
+                                <div class="space-y-2" id="groupList">
+                                    <div class="flex items-center gap-2 bg-wa-gray rounded-lg px-3 py-2.5">
+                                        <span class="text-sm text-gray-600 flex-1 truncate">🏢 Marketing Team</span>
+                                        <span
+                                            class="text-xs text-wa-green font-medium bg-wa-light px-2 py-0.5 rounded-full">Active</span>
+                                        <button
+                                            class="text-gray-400 hover:text-red-500 transition-colors p-1 remove-group"><i
+                                                data-lucide="x" class="w-4 h-4"></i></button>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-wa-gray rounded-lg px-3 py-2.5">
+                                        <span class="text-sm text-gray-600 flex-1 truncate">💼 Sales Pipeline</span>
+                                        <span
+                                            class="text-xs text-wa-green font-medium bg-wa-light px-2 py-0.5 rounded-full">Active</span>
+                                        <button
+                                            class="text-gray-400 hover:text-red-500 transition-colors p-1 remove-group"><i
+                                                data-lucide="x" class="w-4 h-4"></i></button>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-wa-gray rounded-lg px-3 py-2.5">
+                                        <span class="text-sm text-gray-600 flex-1 truncate">🎯 Product Launch</span>
+                                        <span
+                                            class="text-xs text-wa-green font-medium bg-wa-light px-2 py-0.5 rounded-full">Active</span>
+                                        <button
+                                            class="text-gray-400 hover:text-red-500 transition-colors p-1 remove-group"><i
+                                                data-lucide="x" class="w-4 h-4"></i></button>
+                                    </div>
+                                </div>
+                                <button
+                                    class="mt-3 flex items-center gap-2 text-sm font-medium text-wa-green hover:text-wa-dark transition-colors"
+                                    id="addGroupBtn">
+                                    <i data-lucide="plus-circle" class="w-4 h-4"></i> Add another group
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 2. To (the who) -->
+                        <div class="space-y-3">
+                            <h3
+                                class="main-form-header text-base font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                                <i data-lucide="send" class="w-4 h-4 text-wa-green"></i> To: (the who)
+                            </h3>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                    <i data-lucide="phone" class="w-4 h-4 text-gray-400"></i> Boss Report Numbers
+                                </label>
+                                <div class="space-y-2" id="bossNumberList">
+                                    <div class="flex items-center gap-2 bg-wa-gray rounded-lg px-4 py-3">
+                                        <span class="text-sm text-gray-400">+</span>
+                                        <input type="text" value="60 (10) 224-4896"
+                                            class="bg-transparent border-0 text-sm text-gray-700 flex-1 focus:outline-none boss-number-input">
+                                        <span
+                                            class="text-xs text-wa-green font-medium bg-wa-light px-2 py-0.5 rounded-full">Verified</span>
+                                        <button
+                                            class="text-gray-400 hover:text-red-500 transition-colors p-1 remove-boss-number"><i
+                                                data-lucide="x" class="w-4 h-4"></i></button>
+                                    </div>
+                                </div>
+                                <button
+                                    class="mt-3 flex items-center gap-2 text-sm font-medium text-wa-green hover:text-wa-dark transition-colors"
+                                    id="addBossNumberBtn">
+                                    <i data-lucide="plus-circle" class="w-4 h-4"></i> Add another number
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 3. What to look for? -->
+                        <div class="space-y-4">
+                            <h3
+                                class="main-form-header text-base font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                                <i data-lucide="search" class="w-4 h-4 text-wa-green"></i> What to look for?
+                            </h3>
+
+                            <!-- Keywords -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                    <i data-lucide="tag" class="w-4 h-4 text-gray-400"></i> Content Info (Keywords)
+                                </label>
+                                <div class="flex flex-wrap gap-2 mb-3" id="keywordTags">
+                                    <span
+                                        class="inline-flex items-center gap-1 bg-wa-light text-wa-dark text-xs font-medium px-3 py-1.5 rounded-full">
+                                        deadline <button class="hover:text-red-500 transition-colors remove-keyword"><i
+                                                data-lucide="x" class="w-3 h-3"></i></button>
+                                    </span>
+                                    <span
+                                        class="inline-flex items-center gap-1 bg-wa-light text-wa-dark text-xs font-medium px-3 py-1.5 rounded-full">
+                                        urgent <button class="hover:text-red-500 transition-colors remove-keyword"><i
+                                                data-lucide="x" class="w-3 h-3"></i></button>
+                                    </span>
+                                    <span
+                                        class="inline-flex items-center gap-1 bg-wa-light text-wa-dark text-xs font-medium px-3 py-1.5 rounded-full">
+                                        Q4 report <button class="hover:text-red-500 transition-colors remove-keyword"><i
+                                                data-lucide="x" class="w-3 h-3"></i></button>
+                                    </span>
+                                    <span
+                                        class="inline-flex items-center gap-1 bg-wa-light text-wa-dark text-xs font-medium px-3 py-1.5 rounded-full">
+                                        @boss <button class="hover:text-red-500 transition-colors remove-keyword"><i
+                                                data-lucide="x" class="w-3 h-3"></i></button>
+                                    </span>
+                                </div>
+                                <div class="flex gap-2">
+                                    <input type="text" placeholder="Add keyword..."
+                                        class="flex-1 bg-wa-gray border-0 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-wa-green focus:outline-none"
+                                        id="keywordInput">
+                                    <button
+                                        class="px-4 py-2.5 bg-wa-green text-white text-sm font-semibold rounded-lg hover:bg-wa-green/90 transition-colors active:scale-95"
+                                        id="addKeywordBtn">Add</button>
+                                </div>
+                            </div>
+
+                            <!-- Content Types -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                    <i data-lucide="file-text" class="w-4 h-4 text-gray-400"></i> Content Types
+                                </label>
+                                <div class="flex flex-wrap gap-3">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" checked
+                                            class="w-4 h-4 rounded border-gray-300 text-wa-green focus:ring-wa-green">
+                                        <span class="text-sm text-gray-600">Text</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" checked
+                                            class="w-4 h-4 rounded border-gray-300 text-wa-green focus:ring-wa-green">
+                                        <span class="text-sm text-gray-600">Audio</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" checked
+                                            class="w-4 h-4 rounded border-gray-300 text-wa-green focus:ring-wa-green">
+                                        <span class="text-sm text-gray-600">Images</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox"
+                                            class="w-4 h-4 rounded border-gray-300 text-wa-green focus:ring-wa-green">
+                                        <span class="text-sm text-gray-600">Documents</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 4. When to check and send -->
+                        <div class="space-y-4">
+                            <h3
+                                class="main-form-header text-base font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                                <i data-lucide="clock" class="w-4 h-4 text-wa-green"></i> When to check and send
+                            </h3>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <!-- Start Time -->
+                                <div>
+                                    <label
+                                        class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                        <i data-lucide="calendar" class="w-4 h-4 text-gray-400"></i> Start From
+                                    </label>
+                                    <input type="datetime-local"
+                                        class="w-full bg-wa-gray border-0 rounded-lg px-4 py-3 text-sm text-gray-700 focus:ring-2 focus:ring-wa-green focus:outline-none cursor-pointer"
+                                        id="startTimeInput">
+                                </div>
+
+                                <!-- Interval -->
+                                <div>
+                                    <label
+                                        class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                        <i data-lucide="repeat" class="w-4 h-4 text-gray-400"></i> Time Period
+                                        (Interval)
+                                    </label>
+                                    <select
+                                        class="w-full bg-wa-gray border-0 rounded-lg px-4 py-3 text-sm text-gray-700 focus:ring-2 focus:ring-wa-green focus:outline-none cursor-pointer"
+                                        id="intervalSelect">
+                                        <option value="5">Every 5 minutes</option>
+                                        <option value="15" selected>Every 15 minutes</option>
+                                        <option value="30">Every 30 minutes</option>
+                                        <option value="60">Every 1 hour</option>
+                                        <option value="180">Every 3 hours</option>
+                                        <option value="360">Every 6 hours</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Save Button -->
+                        <div class="pt-2">
+                            <button
+                                class="w-full py-3.5 bg-wa-dark text-white font-semibold rounded-xl hover:bg-wa-dark/90 transition-all shadow-lg shadow-wa-dark/20 hover:shadow-xl active:scale-[0.98] flex items-center justify-center gap-2"
+                                id="saveConfigBtn">
+                                <i data-lucide="save" class="w-5 h-5"></i>
+                                Save Configuration
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview / Status Panel -->
+                <div class="space-y-6">
+                    <!-- Status Card -->
+                    <div class="bg-white rounded-2xl border border-gray-200 shadow-xl shadow-gray-100 p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-gray-900 flex items-center gap-2">
+                                <i data-lucide="activity" class="w-5 h-5 text-wa-green"></i>
+                                Agent Status
+                            </h3>
+                            <span class="flex items-center gap-1.5 text-sm text-wa-green font-semibold"
+                                id="statusBadge">
+                                <span class="w-2 h-2 bg-wa-green rounded-full animate-pulse"></span> Running
+                            </span>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center py-2 border-b border-gray-50">
+                                <span class="text-sm text-gray-500">Groups monitored</span>
+                                <span class="text-sm font-semibold text-gray-800" id="groupCount">3 groups</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-gray-50">
+                                <span class="text-sm text-gray-500">Check interval</span>
+                                <span class="text-sm font-semibold text-gray-800" id="displayInterval">15 min</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-gray-50">
+                                <span class="text-sm text-gray-500">Reporting to</span>
+                                <span class="text-sm font-semibold text-gray-800" id="displayNumber">
+                                    +60 (10) 224-4896</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-gray-50">
+                                <span class="text-sm text-gray-500">Keywords tracked</span>
+                                <span class="text-sm font-semibold text-gray-800" id="keywordCount">4 keywords</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2">
+                                <span class="text-sm text-gray-500">Last checked</span>
+                                <span class="text-sm font-semibold text-gray-800" id="lastChecked">Just now</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Report Card -->
+                    <div class="bg-white rounded-2xl border border-gray-200 shadow-xl shadow-gray-100 p-6">
+                        <h3 class="font-bold text-gray-900 flex items-center gap-2 mb-4">
+                            <i data-lucide="file-text" class="w-5 h-5 text-wa-green"></i>
+                            Latest Report Preview
+                        </h3>
+                        <div class="bg-wa-gray rounded-xl p-4 space-y-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-wa-green rounded-full flex items-center justify-center">
+                                    <i data-lucide="check-circle" class="w-5 h-5 text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-800">Report Generated</p>
+                                    <p class="text-xs text-gray-400">Today at 2:15 PM</p>
+                                </div>
+                            </div>
+                            <div class="bg-white rounded-lg p-3 text-sm text-gray-700 space-y-2">
+                                <p>📋 <strong>Summary for Boss:</strong></p>
+                                <ul class="space-y-1.5 text-xs text-gray-600 ml-4">
+                                    <li class="flex items-start gap-2">
+                                        <span class="text-wa-green mt-0.5">●</span>
+                                        <span>Found <strong>"deadline"</strong> mentioned 3 times in <strong>Marketing
+                                                Team</strong></span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <span class="text-wa-green mt-0.5">●</span>
+                                        <span><strong>"urgent"</strong> flagged in <strong>Sales Pipeline</strong> by
+                                            @John</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <span class="text-wa-green mt-0.5">●</span>
+                                        <span>No mentions of <strong>"Q4 report"</strong> today</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <p class="text-xs text-gray-400 text-center">Report sent to +60 (10) 224-4567 via WhatsApp
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Toast notification simulation -->
+                    <div class="bg-wa-dark text-white rounded-xl p-4 flex items-center gap-3 shadow-xl"
+                        id="toastNotification">
+                        <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="bell" class="w-5 h-5"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold">Configuration saved!</p>
+                            <p class="text-xs text-green-300">Agent is now monitoring with updated settings.</p>
+                        </div>
+                        <span class="text-xs text-white/50">Now</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonial Section -->
+    <section class="py-20 sm:py-28 bg-wa-gray/40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-wa-green font-semibold text-sm tracking-wider uppercase">Testimonials</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-3">Loved by Bosses Everywhere</h2>
+            </div>
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                    <div class="flex gap-1 mb-4">
+                        <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+                    </div>
+                    <p class="text-gray-600 text-sm leading-relaxed mb-4">"ActionNow saves me hours every week. I no
+                        longer need to scroll through endless group chats. The AI summaries are spot on."</p>
+                    <div class="flex items-center gap-3">
+                        <img src="http://static.photos/office/200x200/42" alt="Avatar"
+                            class="w-10 h-10 rounded-full object-cover">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-800">Sarah Chen</p>
+                            <p class="text-xs text-gray-400">Marketing Director</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                    <div class="flex gap-1 mb-4">
+                        <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+                    </div>
+                    <p class="text-gray-600 text-sm leading-relaxed mb-4">"The audio transcription feature is a
+                        game-changer. I can finally keep track of voice notes without listening to them all."</p>
+                    <div class="flex items-center gap-3">
+                        <img src="http://static.photos/people/200x200/17" alt="Avatar"
+                            class="w-10 h-10 rounded-full object-cover">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-800">Marcus Rivera</p>
+                            <p class="text-xs text-gray-400">Operations Manager</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                    <div class="flex gap-1 mb-4">
+                        <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+                    </div>
+                    <p class="text-gray-600 text-sm leading-relaxed mb-4">"Set it up in 3 minutes. Now I get daily
+                        digests of everything important across 8 different groups. Absolute lifesaver."</p>
+                    <div class="flex items-center gap-3">
+                        <img src="http://static.photos/office/200x200/99" alt="Avatar"
+                            class="w-10 h-10 rounded-full object-cover">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-800">Priya Patel</p>
+                            <p class="text-xs text-gray-400">Startup Founder</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="py-20 sm:py-28">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-wa-green font-semibold text-sm tracking-wider uppercase">Pricing</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-3">Plans for Every Boss</h2>
+                <p class="text-gray-500 mt-4 text-lg">Start free, scale as you grow. No hidden fees.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+                <!-- Starter -->
+                <div class="bg-white rounded-2xl border-2 border-gray-100 p-7 hover:border-wa-green/30 transition-all">
+                    <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Starter</p>
+                    <p class="text-4xl font-extrabold text-gray-900 mt-3">Free</p>
+                    <p class="text-sm text-gray-400 mt-1">Perfect for trying it out</p>
+                    <ul class="mt-6 space-y-3">
+                        <li class="flex items-center gap-2 text-sm text-gray-600"><i data-lucide="check"
+                                class="w-4 h-4 text-wa-green"></i> 1 WhatsApp group</li>
+                        <li class="flex items-center gap-2 text-sm text-gray-600"><i data-lucide="check"
+                                class="w-4 h-4 text-wa-green"></i> Text monitoring only</li>
+                        <li class="flex items-center gap-2 text-sm text-gray-600"><i data-lucide="check"
+                                class="w-4 h-4 text-wa-green"></i> Daily reports</li>
+                        <li class="flex items-center gap-2 text-sm text-gray-600"><i data-lucide="check"
+                                class="w-4 h-4 text-wa-green"></i> 5 keywords</li>
+                    </ul>
+                    <button
+                        class="w-full mt-7 py-3 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl hover:border-wa-green hover:text-wa-green transition-all">Get
+                        Started</button>
+                </div>
+                <!-- Pro -->
+                <div class="bg-wa-dark rounded-2xl p-7 transform scale-105 shadow-2xl shadow-wa-dark/30 relative">
+                    <div
+                        class="absolute -top-3 left-1/2 -translate-x-1/2 bg-wa-green text-white text-xs font-bold px-4 py-1 rounded-full">
+                        Most Popular</div>
+                    <p class="text-sm font-semibold text-green-300 uppercase tracking-wider">Pro</p>
+                    <p class="text-4xl font-extrabold text-white mt-3">$29<span
+                            class="text-lg text-green-300 font-normal">/mo</span></p>
+                    <p class="text-sm text-green-200 mt-1">For serious managers</p>
+                    <ul class="mt-6 space-y-3">
+                        <li class="flex items-center gap-2 text-sm text-white/90"><i data-lucide="check"
+                                class="w-4 h-4 text-wa-green"></i> Up to 10 groups</li>
+                        <li class="flex items-center gap-2 text-sm text-white/90"><i data-lucide="check"
+                                class="w-4 h-4 text-wa-green"></i> Text + Audio + Images</li>
+                        <li class="flex items-center gap-2 text-sm text-white/90"><i data-lucide="check"
+                                class="w-4 h-4 text-wa-green"></i> Hourly reports</li>
+                        <li class="flex items-center gap-2 text-sm text-white/90"><i data-lucide="check"
+                                class="w-4 h-4 text-wa-green"></i> Unlimited keywords</li>
+                        <li class="flex items-center gap-2 text-sm text-white/90"><i data-lucide="check"
+                                class="w-4 h-4 text-wa-green"></i> Priority support</li>
+                    </ul>
+                    <button
+                        class="w-full mt-7 py-3 bg-wa-green text-white font-semibold rounded-xl hover:bg-wa-green/90 transition-all shadow-lg">Start
+                        Free Trial</button>
+                </div>
+                <!-- Enterprise -->
+                <div class="bg-white rounded-2xl border-2 border-gray-100 p-7 hover:border-wa-green/30 transition-all">
+                    <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Enterprise</p>
+                    <p class="text-4xl font-extrabold text-gray-900 mt-3">$99<span
+                            class="text-lg text-gray-400 font-normal">/mo</span></p>
+                    <p class="text-sm text-gray-400 mt-1">For teams & agencies</p>
+                    <ul class="mt-6 space-y-3">
+                        <li class="flex items-center gap-2 text-sm text-gray-600"><i data-lucide="check"
+                                class="w-4 h-4 text-wa-green"></i> Unlimited groups</li>
+                        <li class="flex items-center gap-2 text-sm text-gray-600"><i data-lucide="check"
+                                class="w-4 h-4 text-wa-green"></i> All content types</li>
+                        <li class="flex items-center gap-2 text-sm text-gray-600"><i data-lucide="check"
+                                class="w-4 h-4 text-wa-green"></i> Real-time reports</li>
+                        <li class="flex items-center gap-2 text-sm text-gray-600"><i data-lucide="check"
+                                class="w-4 h-4 text-wa-green"></i> Custom AI rules</li>
+                        <li class="flex items-center gap-2 text-sm text-gray-600"><i data-lucide="check"
+                                class="w-4 h-4 text-wa-green"></i> Dedicated support</li>
+                    </ul>
+                    <button
+                        class="w-full mt-7 py-3 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl hover:border-wa-green hover:text-wa-green transition-all">Contact
+                        Sales</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 sm:py-28 bg-wa-dark relative overflow-hidden">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-wa-green/10 rounded-full blur-3xl">
+        </div>
+        <div class="max-w-3xl mx-auto text-center px-4 sm:px-6 lg:px-8 relative z-10">
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Ready to Automate Your WhatsApp?</h2>
+            <p class="text-green-200 mt-4 text-lg">Join thousands of bosses who let ActionNow handle the noise while
+                they focus on what matters.</p>
+            <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                    class="px-8 py-4 bg-wa-green text-white font-semibold rounded-xl hover:bg-wa-green/90 transition-all shadow-xl shadow-wa-green/30 active:scale-95 text-base">
+                    Start Your Free Trial
+                </button>
+                <button
+                    class="px-8 py-4 border-2 border-white/30 text-white font-semibold rounded-xl hover:bg-white/10 transition-all active:scale-95 text-base">
+                    Talk to Sales
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-gray-400 py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+                <div>
+                    <div class="flex items-center gap-2.5 mb-4">
+                        <div onclick='javascript:location.href="/" '
+                            class="w-9 h-9 bg-wa-green rounded-xl flex items-center justify-center">
+                            <img class="logo-image" src="assets/logo.png?s" />
+                        </div>
+                        <span class="font-bold text-xl text-white">Action<span class="text-wa-green">Now</span></span>
+                    </div>
+                    <p class="text-sm text-gray-500">Smart WhatsApp manager agent that keeps you informed without the
+                        noise.</p>
+                </div>
+                <div>
+                    <p class="font-semibold text-white mb-4">Product</p>
+                    <ul class="space-y-2.5 text-sm">
+                        <li><a href="#" class="hover:text-wa-green transition-colors">Features</a></li>
+                        <li><a href="#" class="hover:text-wa-green transition-colors">Pricing</a></li>
+                        <li><a href="#" class="hover:text-wa-green transition-colors">API</a></li>
+                        <li><a href="#" class="hover:text-wa-green transition-colors">Changelog</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <p class="font-semibold text-white mb-4">Company</p>
+                    <ul class="space-y-2.5 text-sm">
+                        <li><a href="#" class="hover:text-wa-green transition-colors">About</a></li>
+                        <li><a href="#" class="hover:text-wa-green transition-colors">Blog</a></li>
+                        <li><a href="#" class="hover:text-wa-green transition-colors">Careers</a></li>
+                        <li><a href="#" class="hover:text-wa-green transition-colors">Contact</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <p class="font-semibold text-white mb-4">Legal</p>
+                    <ul class="space-y-2.5 text-sm">
+                        <li><a href="#" class="hover:text-wa-green transition-colors">Privacy Policy</a></li>
+                        <li><a href="#" class="hover:text-wa-green transition-colors">Terms of Service</a></li>
+                        <li><a href="#" class="hover:text-wa-green transition-colors">Cookie Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p class="text-sm text-gray-500">© 2026 ActionNow. All rights reserved.</p>
+                <div class="flex items-center gap-4">
+                    <a href="#"
+                        class="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center hover:bg-wa-green/20 hover:text-wa-green transition-all"><i
+                            data-lucide="twitter" class="w-4 h-4"></i></a>
+                    <a href="#"
+                        class="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center hover:bg-wa-green/20 hover:text-wa-green transition-all"><i
+                            data-lucide="linkedin" class="w-4 h-4"></i></a>
+                    <a href="#"
+                        class="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center hover:bg-wa-green/20 hover:text-wa-green transition-all"><i
+                            data-lucide="github" class="w-4 h-4"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="assets/js/main.js"></script>
+</body>
+
+</html>
