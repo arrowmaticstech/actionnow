@@ -1,0 +1,64 @@
+{
+    "name": "Get WhatsApp Group List",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "get-whatsapp-group-list",
+                "options": {}
+            },
+            "id": "1",
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ],
+            "webhookId": "get-whatsapp-group-list"
+        },
+        {
+            "parameters": {
+                "url": "https://api.wsender.net/v1/groups",
+                "method": "POST",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "phonenumber",
+                            "value": "={{ $json.body.phonenumber }}"
+                        },
+                        {
+                            "name": "token",
+                            "value": "mock_token_123"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "2",
+            "name": "HTTP Request to wsender",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                450,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP Request to wsender",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {},
+    "versionId": "1"
+}
