@@ -1,0 +1,21 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Prod: https://actionnow.my/start/
+export default defineConfig({
+  plugins: [react()],
+  base: '/start/',
+  resolve: {
+    alias: {
+      '@assets': path.resolve(__dirname, '../assets'),
+    },
+  },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+  },
+});
