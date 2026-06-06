@@ -1,64 +1,183 @@
 {
-    "name": "Get WhatsApp Group List",
     "nodes": [
-        {
-            "parameters": {
-                "httpMethod": "POST",
-                "path": "get-whatsapp-group-list",
-                "options": {}
-            },
-            "id": "1",
-            "name": "Webhook",
-            "type": "n8n-nodes-base.webhook",
-            "typeVersion": 1,
-            "position": [
-                250,
-                300
-            ],
-            "webhookId": "get-whatsapp-group-list"
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://www.wasenderapi.com/api/decrypt-media",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBearerAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"data\": {\n    \"messages\": {\n      \"key\": {\n        \"id\": \"{{ $json.message_payload.data.messages.key.id }}\"\n      },\n      \"message\": {\n        \"imageMessage\": {\n          \"url\": \"{{ $json.message_payload.data.messages.message.imageMessage.url }}\",\n          \"mimetype\": \"{{ $json.message_payload.data.messages.message.imageMessage.mimetype }}\",\n          \"mediaKey\": \"{{ $json.message_payload.data.messages.message.imageMessage.mediaKey }}\"\n        }\n      }\n    }\n  }\n}",
+          "options": {}
         },
-        {
-            "parameters": {
-                "url": "https://api.wsender.net/v1/groups",
-                "method": "POST",
-                "sendBody": true,
-                "bodyParameters": {
-                    "parameters": [
-                        {
-                            "name": "phonenumber",
-                            "value": "={{ $json.body.phonenumber }}"
-                        },
-                        {
-                            "name": "token",
-                            "value": "mock_token_123"
-                        }
-                    ]
-                },
-                "options": {}
-            },
-            "id": "2",
-            "name": "HTTP Request to wsender",
-            "type": "n8n-nodes-base.httpRequest",
-            "typeVersion": 4.1,
-            "position": [
-                450,
-                300
-            ]
-        }
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          256,
+          192
+        ],
+        "id": "24dcbb90-6a79-4635-b19d-dbe88817eef3",
+        "name": "wasender decrypt-media",
+        "credentials": {
+          "httpBearerAuth": {
+            "id": "ccu3nHEOcAKpiur5",
+            "name": "Wasender - Rick's number"
+          }
+        },
+        "disabled": true
+      },
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "get-whatsapp-group-list",
+          "responseMode": "responseNode",
+          "options": {
+            "allowedOrigins": "*",
+            "responseHeaders": {
+              "entries": [
+                {
+                  "name": "Access-Control-Allow-Origin",
+                  "value": "*"
+                }
+              ]
+            }
+          }
+        },
+        "id": "54a4ecdc-0c34-4706-878b-101a282216d1",
+        "name": "Webhook1",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [
+          224,
+          -80
+        ],
+        "webhookId": "get-whatsapp-group-list"
+      },
+      {
+        "parameters": {
+          "respondWith": "allIncomingItems",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          816,
+          32
+        ],
+        "id": "e7ba9440-4f81-4101-989b-72d6f7524b83",
+        "name": "Respond to Webhook1"
+      },
+      {
+        "parameters": {
+          "url": "https://www.wasenderapi.com/api/groups",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBearerAuth",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          480,
+          0
+        ],
+        "id": "7979e137-2f63-4094-b150-01fb771561da",
+        "name": "wasender decrypt-media1",
+        "retryOnFail": false,
+        "executeOnce": true,
+        "credentials": {
+          "httpBearerAuth": {
+            "id": "ccu3nHEOcAKpiur5",
+            "name": "Wasender - Rick's number"
+          }
+        },
+        "onError": "continueErrorOutput"
+      }
     ],
     "connections": {
-        "Webhook": {
-            "main": [
-                [
-                    {
-                        "node": "HTTP Request to wsender",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        }
+      "wasender decrypt-media": {
+        "main": [
+          []
+        ]
+      },
+      "Webhook1": {
+        "main": [
+          [
+            {
+              "node": "wasender decrypt-media1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "wasender decrypt-media1": {
+        "main": [
+          [
+            {
+              "node": "Respond to Webhook1",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond to Webhook1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
     },
-    "settings": {},
-    "versionId": "1"
-}
+    "pinData": {
+      "Webhook1": [
+        {
+          "headers": {
+            "host": "arrowmatics.app.n8n.cloud",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+            "content-length": "15",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+            "cache-control": "no-cache",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "161.142.117.71",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "MY",
+            "cf-ray": "a06fa32b2c169a8c-KUL",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+            "origin": "http://127.0.0.1:8080",
+            "pragma": "no-cache",
+            "priority": "u=1, i",
+            "referer": "http://127.0.0.1:8080/",
+            "sec-ch-ua": "\"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "161.142.117.71, 172.69.85.172",
+            "x-forwarded-host": "arrowmatics.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-82-65d5995466-zbt6l",
+            "x-is-trusted": "yes",
+            "x-real-ip": "161.142.117.71"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "phonenumber": "333"
+          },
+          "webhookUrl": "https://arrowmatics.app.n8n.cloud/webhook/get-whatsapp-group-list",
+          "executionMode": "production"
+        }
+      ]
+    },
+    "meta": {
+      "instanceId": "f5c9600193afd1d3ab92a54a0de2f82d56566faf5c6d6e2302f937327546ecf0"
+    }
+  }
