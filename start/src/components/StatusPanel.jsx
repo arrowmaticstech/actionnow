@@ -1,14 +1,23 @@
 import { Activity, FileText, CheckCircle, Bell } from 'lucide-react';
-import { getDisplayGroupCount } from '../lib/main';
 import {
   formatInterval,
   formatBossNumber,
   formatGroupCount,
   formatKeywordCount,
+  formatContentTypes,
+  getGroupLabel,
+  getBossNumberValue,
 } from '../utils/format';
 
 export default function StatusPanel({ config }) {
-  const groupCount = getDisplayGroupCount(config.groups);
+  const groupCount = config.groups.length;
+  const keywordCount = config.keywords.length;
+  const recipientCount = config.bossNumbers
+    .map(getBossNumberValue)
+    .map((n) => n.trim())
+    .filter(Boolean).length;
+
+  const statusLabel = config.supervisionLabel?.trim() || 'Untitled supervision';
 
   return (
     <div className="space-y-6">
@@ -24,6 +33,12 @@ export default function StatusPanel({ config }) {
         </div>
         <div className="space-y-3">
           <div className="flex justify-between items-center py-2 border-b border-gray-50">
+            <span className="text-sm text-gray-500">Supervision</span>
+            <span className="text-sm font-semibold text-gray-800 text-right max-w-[60%] truncate" title={statusLabel}>
+              {statusLabel}
+            </span>
+          </div>
+          <div className="flex justify-between items-center py-2 border-b border-gray-50">
             <span className="text-sm text-gray-500">Groups monitored</span>
             <span className="text-sm font-semibold text-gray-800" id="groupCount">
               {formatGroupCount(groupCount)}
@@ -37,14 +52,20 @@ export default function StatusPanel({ config }) {
           </div>
           <div className="flex justify-between items-center py-2 border-b border-gray-50">
             <span className="text-sm text-gray-500">Reporting to</span>
-            <span className="text-sm font-semibold text-gray-800" id="displayNumber">
-              {formatBossNumber(config.bossNumbers)}
+            <span className="text-sm font-semibold text-gray-800 text-right max-w-[60%] truncate" id="displayNumber" title={formatBossNumber(config.bossNumbers)}>
+              {recipientCount === 0 ? 'None' : formatBossNumber(config.bossNumbers)}
             </span>
           </div>
           <div className="flex justify-between items-center py-2 border-b border-gray-50">
             <span className="text-sm text-gray-500">Keywords tracked</span>
             <span className="text-sm font-semibold text-gray-800" id="keywordCount">
-              {formatKeywordCount(config.keywords.length)}
+              {formatKeywordCount(keywordCount)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center py-2 border-b border-gray-50">
+            <span className="text-sm text-gray-500">Content types</span>
+            <span className="text-sm font-semibold text-gray-800 text-right max-w-[60%] truncate capitalize">
+              {formatContentTypes(config.contentTypes)}
             </span>
           </div>
           <div className="flex justify-between items-center py-2">
@@ -54,6 +75,19 @@ export default function StatusPanel({ config }) {
             </span>
           </div>
         </div>
+
+        {groupCount > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Selected groups</p>
+            <ul className="space-y-1">
+              {config.groups.map((group, i) => (
+                <li key={i} className="text-xs text-gray-600 truncate" title={getGroupLabel(group)}>
+                  • {getGroupLabel(group)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200 shadow-xl shadow-gray-100 p-6">
@@ -73,30 +107,31 @@ export default function StatusPanel({ config }) {
           </div>
           <div className="bg-white rounded-lg p-3 text-sm text-gray-700 space-y-2">
             <p>📋 <strong>Summary for Boss:</strong></p>
-            <ul className="space-y-1.5 text-xs text-gray-600 ml-4">
-              <li className="flex items-start gap-2">
-                <span className="text-wa-green mt-0.5">●</span>
-                <span>
-                  Found <strong>&quot;deadline&quot;</strong> mentioned 3 times in{' '}
-                  <strong>Marketing Team</strong>
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-wa-green mt-0.5">●</span>
-                <span>
-                  <strong>&quot;urgent&quot;</strong> flagged in <strong>Sales Pipeline</strong> by @John
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-wa-green mt-0.5">●</span>
-                <span>
-                  No mentions of <strong>&quot;Q4 report&quot;</strong> today
-                </span>
-              </li>
-            </ul>
+            {keywordCount === 0 && groupCount === 0 ? (
+              <p className="text-xs text-gray-500">Configure groups and keywords to see a preview.</p>
+            ) : (
+              <ul className="space-y-1.5 text-xs text-gray-600 ml-4">
+                {config.keywords.slice(0, 3).map((keyword) => (
+                  <li key={keyword} className="flex items-start gap-2">
+                    <span className="text-wa-green mt-0.5">●</span>
+                    <span>
+                      Tracking <strong>&quot;{keyword}&quot;</strong>
+                      {groupCount > 0 && (
+                        <> across {formatGroupCount(groupCount)}</>
+                      )}
+                    </span>
+                  </li>
+                ))}
+                {keywordCount > 3 && (
+                  <li className="text-gray-400">+ {keywordCount - 3} more keywords</li>
+                )}
+              </ul>
+            )}
           </div>
           <p className="text-xs text-gray-400 text-center">
-            Report sent to +60 (10) 224-4567 via WhatsApp
+            {recipientCount === 0
+              ? 'No recipients selected yet'
+              : `Report will be sent to ${formatBossNumber(config.bossNumbers)} via WhatsApp`}
           </p>
         </div>
       </div>

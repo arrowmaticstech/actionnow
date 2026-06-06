@@ -12,8 +12,9 @@ export const RANDOM_GROUP_NAMES = [
   '🏆 Leadership',
 ];
 
-/** Initial demo value shown in status when no groups are added yet (matches reference HTML). */
-export const INITIAL_GROUP_COUNT = 3;
+export function pickRandomGroupName() {
+  return RANDOM_GROUP_NAMES[Math.floor(Math.random() * RANDOM_GROUP_NAMES.length)];
+}
 
 export const TOAST_VISIBLE_MS = 3000;
 export const SAVE_FLASH_MS = 2000;
@@ -21,10 +22,18 @@ export const RIPPLE_INTERVAL_MS = 50;
 export const RIPPLE_DURATION_MS = 1000;
 export const NAVBAR_SCROLL_THRESHOLD = 20;
 
-export function pickRandomGroupName() {
-  return RANDOM_GROUP_NAMES[Math.floor(Math.random() * RANDOM_GROUP_NAMES.length)];
-}
+export const DEFAULT_OWNER_EMAIL = 'hello@actionnow.my';
+export const DEFAULT_OWNER_PHONE = '+60103364933';
 
-export function getDisplayGroupCount(groups) {
-  return groups.length > 0 ? groups.length : INITIAL_GROUP_COUNT;
-}
+export const SUGGESTED_KEYWORDS = [
+  'kitchen issue smelly',
+  'malfunction on',
+  'staff absent',
+  'customer complaint',
+  'health hazard',
+  'equipment broken',
+  'safety issue',
+  'late arrival',
+  'maintenance needed',
+  'out of stock',
+];

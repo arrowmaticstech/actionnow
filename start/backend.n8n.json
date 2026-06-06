@@ -14,8 +14,8 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          256,
-          192
+          -224,
+          240
         ],
         "id": "24dcbb90-6a79-4635-b19d-dbe88817eef3",
         "name": "wasender decrypt-media",
@@ -26,6 +26,61 @@
           }
         },
         "disabled": true
+      },
+      {
+        "parameters": {
+          "respondWith": "allIncomingItems",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          816,
+          32
+        ],
+        "id": "e7ba9440-4f81-4101-989b-72d6f7524b83",
+        "name": "Respond to Webhook1"
+      },
+      {
+        "parameters": {
+          "respondWith": "allIncomingItems",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          816,
+          384
+        ],
+        "id": "6cb40848-1d5f-484d-ab98-b73afb84ab41",
+        "name": "Respond to Webhook"
+      },
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "get-whatsapp-contact-list",
+          "responseMode": "responseNode",
+          "options": {
+            "allowedOrigins": "*",
+            "responseHeaders": {
+              "entries": [
+                {
+                  "name": "Access-Control-Allow-Origin",
+                  "value": "*"
+                }
+              ]
+            }
+          }
+        },
+        "id": "02a6aa2e-37d6-4f28-ac9f-f9ae4067f827",
+        "name": "Webhook - Get possible contacts",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [
+          192,
+          288
+        ],
+        "webhookId": "get-whatsapp-group-list"
       },
       {
         "parameters": {
@@ -45,12 +100,107 @@
           }
         },
         "id": "54a4ecdc-0c34-4706-878b-101a282216d1",
-        "name": "Webhook1",
+        "name": "Webhook - Get whatsapp group list",
         "type": "n8n-nodes-base.webhook",
         "typeVersion": 1,
         "position": [
-          224,
-          -80
+          192,
+          -64
+        ],
+        "webhookId": "get-whatsapp-group-list"
+      },
+      {
+        "parameters": {
+          "url": "=https://www.wasenderapi.com/api/contacts?paginated={{ $json.body.paginated }}&limit={{ $json.body.limit }}&page={{ $json.body.page }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBearerAuth",
+          "options": {
+            "timeout": 20000
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          480,
+          352
+        ],
+        "id": "4c0a21bd-1ed5-4785-82b2-a540e54ffbca",
+        "name": "wasender get whatsapp contact",
+        "retryOnFail": false,
+        "executeOnce": true,
+        "credentials": {
+          "httpBearerAuth": {
+            "id": "ccu3nHEOcAKpiur5",
+            "name": "Wasender - Rick's number"
+          }
+        },
+        "onError": "continueErrorOutput"
+      },
+      {
+        "parameters": {
+          "url": "=https://www.wasenderapi.com/api/groups?paginated={{ $json.body.paginated }}&limit={{ $json.body.limit }}&page={{ $json.body.page }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBearerAuth",
+          "options": {
+            "timeout": 20000
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          480,
+          0
+        ],
+        "id": "7979e137-2f63-4094-b150-01fb771561da",
+        "name": "wasender  get grouplist",
+        "retryOnFail": false,
+        "executeOnce": true,
+        "credentials": {
+          "httpBearerAuth": {
+            "id": "ccu3nHEOcAKpiur5",
+            "name": "Wasender - Rick's number"
+          }
+        },
+        "onError": "continueErrorOutput"
+      },
+      {
+        "parameters": {
+          "respondWith": "allIncomingItems",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          592,
+          976
+        ],
+        "id": "7e3fa939-30e5-46d9-bb44-c4e4ccf3d3ad",
+        "name": "Respond to Webhook2"
+      },
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "action-now-save-config",
+          "responseMode": "responseNode",
+          "options": {
+            "allowedOrigins": "*",
+            "responseHeaders": {
+              "entries": [
+                {
+                  "name": "Access-Control-Allow-Origin",
+                  "value": "*"
+                }
+              ]
+            }
+          }
+        },
+        "id": "24e14fb8-41a9-4908-8d3e-a2dcec89757a",
+        "name": "Webhook - Save configuration",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [
+          160,
+          960
         ],
         "webhookId": "get-whatsapp-group-list"
       },
@@ -62,33 +212,487 @@
         "type": "n8n-nodes-base.respondToWebhook",
         "typeVersion": 1.5,
         "position": [
-          816,
-          32
+          704,
+          688
         ],
-        "id": "e7ba9440-4f81-4101-989b-72d6f7524b83",
-        "name": "Respond to Webhook1"
+        "id": "2c478628-5592-4f3c-b414-7f05efbaee90",
+        "name": "Respond to Webhook3"
       },
       {
         "parameters": {
-          "url": "https://www.wasenderapi.com/api/groups",
+          "httpMethod": "POST",
+          "path": "/get-whatsapp-pin-from-lid",
+          "responseMode": "responseNode",
+          "options": {
+            "allowedOrigins": "*",
+            "responseHeaders": {
+              "entries": [
+                {
+                  "name": "Access-Control-Allow-Origin",
+                  "value": "*"
+                }
+              ]
+            }
+          }
+        },
+        "id": "5127a9a6-e15f-4c4d-8859-7da8b64d06a6",
+        "name": "Webhook - Get phone from lid",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [
+          144,
+          656
+        ],
+        "webhookId": "get-whatsapp-group-list"
+      },
+      {
+        "parameters": {
+          "url": "=https://www.wasenderapi.com/api/{{ $json.body.lid?'pn-from-lid':'zzz'}}/{{ $json.body.lid }}",
           "authentication": "genericCredentialType",
           "genericAuthType": "httpBearerAuth",
-          "options": {}
+          "options": {
+            "timeout": 20000
+          }
         },
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.3,
         "position": [
-          480,
-          0
+          384,
+          672
         ],
-        "id": "7979e137-2f63-4094-b150-01fb771561da",
-        "name": "wasender decrypt-media1",
+        "id": "05c2b609-f688-446d-bf67-d11e999c427c",
+        "name": "wasender get whatsapp lid",
         "retryOnFail": false,
         "executeOnce": true,
         "credentials": {
           "httpBearerAuth": {
             "id": "ccu3nHEOcAKpiur5",
             "name": "Wasender - Rick's number"
+          }
+        },
+        "onError": "continueErrorOutput"
+      },
+      {
+        "parameters": {
+          "schema": {
+            "__rl": true,
+            "value": "actionnow",
+            "mode": "list",
+            "cachedResultName": "actionnow"
+          },
+          "table": {
+            "__rl": true,
+            "value": "monitor_settings",
+            "mode": "list",
+            "cachedResultName": "monitor_settings"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "refresh_seconds": "={{ $json.body.refresh_seconds }}",
+              "owner_email": "={{ $json.body.owner_email }}",
+              "owner_phone_num": "={{ $json.body.owner_phone_num }}",
+              "from_group_ids": "={{ $json.body.from_group_ids }}",
+              "to_receipient_phone_ids": "={{ $json.body.to_receipient_phone_ids }}",
+              "what_content_keywords": "={{ $json.body.what_content_keywords }}",
+              "what_content_types": "={{ $json.body.what_content_types }}",
+              "from_date": "={{ $json.body.from_date }}",
+              "to_date": "={{ $json.body.to_date }}",
+              "monitor_name": "={{ $json.body.monitor_name }}"
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [
+              {
+                "id": "id",
+                "displayName": "id",
+                "required": false,
+                "defaultMatch": true,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "owner_email",
+                "displayName": "owner_email",
+                "required": true,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "owner_phone_num",
+                "displayName": "owner_phone_num",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "monitor_name",
+                "displayName": "monitor_name",
+                "required": true,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "from_group_ids",
+                "displayName": "from_group_ids",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "array",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "to_receipient_phone_ids",
+                "displayName": "to_receipient_phone_ids",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "array",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "what_content_keywords",
+                "displayName": "what_content_keywords",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "array",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "what_content_types",
+                "displayName": "what_content_types",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "array",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "from_date",
+                "displayName": "from_date",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "dateTime",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "to_date",
+                "displayName": "to_date",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "dateTime",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "refresh_seconds",
+                "displayName": "refresh_seconds",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "number",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "created_date",
+                "displayName": "created_date",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "dateTime",
+                "canBeUsedToMatch": true,
+                "removed": true
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          368,
+          960
+        ],
+        "id": "73395447-91d9-4c25-baaa-afaf1ec894d3",
+        "name": "Insert rows in a table",
+        "alwaysOutputData": true,
+        "credentials": {
+          "postgres": {
+            "id": "UMW6mMpCtmfMWdKZ",
+            "name": "Arrowmatic supabase postgres"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "operation": "select",
+          "schema": {
+            "__rl": true,
+            "value": "actionnow",
+            "mode": "list",
+            "cachedResultName": "actionnow"
+          },
+          "table": {
+            "__rl": true,
+            "value": "monitor_settings",
+            "mode": "list",
+            "cachedResultName": "monitor_settings"
+          },
+          "limit": 1,
+          "options": {}
+        },
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          352,
+          1280
+        ],
+        "id": "9303107f-5ac3-426a-a75f-fa87ce139493",
+        "name": "config seetings",
+        "alwaysOutputData": true,
+        "credentials": {
+          "postgres": {
+            "id": "UMW6mMpCtmfMWdKZ",
+            "name": "Arrowmatic supabase postgres"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "minutes"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          160,
+          1216
+        ],
+        "id": "c9703938-2f5f-49f0-adfb-d3cdc2d1a503",
+        "name": "Schedule Trigger - check the next runs for reports"
+      },
+      {
+        "parameters": {
+          "jsCode": "// 1. Get the current time in GMT+8\nconst now = new Date();\nconst gmt8Offset = 8 * 60 * 60 * 1000; // 8 hours in milliseconds\nconst  refresh_seconds =$input.first().json.refresh_seconds\nconst  from_date=$input.first().json.from_date\n// 2. Parse input data from the previous node\nconst fromDateStr = from_date; \nconst refreshSeconds = parseInt(refresh_seconds, 10) || 3600;\nconst fromDate = new Date(fromDateStr);\n\n// 3. Validation: If current time is before from_date, stop execution\nif (now < fromDate) {\n  return []; // Returning an empty array stops the workflow here if \"Always Output Data\" is off\n}\n\n// 4. Align the intervals properly\n// Find out how many intervals have passed between from_date and now\nconst elapsedMs = now.getTime() - fromDate.getTime();\nconst intervalMs = refreshSeconds * 1000;\n\n// Calculate the number of full intervals passed, then find the very next slot\nconst completedIntervals = Math.floor(elapsedMs / intervalMs);\nlet nextSlotTimeMs = fromDate.getTime() + ((completedIntervals + 1) * intervalMs);\n\n// 5. Generate the next 100 slots\nconst timeslots = [];\nfor (let i = 0; i < 100; i++) {\n  const slotDate = new Date(nextSlotTimeMs + (i * intervalMs));\n  \n  // Convert to local GMT+8 ISO string for clean output display\n  const gmt8Time = new Date(slotDate.getTime() + gmt8Offset);\n  const gmt8String = gmt8Time.toISOString().replace('Z', '+08:00');\n\n  timeslots.push({\n    slot_index: i + 1,\n    timestamp_utc: slotDate.toISOString(),\n    timestamp_gmt8: gmt8String\n  });\n}\n\n// 6. Return the array of timeslots to n8n\nreturn timeslots.map(slot => ({ json: slot }));\n// return null"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          544,
+          1264
+        ],
+        "id": "bcaac3a3-a554-4b63-8510-fb4d4a2e48b6",
+        "name": "code - get next slots",
+        "alwaysOutputData": false
+      },
+      {
+        "parameters": {
+          "jsCode": "// 1. Get the current time in GMT+8\nconst now = new Date();\nconst gmt8Offset = 8 * 60 * 60 * 1000; // 8 hours in milliseconds\nconst nowGmt8Ms = now.getTime() + gmt8Offset;\nconst nowGmt8Str = new Date(nowGmt8Ms).toISOString().replace('Z', '+08:00');\n\nconsole.log(\"=== STARTING TIMESLOT CHECK ===\");\nconsole.log(\"Current GMT+8 Time String:\", nowGmt8Str);\nconsole.log(\"Current GMT+8 Time (MS):\", nowGmt8Ms);\n\n// 2. Define your window configuration (5 minutes in milliseconds)\nconst FIVE_MINUTES_MS = 5 * 60 * 1000;\nconst totalItems = $input.all().length;\nconsole.log(`Total timeslots received to check: ${totalItems}`);\n\nlet checkedCount = 0;\n\n// 3. Loop through all incoming timeslot items to find a match\nfor (const item of $input.all()) {\n  checkedCount++;\n  const slotGmt8Str = item.json.timestamp_gmt8; \n  \n  if (!slotGmt8Str) {\n    console.log(`[Slot ${checkedCount}/${totalItems}] Skipped: Missing timestamp_gmt8 property.`);\n    continue;\n  }\n\n  // Convert the slot string into an absolute millisecond timestamp\n  const slotMs = new Date(slotGmt8Str).getTime();\n  const timeDifference = slotMs - nowGmt8Ms;\n  const diffInMinutes = (timeDifference / 1000 / 60).toFixed(2);\n\n  // LOG EVERY SLOT ENCOUNTERED FOR VISIBILITY\n  console.log(`[Slot ${checkedCount}/${totalItems}] Checking: ${slotGmt8Str} | Diff: ${diffInMinutes} mins`);\n\n  // 4. Check if the current time is within 5 minutes BEFORE the target slot time\n  if (timeDifference >= 0 && timeDifference <= FIVE_MINUTES_MS) {\n    console.log(`🎯 MATCH FOUND at slot ${checkedCount}! Executing Postgres trigger node.`);\n    \n    return [{\n      json: {\n        match_found: true,\n        matched_slot_gmt8: slotGmt8Str,\n        current_time_gmt8: nowGmt8Str,\n        minutes_remaining: diffInMinutes\n      }\n    }];\n  }\n}\n\nconsole.log(\"❌ No timeslots fell within the 5-minute window.\");\nconsole.log(\"=== END OF TIMESLOT CHECK ===\");\n\n// 5. TRICK FOR UI DEBUGGING: \n// Change \"true\" to \"false\" below when you are ready to go live!\nconst debugModeInUi = true; \n\nif (debugModeInUi) {\n  return [{\n    json: {\n      match_found: false,\n      message: \"No timeslots matched. Showing this instead of empty screen because debugModeInUi is active.\",\n      current_time_checked: nowGmt8Str,\n      total_slots_evaluated: totalItems\n    }\n  }];\n}\n\nreturn []; // Clean exit when debugModeInUi is false"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          768,
+          1264
+        ],
+        "id": "11ec1c89-c427-46ed-b6f5-40b3d4ec0464",
+        "name": "check if within time to execute",
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "048f066f-838c-44cf-9d55-637c09fdf3e2",
+                "leftValue": "= {{ !!$json.match_found }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "looseTypeValidation": true,
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          976,
+          1264
+        ],
+        "id": "5b118f46-9924-4977-b3fc-4e57e3b7cdaa",
+        "name": "If"
+      },
+      {
+        "parameters": {},
+        "type": "n8n-nodes-base.noOp",
+        "typeVersion": 1,
+        "position": [
+          1088,
+          1584
+        ],
+        "id": "c9a91150-a54b-4ff7-8c5b-4b84b2675c1a",
+        "name": "No Operation, do nothing"
+      },
+      {
+        "parameters": {
+          "operation": "select",
+          "schema": {
+            "__rl": true,
+            "value": "actionnow",
+            "mode": "list",
+            "cachedResultName": "actionnow"
+          },
+          "table": {
+            "__rl": true,
+            "value": "monitor_results",
+            "mode": "list",
+            "cachedResultName": "monitor_results"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          1312,
+          1344
+        ],
+        "id": "8756f554-23e6-417c-8168-9ebfd976a342",
+        "name": "Select rows from a table",
+        "credentials": {
+          "postgres": {
+            "id": "UMW6mMpCtmfMWdKZ",
+            "name": "Arrowmatic supabase postgres"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "respondWith": "allIncomingItems",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          624,
+          1856
+        ],
+        "id": "c38f17c0-e995-4b9e-b46b-f0c3f93dc675",
+        "name": "Respond to Webhook4"
+      },
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "actionnow-receive-whatsapp",
+          "responseMode": "responseNode",
+          "options": {
+            "allowedOrigins": "*",
+            "responseHeaders": {
+              "entries": [
+                {
+                  "name": "Access-Control-Allow-Origin",
+                  "value": "*"
+                }
+              ]
+            }
+          }
+        },
+        "id": "a4f7f756-f05d-45fa-9b59-ed57903b2603",
+        "name": "Webhook - receive whatsapp text from group",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [
+          0,
+          1840
+        ],
+        "webhookId": "get-whatsapp-group-list"
+      },
+      {
+        "parameters": {
+          "url": "=https://www.wasenderapi.com/api/groups?paginated={{ $json.body.paginated }}&limit={{ $json.body.limit }}&page={{ $json.body.page }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBearerAuth",
+          "options": {
+            "timeout": 20000
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          144,
+          2176
+        ],
+        "id": "e491a40d-ae4d-48a8-a7b4-08e9cbb78000",
+        "name": "wasender  get grouplist1",
+        "retryOnFail": false,
+        "executeOnce": true,
+        "credentials": {
+          "httpBearerAuth": {
+            "id": "ccu3nHEOcAKpiur5",
+            "name": "Wasender - Rick's number"
+          }
+        },
+        "disabled": true,
+        "onError": "continueErrorOutput"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://www.wasenderapi.com/api/send-message",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBearerAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n\n     \"to\":  \"{{ $json.body.data.messages.key.remoteJid }}\",\n      \"text\": \"Hello everyone in the group! Connection is working\"\n}",
+          "options": {
+            "timeout": 20000
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          256,
+          1872
+        ],
+        "id": "7025c6c9-91d3-4e82-bda3-006748662b6c",
+        "name": "wasender get whatsapp lid1",
+        "retryOnFail": false,
+        "executeOnce": true,
+        "credentials": {
+          "httpBearerAuth": {
+            "id": "PwZsZSqKyJv3rOI0",
+            "name": "wasender - benson2- actionnow - Bearer Auth account"
           }
         },
         "onError": "continueErrorOutput"
@@ -100,18 +704,47 @@
           []
         ]
       },
-      "Webhook1": {
+      "Webhook - Get possible contacts": {
         "main": [
           [
             {
-              "node": "wasender decrypt-media1",
+              "node": "wasender get whatsapp contact",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "wasender decrypt-media1": {
+      "Webhook - Get whatsapp group list": {
+        "main": [
+          [
+            {
+              "node": "wasender  get grouplist",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "wasender get whatsapp contact": {
+        "main": [
+          [
+            {
+              "node": "Respond to Webhook",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond to Webhook",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "wasender  get grouplist": {
         "main": [
           [
             {
@@ -120,9 +753,145 @@
               "index": 0
             }
           ],
+          []
+        ]
+      },
+      "Webhook - Save configuration": {
+        "main": [
           [
             {
-              "node": "Respond to Webhook1",
+              "node": "Insert rows in a table",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Webhook - Get phone from lid": {
+        "main": [
+          [
+            {
+              "node": "wasender get whatsapp lid",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "wasender get whatsapp lid": {
+        "main": [
+          [
+            {
+              "node": "Respond to Webhook3",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond to Webhook3",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Insert rows in a table": {
+        "main": [
+          [
+            {
+              "node": "Respond to Webhook2",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "config seetings": {
+        "main": [
+          [
+            {
+              "node": "code - get next slots",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Schedule Trigger - check the next runs for reports": {
+        "main": [
+          [
+            {
+              "node": "config seetings",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "code - get next slots": {
+        "main": [
+          [
+            {
+              "node": "check if within time to execute",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "check if within time to execute": {
+        "main": [
+          [
+            {
+              "node": "If",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "If": {
+        "main": [
+          [
+            {
+              "node": "Select rows from a table",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "No Operation, do nothing",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Webhook - receive whatsapp text from group": {
+        "main": [
+          [
+            {
+              "node": "wasender get whatsapp lid1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "wasender get whatsapp lid1": {
+        "main": [
+          [
+            {
+              "node": "Respond to Webhook4",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond to Webhook4",
               "type": "main",
               "index": 0
             }
@@ -131,12 +900,12 @@
       }
     },
     "pinData": {
-      "Webhook1": [
+      "Webhook - Get possible contacts": [
         {
           "headers": {
             "host": "arrowmatics.app.n8n.cloud",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
-            "content-length": "15",
+            "content-length": "43",
             "accept": "*/*",
             "accept-encoding": "gzip, br",
             "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
@@ -145,39 +914,300 @@
             "cf-connecting-ip": "161.142.117.71",
             "cf-ew-via": "15",
             "cf-ipcountry": "MY",
-            "cf-ray": "a06fa32b2c169a8c-KUL",
+            "cf-ray": "a073c7ba69f85bd7-KUL",
             "cf-visitor": "{\"scheme\":\"https\"}",
             "cf-worker": "n8n.cloud",
             "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
-            "origin": "http://127.0.0.1:8080",
+            "origin": "http://localhost:5174",
             "pragma": "no-cache",
             "priority": "u=1, i",
-            "referer": "http://127.0.0.1:8080/",
+            "referer": "http://localhost:5174/",
             "sec-ch-ua": "\"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
             "sec-ch-ua-mobile": "?0",
             "sec-ch-ua-platform": "\"Windows\"",
             "sec-fetch-dest": "empty",
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "cross-site",
-            "x-forwarded-for": "161.142.117.71, 172.69.85.172",
+            "x-forwarded-for": "161.142.117.71, 172.69.85.173",
             "x-forwarded-host": "arrowmatics.app.n8n.cloud",
             "x-forwarded-port": "443",
             "x-forwarded-proto": "https",
-            "x-forwarded-server": "traefik-prod-users-gwc-82-65d5995466-zbt6l",
+            "x-forwarded-server": "traefik-prod-users-gwc-82-65d5995466-wbrzx",
             "x-is-trusted": "yes",
             "x-real-ip": "161.142.117.71"
           },
           "params": {},
           "query": {},
           "body": {
-            "phonenumber": "333"
+            "phonenumber": "",
+            "paginated": "true",
+            "page": "1",
+            "limit": "10"
+          },
+          "webhookUrl": "https://arrowmatics.app.n8n.cloud/webhook/get-whatsapp-contact-list",
+          "executionMode": "production"
+        }
+      ],
+      "Webhook - Get whatsapp group list": [
+        {
+          "headers": {
+            "host": "arrowmatics.app.n8n.cloud",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+            "content-length": "43",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+            "cache-control": "no-cache",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "161.142.117.71",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "MY",
+            "cf-ray": "a07397e82e35ad13-KUL",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+            "origin": "http://localhost:5174",
+            "pragma": "no-cache",
+            "priority": "u=1, i",
+            "referer": "http://localhost:5174/",
+            "sec-ch-ua": "\"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "161.142.117.71, 172.69.85.173",
+            "x-forwarded-host": "arrowmatics.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-82-65d5995466-wbrzx",
+            "x-is-trusted": "yes",
+            "x-real-ip": "161.142.117.71"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "phonenumber": "",
+            "paginated": "true",
+            "page": "1",
+            "limit": "10"
           },
           "webhookUrl": "https://arrowmatics.app.n8n.cloud/webhook/get-whatsapp-group-list",
+          "executionMode": "production"
+        }
+      ],
+      "Webhook - Save configuration": [
+        {
+          "headers": {
+            "host": "arrowmatics.app.n8n.cloud",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+            "content-length": "512",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+            "cache-control": "no-cache",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "161.142.117.71",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "MY",
+            "cf-ray": "a073fe3b9a9dd974-KUL",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "origin": "http://localhost:5174",
+            "pragma": "no-cache",
+            "priority": "u=1, i",
+            "referer": "http://localhost:5174/",
+            "sec-ch-ua": "\"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "161.142.117.71, 172.69.85.173",
+            "x-forwarded-host": "arrowmatics.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-82-65d5995466-wbrzx",
+            "x-is-trusted": "yes",
+            "x-real-ip": "161.142.117.71"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "supervision_label": "asdasda",
+            "monitor_name": "asdasda",
+            "owner_email": "hello@actionnow.my",
+            "owner_phone_num": "+60103364933",
+            "from_group_ids": [
+              "120363401868081346@g.us",
+              "120363355053816501@g.us"
+            ],
+            "to_receipient_phone_ids": [
+              "60102264984",
+              "601231232"
+            ],
+            "what_content_keywords": [
+              "deadline",
+              "urgent",
+              "Q4 report",
+              "@boss",
+              "malfunction on",
+              "health hazard",
+              "maintenance needed",
+              "equipment broken"
+            ],
+            "what_content_types": [
+              "text",
+              "audio",
+              "images"
+            ],
+            "from_date": "2026-06-06T02:27:00.000Z",
+            "to_date": null,
+            "refresh_seconds": 3600
+          },
+          "webhookUrl": "https://arrowmatics.app.n8n.cloud/webhook/action-now-save-config",
+          "executionMode": "production"
+        }
+      ],
+      "Webhook - Get phone from lid": [
+        {
+          "headers": {
+            "host": "arrowmatics.app.n8n.cloud",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+            "content-length": "43",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+            "cache-control": "no-cache",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "161.142.117.71",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "MY",
+            "cf-ray": "a07399003b6aad13-KUL",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+            "origin": "http://localhost:5174",
+            "pragma": "no-cache",
+            "priority": "u=1, i",
+            "referer": "http://localhost:5174/",
+            "sec-ch-ua": "\"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "161.142.117.71, 172.69.85.173",
+            "x-forwarded-host": "arrowmatics.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-82-65d5995466-wbrzx",
+            "x-is-trusted": "yes",
+            "x-real-ip": "161.142.117.71"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "phonenumber": "",
+            "paginated": "true",
+            "page": "1",
+            "limit": "10"
+          },
+          "webhookUrl": "https://arrowmatics.app.n8n.cloud/webhook/get-whatsapp-contact-list",
+          "executionMode": "production"
+        }
+      ],
+      "Schedule Trigger - check the next runs for reports": [
+        {
+          "timestamp": "2026-06-06T12:30:36.003+08:00",
+          "Readable date": "June 6th 2026, 12:30:36 pm",
+          "Readable time": "12:30:36 pm",
+          "Day of week": "Saturday",
+          "Year": "2026",
+          "Month": "June",
+          "Day of month": "06",
+          "Hour": "12",
+          "Minute": "30",
+          "Second": "36",
+          "Timezone": "Asia/Kuala_Lumpur (UTC+08:00)"
+        }
+      ],
+      "Webhook - receive whatsapp text from group": [
+        {
+          "headers": {
+            "host": "arrowmatics.app.n8n.cloud",
+            "user-agent": "axios/1.16.1",
+            "content-length": "946",
+            "accept": "application/json, text/plain, */*",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "2a02:4780:4:78e::1",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "US",
+            "cf-ray": "a0749b51d80ff9be-BOS",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "2a02:4780:4:78e::1, 162.158.10.203",
+            "x-forwarded-host": "arrowmatics.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-82-65d5995466-khg4j",
+            "x-is-trusted": "yes",
+            "x-real-ip": "2a02:4780:4:78e::1",
+            "x-webhook-secret": "bef7a3fc29f91d54ed390c1308411b07",
+            "x-webhook-signature": "bef7a3fc29f91d54ed390c1308411b07"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "event": "messages-personal.received",
+            "sessionId": "6c82249d1ee1f2a5e5dd01ec8da25fe179d895f0f35c0ad365b1f55738527974",
+            "data": {
+              "messages": {
+                "key": {
+                  "id": "3EB04A084E24939F06264C",
+                  "fromMe": false,
+                  "remoteJid": "218807914250471@lid",
+                  "senderPn": "60103369433@s.whatsapp.net",
+                  "cleanedSenderPn": "60103369433",
+                  "senderLid": "218807914250471@lid",
+                  "addressingMode": "lid"
+                },
+                "messageTimestamp": 1780719439,
+                "pushName": "Suarify Sdn Bhd",
+                "broadcast": false,
+                "message": {
+                  "conversation": "heyy",
+                  "messageContextInfo": {
+                    "deviceListMetadata": {
+                      "senderKeyHash": "6No7IR/xASs0Hw==",
+                      "senderTimestamp": "1780383720",
+                      "senderAccountType": "E2EE",
+                      "receiverAccountType": "E2EE",
+                      "recipientKeyHash": "eZXADiLKUxkcig==",
+                      "recipientTimestamp": "1780719115"
+                    },
+                    "deviceListMetadataVersion": 2,
+                    "messageSecret": "QP/Zz6Nmd6n0pDmQBhDvwfPXii+kpC1+625f22dGxbA="
+                  }
+                },
+                "verifiedBizName": "Suarify Sdn Bhd",
+                "messageBody": "heyy",
+                "remoteJid": "218807914250471@lid",
+                "id": "3EB04A084E24939F06264C"
+              }
+            },
+            "timestamp": 1780719439529
+          },
+          "webhookUrl": "https://arrowmatics.app.n8n.cloud/webhook/actionnow-receive-whatsapp",
           "executionMode": "production"
         }
       ]
     },
     "meta": {
+      "templateCredsSetupCompleted": true,
       "instanceId": "f5c9600193afd1d3ab92a54a0de2f82d56566faf5c6d6e2302f937327546ecf0"
     }
   }

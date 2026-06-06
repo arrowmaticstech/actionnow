@@ -7,8 +7,9 @@ import useMouseRipple from './hooks/useMouseRipple';
 import { TOAST_VISIBLE_MS } from './lib/main';
 
 const INITIAL_CONFIG = {
+  supervisionLabel: '',
   groups: [],
-  bossNumbers: ['60 (10) 224-4896'],
+  bossNumbers: [{ value: '', verified: false }],
   keywords: ['deadline', 'urgent', 'Q4 report', '@boss'],
   contentTypes: {
     text: true,
@@ -17,6 +18,7 @@ const INITIAL_CONFIG = {
     documents: false,
   },
   startTime: '',
+  endTime: '',
   interval: '15',
   lastChecked: 'Just now',
   showToast: false,
