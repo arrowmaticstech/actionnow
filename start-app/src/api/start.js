@@ -7,24 +7,28 @@ import { DEFAULT_OWNER_EMAIL, DEFAULT_OWNER_PHONE } from '../lib/main';
 
 const API_BASE = 'https://arrowmatics.app.n8n.cloud/webhook';
 const API_TEST_BASE = 'https://arrowmatics.app.n8n.cloud/webhook-test';
-const GROUP_LIST_WEBHOOK = `${API_BASE}/get-whatsapp-group-list`;
-const CONTACT_LIST_WEBHOOK = `${API_BASE}/get-whatsapp-contact-list`;
-const SAVE_CONFIG_URL = 'https://arrowmatics.app.n8n.cloud/webhook/action-now-save-config';
-const DEL_CONFIG_URL = 'https://arrowmatics.app.n8n.cloud/webhook/action-now-del-config';
-const GET_REPORT_URL = `${API_BASE}/action-now-get-report`;
-const LID_TO_PHONE_URL = `${API_BASE}/get-whatsapp-pin-from-lid`;
+const GROUP_LIST_WEBHOOK = `${API_BASE}/get-whatsapp-group-list/v2`;
+const CONTACT_LIST_WEBHOOK = `${API_BASE}/get-whatsapp-contact-list/v2`;
+const SAVE_CONFIG_URL = `${API_BASE}/action-now-save-config/v2`;
+const DEL_CONFIG_URL = `${API_BASE}/action-now-del-config/v2`;
+const GET_REPORT_URL = `${API_BASE}/action-now-get-report/v2`;
+const LID_TO_PHONE_URL = `${API_BASE}/get-whatsapp-pin-from-lid/v2`;
 
 export const REPORT_POLL_MS = 60_000;
 
-export const LIST_PAGE_LIMIT = 10;
+export const LIST_PAGE_LIMIT = 30;
 
-function buildPaginatedListBody(phoneNumber, page) {
-  return new URLSearchParams({
+function buildPaginatedListBody(phoneNumber, page, ownerEmail) {
+  const params = new URLSearchParams({
     phonenumber: phoneNumber,
     paginated: 'true',
     page: String(page),
     limit: String(LIST_PAGE_LIMIT),
   });
+  if (ownerEmail?.trim()) {
+    params.set('owner_email', ownerEmail.trim());
+  }
+  return params;
 }
 
 function getResponseRoot(data) {
@@ -113,10 +117,10 @@ export function parseContactListResponse(data) {
     .filter((contact) => contact.value);
 }
 
-export async function fetchWhatsAppGroups(phoneNumber, page = 1) {
+export async function fetchWhatsAppGroups(phoneNumber, page = 1, ownerEmail = '') {
   const response = await fetch(GROUP_LIST_WEBHOOK, {
     method: 'POST',
-    body: buildPaginatedListBody(phoneNumber, page),
+    body: buildPaginatedListBody(phoneNumber, page, ownerEmail),
   });
 
   if (!response.ok) {
@@ -128,10 +132,10 @@ export async function fetchWhatsAppGroups(phoneNumber, page = 1) {
   return { items, ...extractPaginationMeta(data, items.length, page) };
 }
 
-export async function fetchWhatsAppContacts(phoneNumber, page = 1) {
+export async function fetchWhatsAppContacts(phoneNumber, page = 1, ownerEmail = '') {
   const response = await fetch(CONTACT_LIST_WEBHOOK, {
     method: 'POST',
-    body: buildPaginatedListBody(phoneNumber, page),
+    body: buildPaginatedListBody(phoneNumber, page, ownerEmail),
   });
 
   if (!response.ok) {
@@ -185,11 +189,15 @@ export function isLidContact(value) {
   return String(value).toLowerCase().includes('@lid');
 }
 
-export async function fetchPhoneFromLid(lid) {
+export async function fetchPhoneFromLid(lid, ownerEmail = '', ownerPhone = '') {
   const response = await fetch(LID_TO_PHONE_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ lid }),
+    body: JSON.stringify({
+      lid,
+      owner_email: ownerEmail || undefined,
+      phone_number: ownerPhone || undefined,
+    }),
   });
 
   if (!response.ok) {
@@ -207,19 +215,19 @@ export async function fetchPhoneFromLid(lid) {
   return String(pn);
 }
 
-export async function resolveRecipientPhoneIds(recipients) {
+export async function resolveRecipientPhoneIds(recipients, owner = {}) {
   const values = recipients.map((v) => v.trim()).filter(Boolean);
 
   return Promise.all(
     values.map(async (value) => {
       if (!isLidContact(value)) return value;
-      return fetchPhoneFromLid(value);
+      return fetchPhoneFromLid(value, owner.ownerEmail, owner.ownerPhone);
     }),
   );
 }
 
 /** Maps UI config → actionnow.monitor_settings columns for n8n/Supabase. */
-export function buildConfigPayload(config, resolvedRecipients) {
+export function buildConfigPayload(config, resolvedRecipients, owner = {}) {
   const supervisionLabel = config.supervisionLabel?.trim() || 'Untitled supervision';
   const recipients = resolvedRecipients ?? config.bossNumbers
     .map(getBossNumberValue)
@@ -229,8 +237,8 @@ export function buildConfigPayload(config, resolvedRecipients) {
   return {
     supervision_label: supervisionLabel,
     monitor_name: supervisionLabel,
-    owner_email: DEFAULT_OWNER_EMAIL,
-    owner_phone_num: DEFAULT_OWNER_PHONE,
+    owner_email: owner.ownerEmail?.trim() || DEFAULT_OWNER_EMAIL,
+    owner_phone_num: owner.ownerPhone?.trim() || DEFAULT_OWNER_PHONE,
     from_group_ids: ensureStringArray(
       config.groups?.map(getGroupValue),
     ),
@@ -264,7 +272,7 @@ export function validateConfigForSave(config) {
   }
 }
 
-export async function saveConfiguration(config) {
+export async function saveConfiguration(config, owner = {}) {
   validateConfigForSave(config);
 
   const rawRecipients = config.bossNumbers
@@ -272,8 +280,8 @@ export async function saveConfiguration(config) {
     .map((n) => n.trim())
     .filter(Boolean);
 
-  const resolvedRecipients = await resolveRecipientPhoneIds(rawRecipients);
-  const payload = buildConfigPayload(config, resolvedRecipients);
+  const resolvedRecipients = await resolveRecipientPhoneIds(rawRecipients, owner);
+  const payload = buildConfigPayload(config, resolvedRecipients, owner);
   console.log('Sending config to n8n:', payload);
 
   await fetch(DEL_CONFIG_URL, {

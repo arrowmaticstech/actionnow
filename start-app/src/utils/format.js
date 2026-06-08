@@ -2,6 +2,13 @@
  * Display formatters ported from assets/js/main.js interval & boss-number updates.
  */
 
+/** Value for `<input type="datetime-local">` in the user's local timezone. */
+export function getDatetimeLocalNow() {
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
+
 export function getGroupValue(entry) {
   if (typeof entry === 'string') return entry;
   return entry?.value ?? '';

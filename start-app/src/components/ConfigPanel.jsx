@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   MapPin, Phone, Download, X, Users, PlusCircle, Plus, Send,
   Search, Tag, FileText, Clock, Calendar, Repeat, Save, Loader2,
@@ -14,9 +14,17 @@ import {
   generateScheduleSlots,
   groupSlotsByDay,
   formatSlotTime,
+  getDatetimeLocalNow,
 } from '../utils/format';
 
-export default function ConfigPanel({ config, setConfig, onSave }) {
+export default function ConfigPanel({
+  config,
+  setConfig,
+  onSave,
+  ownerEmail = '',
+  ownerPhone = '',
+  isWhatsAppConnected = false,
+}) {
   const [waPhoneNumber, setWaPhoneNumber] = useState('');
   const [isFetching, setIsFetching] = useState(false);
   const [fetchedGroups, setFetchedGroups] = useState([]);
@@ -35,6 +43,12 @@ export default function ConfigPanel({ config, setConfig, onSave }) {
   const [saveState, setSaveState] = useState('idle');
   const [saveError, setSaveError] = useState(null);
 
+  useEffect(() => {
+    if (ownerPhone) {
+      setWaPhoneNumber(ownerPhone.replace(/^\+/, ''));
+    }
+  }, [ownerPhone]);
+
   const scheduleSlots = useMemo(
     () => generateScheduleSlots(config.startTime, config.interval),
     [config.startTime, config.interval],
@@ -51,7 +65,11 @@ export default function ConfigPanel({ config, setConfig, onSave }) {
   const loadGroups = async (page) => {
     setIsFetching(true);
     try {
-      const { items, page: currentPage, hasMore } = await fetchWhatsAppGroups(waPhoneNumber.trim(), page);
+      const { items, page: currentPage, hasMore } = await fetchWhatsAppGroups(
+        waPhoneNumber.trim(),
+        page,
+        ownerEmail,
+      );
       setFetchedGroups(items);
       setGroupPage(currentPage);
       setGroupHasMore(hasMore);
@@ -122,7 +140,11 @@ export default function ConfigPanel({ config, setConfig, onSave }) {
   const loadContacts = async (page) => {
     setIsFetchingContacts(true);
     try {
-      const { items, page: currentPage, hasMore } = await fetchWhatsAppContacts(waPhoneNumber.trim(), page);
+      const { items, page: currentPage, hasMore } = await fetchWhatsAppContacts(
+        waPhoneNumber.trim(),
+        page,
+        ownerEmail,
+      );
       setFetchedContacts(items);
       setContactPage(currentPage);
       setContactHasMore(hasMore);
@@ -214,7 +236,7 @@ export default function ConfigPanel({ config, setConfig, onSave }) {
   const handleSave = async () => {
     setSaveState('saving');
     try {
-      await saveConfiguration(config);
+      await saveConfiguration(config, { ownerEmail, ownerPhone });
       onSave();
       setSaveState('saved');
       setTimeout(() => setSaveState('idle'), SAVE_FLASH_MS);
@@ -271,10 +293,15 @@ export default function ConfigPanel({ config, setConfig, onSave }) {
                   placeholder="e.g. 60123456789"
                   className="hidden flex-1 bg-wa-gray border-0 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-wa-green focus:outline-none"
                 /> */}
+                {!isWhatsAppConnected && (
+                  <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mb-2">
+                    Pair your WhatsApp account above before fetching groups.
+                  </p>
+                )}
                 <button
                   id="fetchGroupsBtn"
                   onClick={handleFetchGroups}
-                  disabled={isFetching}
+                  disabled={isFetching || !isWhatsAppConnected}
                   className="px-4 py-2.5 bg-wa-green text-white text-sm font-semibold rounded-lg hover:bg-wa-green/90 transition-colors active:scale-95 flex items-center gap-2 disabled:opacity-70"
                 >
                   {isFetching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
@@ -417,7 +444,7 @@ export default function ConfigPanel({ config, setConfig, onSave }) {
               <button
                 id="fetchContactsBtn"
                 onClick={handleFetchContacts}
-                disabled={isFetchingContacts}
+                disabled={isFetchingContacts || !isWhatsAppConnected}
                 className="px-4 py-2.5 bg-wa-green text-white text-sm font-semibold rounded-lg hover:bg-wa-green/90 transition-colors active:scale-95 flex items-center gap-2 disabled:opacity-70"
               >
                 {isFetchingContacts ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
@@ -668,6 +695,21 @@ export default function ConfigPanel({ config, setConfig, onSave }) {
                 type="datetime-local"
                 value={config.startTime}
                 onChange={(e) => setConfig((prev) => ({ ...prev, startTime: e.target.value }))}
+                onFocus={() => {
+                  if (!config.startTime) {
+                    setConfig((prev) => ({ ...prev, startTime: getDatetimeLocalNow() }));
+                  }
+                }}
+                onClick={(e) => {
+                  if (!config.startTime) {
+                    setConfig((prev) => ({ ...prev, startTime: getDatetimeLocalNow() }));
+                  }
+                  try {
+                    e.currentTarget.showPicker?.();
+                  } catch (_) {
+                    // showPicker not supported in this browser
+                  }
+                }}
                 id="startTimeInput"
                 className="w-full bg-wa-gray border-0 rounded-lg px-4 py-3 text-sm text-gray-700 focus:ring-2 focus:ring-wa-green focus:outline-none cursor-pointer"
               />

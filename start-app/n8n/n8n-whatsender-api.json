@@ -1,0 +1,1539 @@
+{
+  "name": "Wasender API Proxy",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Wasender API Proxy\n\nThin wrappers mirror `https://www.wasenderapi.com/api/*`.\n\n**App endpoints (DB + Wasender):**\n- `POST wasender/create-and-pair` — form submit → create/find session → QR\n- `POST wasender/poll-status` — poll Wasender + sync `user_whatsapp_connections`\n- `POST wasender/unbind` — disconnect + DELETE Wasender session + DELETE DB row\n- `POST wasender/get-connection` — read connection from Supabase\n\n**Proxy endpoints:** pass JSON body fields through to Wasender.\nSession id field: `whatsappSession` (maps to `{whatsappSession}` path param).\n\nCredential: `wasender - benson2- actionnow - Bearer Auth account`",
+        "height": 340,
+        "width": 520
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-400, -200],
+      "id": "ws-note-main",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wasender/whatsapp-sessions",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "id": "ws-wh-create",
+      "name": "Webhook - POST whatsapp-sessions",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "wasender-whatsapp-sessions-create"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.wasenderapi.com/api/whatsapp-sessions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify(Object.fromEntries(Object.entries({ name: $json.body.name, phone_number: $json.body.phone_number, account_protection: $json.body.account_protection, log_messages: $json.body.log_messages, read_incoming_messages: $json.body.read_incoming_messages, webhook_url: $json.body.webhook_url, webhook_enabled: $json.body.webhook_enabled, webhook_events: $json.body.webhook_events }).filter(([, v]) => v !== undefined && v !== null && v !== ''))) }}",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [280, 0],
+      "id": "ws-http-create-session",
+      "name": "Wasender - POST whatsapp-sessions",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "PwZsZSqKyJv3rOI0",
+          "name": "wasender - benson2- actionnow - Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": { "respondWith": "allIncomingItems", "options": {} },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [560, 0],
+      "id": "ws-resp-create-session",
+      "name": "Respond - POST whatsapp-sessions"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wasender/whatsapp-sessions/list",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "id": "ws-wh-list",
+      "name": "Webhook - GET whatsapp-sessions",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 160],
+      "webhookId": "wasender-whatsapp-sessions-list"
+    },
+    {
+      "parameters": {
+        "url": "https://www.wasenderapi.com/api/whatsapp-sessions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [280, 160],
+      "id": "ws-http-list-sessions",
+      "name": "Wasender - GET whatsapp-sessions",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "PwZsZSqKyJv3rOI0",
+          "name": "wasender - benson2- actionnow - Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": { "respondWith": "allIncomingItems", "options": {} },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [560, 160],
+      "id": "ws-resp-list-sessions",
+      "name": "Respond - GET whatsapp-sessions"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wasender/whatsapp-sessions/get",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "id": "ws-wh-get",
+      "name": "Webhook - GET whatsapp-sessions/{id}",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 320],
+      "webhookId": "wasender-whatsapp-sessions-get"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.wasenderapi.com/api/whatsapp-sessions/{{ $json.body.whatsappSession }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [280, 320],
+      "id": "ws-http-get-session",
+      "name": "Wasender - GET whatsapp-sessions/{id}",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "PwZsZSqKyJv3rOI0",
+          "name": "wasender - benson2- actionnow - Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": { "respondWith": "allIncomingItems", "options": {} },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [560, 320],
+      "id": "ws-resp-get-session",
+      "name": "Respond - GET whatsapp-sessions/{id}"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wasender/whatsapp-sessions/update",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "id": "ws-wh-update",
+      "name": "Webhook - PUT whatsapp-sessions/{id}",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 480],
+      "webhookId": "wasender-whatsapp-sessions-update"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://www.wasenderapi.com/api/whatsapp-sessions/{{ $json.body.whatsappSession }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify(Object.fromEntries(Object.entries({ name: $json.body.name, phone_number: $json.body.phone_number, account_protection: $json.body.account_protection, log_messages: $json.body.log_messages, read_incoming_messages: $json.body.read_incoming_messages, webhook_url: $json.body.webhook_url, webhook_enabled: $json.body.webhook_enabled, webhook_events: $json.body.webhook_events }).filter(([, v]) => v !== undefined && v !== null && v !== ''))) }}",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [280, 480],
+      "id": "ws-http-update-session",
+      "name": "Wasender - PUT whatsapp-sessions/{id}",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "PwZsZSqKyJv3rOI0",
+          "name": "wasender - benson2- actionnow - Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": { "respondWith": "allIncomingItems", "options": {} },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [560, 480],
+      "id": "ws-resp-update-session",
+      "name": "Respond - PUT whatsapp-sessions/{id}"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wasender/whatsapp-sessions/delete",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "id": "ws-wh-delete",
+      "name": "Webhook - DELETE whatsapp-sessions/{id}",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 640],
+      "webhookId": "wasender-whatsapp-sessions-delete"
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "=https://www.wasenderapi.com/api/whatsapp-sessions/{{ $json.body.whatsappSession }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [280, 640],
+      "id": "ws-http-delete-session",
+      "name": "Wasender - DELETE whatsapp-sessions/{id}",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "PwZsZSqKyJv3rOI0",
+          "name": "wasender - benson2- actionnow - Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": { "respondWith": "allIncomingItems", "options": {} },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [560, 640],
+      "id": "ws-resp-delete-session",
+      "name": "Respond - DELETE whatsapp-sessions/{id}"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wasender/whatsapp-sessions/connect",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "id": "ws-wh-connect",
+      "name": "Webhook - POST connect",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 800],
+      "webhookId": "wasender-whatsapp-sessions-connect"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://www.wasenderapi.com/api/whatsapp-sessions/{{ $json.body.whatsappSession }}/connect",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [280, 800],
+      "id": "ws-http-connect",
+      "name": "Wasender - POST connect",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "PwZsZSqKyJv3rOI0",
+          "name": "wasender - benson2- actionnow - Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": { "respondWith": "allIncomingItems", "options": {} },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [560, 800],
+      "id": "ws-resp-connect",
+      "name": "Respond - POST connect"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wasender/whatsapp-sessions/qrcode",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "id": "ws-wh-qrcode",
+      "name": "Webhook - GET qrcode",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 960],
+      "webhookId": "wasender-whatsapp-sessions-qrcode"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.wasenderapi.com/api/whatsapp-sessions/{{ $json.body.whatsappSession }}/qrcode",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [280, 960],
+      "id": "ws-http-qrcode",
+      "name": "Wasender - GET qrcode",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "PwZsZSqKyJv3rOI0",
+          "name": "wasender - benson2- actionnow - Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": { "respondWith": "allIncomingItems", "options": {} },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [560, 960],
+      "id": "ws-resp-qrcode",
+      "name": "Respond - GET qrcode"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wasender/whatsapp-sessions/disconnect",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "id": "ws-wh-disconnect",
+      "name": "Webhook - POST disconnect",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 1120],
+      "webhookId": "wasender-whatsapp-sessions-disconnect"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://www.wasenderapi.com/api/whatsapp-sessions/{{ $json.body.whatsappSession }}/disconnect",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [280, 1120],
+      "id": "ws-http-disconnect",
+      "name": "Wasender - POST disconnect",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "PwZsZSqKyJv3rOI0",
+          "name": "wasender - benson2- actionnow - Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": { "respondWith": "allIncomingItems", "options": {} },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [560, 1120],
+      "id": "ws-resp-disconnect",
+      "name": "Respond - POST disconnect"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wasender/whatsapp-sessions/restart",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "id": "ws-wh-restart",
+      "name": "Webhook - POST restart",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 1280],
+      "webhookId": "wasender-whatsapp-sessions-restart"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://www.wasenderapi.com/api/whatsapp-sessions/{{ $json.body.whatsappSession }}/restart",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [280, 1280],
+      "id": "ws-http-restart",
+      "name": "Wasender - POST restart",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "PwZsZSqKyJv3rOI0",
+          "name": "wasender - benson2- actionnow - Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": { "respondWith": "allIncomingItems", "options": {} },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [560, 1280],
+      "id": "ws-resp-restart",
+      "name": "Respond - POST restart"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wasender/status",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "id": "ws-wh-status",
+      "name": "Webhook - GET status",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [800, 0],
+      "webhookId": "wasender-status"
+    },
+    {
+      "parameters": {
+        "url": "https://www.wasenderapi.com/api/status",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [1080, 0],
+      "id": "ws-http-status",
+      "name": "Wasender - GET status",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "PwZsZSqKyJv3rOI0",
+          "name": "wasender - benson2- actionnow - Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": { "respondWith": "allIncomingItems", "options": {} },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [1360, 0],
+      "id": "ws-resp-status",
+      "name": "Respond - GET status"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wasender/user",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "id": "ws-wh-user",
+      "name": "Webhook - GET user",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [800, 160],
+      "webhookId": "wasender-user"
+    },
+    {
+      "parameters": {
+        "url": "https://www.wasenderapi.com/api/user",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [1080, 160],
+      "id": "ws-http-user",
+      "name": "Wasender - GET user",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "PwZsZSqKyJv3rOI0",
+          "name": "wasender - benson2- actionnow - Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": { "respondWith": "allIncomingItems", "options": {} },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [1360, 160],
+      "id": "ws-resp-user",
+      "name": "Respond - GET user"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wasender/on-whatsapp",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "id": "ws-wh-on-whatsapp",
+      "name": "Webhook - GET on-whatsapp",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [800, 320],
+      "webhookId": "wasender-on-whatsapp"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.wasenderapi.com/api/on-whatsapp/{{ encodeURIComponent($json.body.phone_number || $json.body.phoneNumber || '') }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [1080, 320],
+      "id": "ws-http-on-whatsapp",
+      "name": "Wasender - GET on-whatsapp",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "PwZsZSqKyJv3rOI0",
+          "name": "wasender - benson2- actionnow - Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": { "respondWith": "allIncomingItems", "options": {} },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [1360, 320],
+      "id": "ws-resp-on-whatsapp",
+      "name": "Respond - GET on-whatsapp"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wasender/send-message",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "id": "ws-wh-send-message",
+      "name": "Webhook - POST send-message",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [800, 480],
+      "webhookId": "wasender-send-message"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.wasenderapi.com/api/send-message",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify(Object.fromEntries(Object.entries({ to: $json.body.to || $json.body.tophone, text: $json.body.text || $json.body.message, imageUrl: $json.body.imageUrl || $json.body.imageurl || $json.body.image_url, videoUrl: $json.body.videoUrl || $json.body.videourl || $json.body.video_url, audioUrl: $json.body.audioUrl || $json.body.audiourl || $json.body.audio_url, documentUrl: $json.body.documentUrl || $json.body.documenturl || $json.body.document_url, fileName: $json.body.fileName || $json.body.filename || $json.body.file_name }).filter(([, v]) => v !== undefined && v !== null && v !== ''))) }}",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [1080, 480],
+      "id": "ws-http-send-message",
+      "name": "Wasender - POST send-message",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "PwZsZSqKyJv3rOI0",
+          "name": "wasender - benson2- actionnow - Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": { "respondWith": "allIncomingItems", "options": {} },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [1360, 480],
+      "id": "ws-resp-send-message",
+      "name": "Respond - POST send-message"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wasender/send-presence-update",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "id": "ws-wh-presence",
+      "name": "Webhook - POST send-presence-update",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [800, 640],
+      "webhookId": "wasender-send-presence-update"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.wasenderapi.com/api/send-presence-update",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ jid: $json.body.jid, presence: $json.body.presence }) }}",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [1080, 640],
+      "id": "ws-http-presence",
+      "name": "Wasender - POST send-presence-update",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "PwZsZSqKyJv3rOI0",
+          "name": "wasender - benson2- actionnow - Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": { "respondWith": "allIncomingItems", "options": {} },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [1360, 640],
+      "id": "ws-resp-presence",
+      "name": "Respond - POST send-presence-update"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wasender/create-and-pair",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "id": "ws-wh-create-pair",
+      "name": "Webhook - create-and-pair",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [1600, 0],
+      "webhookId": "wasender-create-and-pair"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT *\nFROM actionnow.user_whatsapp_connections\nWHERE owner_email = $1\n  AND phone_number = $2\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [$('Webhook - create-and-pair').item.json.body.owner_email, $('Webhook - create-and-pair').item.json.body.phone_number] }}"
+        }
+      },
+      "name": "Postgres - lookup connection",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1880, 0],
+      "id": "ws-pg-lookup-pair",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            {
+              "id": "has-session-id",
+              "leftValue": "={{ !!$json.wasender_session_id }}",
+              "rightValue": "",
+              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "name": "IF - has wasender_session_id",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [2160, 0],
+      "id": "ws-if-has-session"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.wasenderapi.com/api/whatsapp-sessions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ name: $('Webhook - create-and-pair').item.json.body.name, phone_number: $('Webhook - create-and-pair').item.json.body.phone_number, account_protection: $('Webhook - create-and-pair').item.json.body.account_protection ?? true, log_messages: $('Webhook - create-and-pair').item.json.body.log_messages ?? true, read_incoming_messages: $('Webhook - create-and-pair').item.json.body.read_incoming_messages ?? true, webhook_url: $('Webhook - create-and-pair').item.json.body.webhook_url ?? 'https://arrowmatics.app.n8n.cloud/webhook/actionnow-receive-whatsapp', webhook_enabled: $('Webhook - create-and-pair').item.json.body.webhook_enabled ?? true, webhook_events: $('Webhook - create-and-pair').item.json.body.webhook_events ?? ['messages.received', 'group-participants.update', 'qrcode.updated', 'message.sent', 'messages-personal.received', 'messages-group.received', 'message-receipt.update', 'messages.reaction'] }) }}",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [2440, 120],
+      "id": "ws-http-pair-create",
+      "name": "Wasender - create session (pair)",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "PwZsZSqKyJv3rOI0",
+          "name": "wasender - benson2- actionnow - Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO actionnow.user_whatsapp_connections (\n  owner_email, name, phone_number, status,\n  account_protection, log_messages, read_incoming_messages,\n  webhook_url, webhook_enabled, webhook_events,\n  api_key, webhook_secret, wasender_session_id\n) VALUES (\n  $1, $2, $3, $4,\n  $5, $6, $7,\n  $8, $9, $10,\n  $11, $12, $13\n)\nON CONFLICT (owner_email, phone_number) DO UPDATE SET\n  name = EXCLUDED.name,\n  status = EXCLUDED.status,\n  account_protection = EXCLUDED.account_protection,\n  log_messages = EXCLUDED.log_messages,\n  read_incoming_messages = EXCLUDED.read_incoming_messages,\n  webhook_url = EXCLUDED.webhook_url,\n  webhook_enabled = EXCLUDED.webhook_enabled,\n  webhook_events = EXCLUDED.webhook_events,\n  api_key = EXCLUDED.api_key,\n  webhook_secret = EXCLUDED.webhook_secret,\n  wasender_session_id = EXCLUDED.wasender_session_id,\n  updated_at = now()\nRETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [\n  $('Webhook - create-and-pair').item.json.body.owner_email,\n  $('Webhook - create-and-pair').item.json.body.name,\n  $('Webhook - create-and-pair').item.json.body.phone_number,\n  String($json.data?.status || 'disconnected').toLowerCase(),\n  $json.data?.account_protection ?? true,\n  $json.data?.log_messages ?? true,\n  $json.data?.read_incoming_messages ?? true,\n  $json.data?.webhook_url ?? $('Webhook - create-and-pair').item.json.body.webhook_url ?? null,\n  $json.data?.webhook_enabled ?? true,\n  $json.data?.webhook_events ?? ['messages.received', 'group-participants.update', 'qrcode.updated', 'message.sent', 'messages-personal.received', 'messages-group.received', 'message-receipt.update', 'messages.reaction'],\n  $json.data?.api_key ?? null,\n  $json.data?.webhook_secret ?? null,\n  $json.data?.id ?? null\n] }}"
+        }
+      },
+      "name": "Postgres - upsert after create",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [2720, 120],
+      "id": "ws-pg-upsert-pair",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhook = $('Webhook - create-and-pair').first().json.body;\nconst existing = $('Postgres - lookup connection').first().json;\nlet sessionId = existing?.wasender_session_id;\nlet connection = existing;\n\ntry {\n  const upsert = $('Postgres - upsert after create').first()?.json;\n  if (upsert?.wasender_session_id) {\n    sessionId = upsert.wasender_session_id;\n    connection = upsert;\n  }\n} catch (_) {}\n\nif (!sessionId) {\n  return [{ json: { error: true, message: 'Could not resolve wasender_session_id', owner_email: webhook.owner_email, phone_number: webhook.phone_number } }];\n}\n\nreturn [{ json: { ...webhook, wasender_session_id: sessionId, connection_id: connection?.id ?? null, connection } }];"
+      },
+      "name": "Code - resolve session id",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3000, 0],
+      "id": "ws-code-resolve-session"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.wasenderapi.com/api/whatsapp-sessions/{{ $json.wasender_session_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [3280, 0],
+      "id": "ws-http-pair-get-status",
+      "name": "Wasender - get session status (pair)",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "PwZsZSqKyJv3rOI0",
+          "name": "wasender - benson2- actionnow - Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            {
+              "id": "is-connected",
+              "leftValue": "={{ String($json.data?.status || $json.status || '').toLowerCase() }}",
+              "rightValue": "connected",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "name": "IF - already connected",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [3560, 0],
+      "id": "ws-if-connected"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE actionnow.user_whatsapp_connections\nSET status = 'connected', updated_at = now()\nWHERE owner_email = $1 AND phone_number = $2\nRETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [$('Webhook - create-and-pair').item.json.body.owner_email, $('Webhook - create-and-pair').item.json.body.phone_number] }}"
+        }
+      },
+      "name": "Postgres - mark connected",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [3840, -120],
+      "id": "ws-pg-mark-connected",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const session = $('Wasender - get session status (pair)').first().json;\nconst connection = $('Postgres - mark connected').first().json;\nreturn [{ json: { success: true, already_connected: true, status: 'connected', wasender_session_id: connection.wasender_session_id, connection, wasender: session } }];"
+      },
+      "name": "Code - format already connected",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4120, -120],
+      "id": "ws-code-already-connected"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://www.wasenderapi.com/api/whatsapp-sessions/{{ $('Code - resolve session id').item.json.wasender_session_id }}/connect",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [3840, 120],
+      "id": "ws-http-pair-connect",
+      "name": "Wasender - connect (pair)",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "PwZsZSqKyJv3rOI0",
+          "name": "wasender - benson2- actionnow - Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.wasenderapi.com/api/whatsapp-sessions/{{ $('Code - resolve session id').item.json.wasender_session_id }}/qrcode",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [4120, 120],
+      "id": "ws-http-pair-qrcode",
+      "name": "Wasender - qrcode (pair)",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "PwZsZSqKyJv3rOI0",
+          "name": "wasender - benson2- actionnow - Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE actionnow.user_whatsapp_connections\nSET status = 'pending', updated_at = now()\nWHERE owner_email = $1 AND phone_number = $2\nRETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [$('Webhook - create-and-pair').item.json.body.owner_email, $('Webhook - create-and-pair').item.json.body.phone_number] }}"
+        }
+      },
+      "name": "Postgres - mark pending",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [4400, 120],
+      "id": "ws-pg-mark-pending",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const qr = $('Wasender - qrcode (pair)').first().json;\nconst data = qr.data ?? qr;\nconst qrString = data.qrCode ?? data.qr_code ?? qr.qrCode ?? qr.qr_code ?? null;\nconst wasenderStatus = String(data.status ?? qr.status ?? 'need_scan').toLowerCase();\nconst connection = $('Postgres - mark pending').first().json;\nconst sessionId = $('Code - resolve session id').first().json.wasender_session_id;\nreturn [{ json: {\n  success: true,\n  already_connected: false,\n  status: wasenderStatus === 'connected' ? 'connected' : 'pending',\n  wasender_status: wasenderStatus,\n  wasender_session_id: sessionId,\n  qr_code: qrString,\n  qrCode: qrString,\n  expires_in: 30,\n  connection,\n  wasender: qr,\n  message: qrString ? 'Scan the QR code with WhatsApp within 30 seconds.' : 'QR code unavailable. Refresh and try again.'\n} }];"
+      },
+      "name": "Code - format qr response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4680, 120],
+      "id": "ws-code-qr-response"
+    },
+    {
+      "parameters": { "respondWith": "allIncomingItems", "options": {} },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [4960, 0],
+      "id": "ws-resp-create-pair",
+      "name": "Respond - create-and-pair"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wasender/poll-status",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "id": "ws-wh-poll",
+      "name": "Webhook - poll-status",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [1600, 400],
+      "webhookId": "wasender-poll-status"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT *\nFROM actionnow.user_whatsapp_connections\nWHERE ($1::bigint IS NOT NULL AND wasender_session_id = $1::bigint)\n   OR ($2::text IS NOT NULL AND $3::text IS NOT NULL AND owner_email = $2 AND phone_number = $3)\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [\n  $('Webhook - poll-status').item.json.body.whatsappSession ?? $('Webhook - poll-status').item.json.body.wasender_session_id ?? null,\n  $('Webhook - poll-status').item.json.body.owner_email ?? null,\n  $('Webhook - poll-status').item.json.body.phone_number ?? null\n] }}"
+        }
+      },
+      "name": "Postgres - lookup for poll",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1880, 400],
+      "id": "ws-pg-lookup-poll",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.wasenderapi.com/api/whatsapp-sessions/{{ $json.wasender_session_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [2160, 400],
+      "id": "ws-http-poll-status",
+      "name": "Wasender - poll session status",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "PwZsZSqKyJv3rOI0",
+          "name": "wasender - benson2- actionnow - Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE actionnow.user_whatsapp_connections\nSET status = $2, updated_at = now()\nWHERE wasender_session_id = $1\nRETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [\n  $('Postgres - lookup for poll').item.json.wasender_session_id,\n  String($json.data?.status || $json.status || 'disconnected').toLowerCase()\n] }}"
+        }
+      },
+      "name": "Postgres - sync poll status",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [2440, 400],
+      "id": "ws-pg-sync-poll",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const wasender = $('Wasender - poll session status').first().json;\nconst connection = $('Postgres - sync poll status').first().json;\nconst status = String(wasender.data?.status || wasender.status || connection.status || 'disconnected').toLowerCase();\nreturn [{ json: { success: true, status, connected: status === 'connected', connection, wasender } }];"
+      },
+      "name": "Code - format poll response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2720, 400],
+      "id": "ws-code-poll-response"
+    },
+    {
+      "parameters": { "respondWith": "allIncomingItems", "options": {} },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [3000, 400],
+      "id": "ws-resp-poll",
+      "name": "Respond - poll-status"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wasender/unbind",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "id": "ws-wh-unbind",
+      "name": "Webhook - unbind",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [1600, 640],
+      "webhookId": "wasender-unbind"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT *\nFROM actionnow.user_whatsapp_connections\nWHERE ($1::bigint IS NOT NULL AND wasender_session_id = $1::bigint)\n   OR ($2::text IS NOT NULL AND $3::text IS NOT NULL AND owner_email = $2 AND phone_number = $3)\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [\n  $('Webhook - unbind').item.json.body.whatsappSession ?? $('Webhook - unbind').item.json.body.wasender_session_id ?? null,\n  $('Webhook - unbind').item.json.body.owner_email ?? null,\n  $('Webhook - unbind').item.json.body.phone_number ?? null\n] }}"
+        }
+      },
+      "name": "Postgres - lookup for unbind",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1880, 640],
+      "id": "ws-pg-lookup-unbind",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook - unbind').first().json.body ?? {};\nconst row = $('Postgres - lookup for unbind').first().json ?? {};\nconst wasender_session_id = row.wasender_session_id ?? body.whatsappSession ?? body.wasender_session_id ?? null;\nreturn [{\n  json: {\n    wasender_session_id,\n    connection_id: row.id ?? null,\n    owner_email: row.owner_email ?? body.owner_email ?? null,\n    phone_number: row.phone_number ?? body.phone_number ?? null,\n    had_db_row: !!row.id,\n  },\n}];"
+      },
+      "name": "Code - resolve unbind targets",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2160, 640],
+      "id": "ws-code-resolve-unbind"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            {
+              "id": "has-wasender-id",
+              "leftValue": "={{ !!$json.wasender_session_id }}",
+              "rightValue": "",
+              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "name": "IF - has wasender session id",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [2440, 640],
+      "id": "ws-if-unbind-has-session"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://www.wasenderapi.com/api/whatsapp-sessions/{{ $('Code - resolve unbind targets').item.json.wasender_session_id }}/disconnect",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [2720, 520],
+      "id": "ws-http-unbind-disconnect",
+      "name": "Wasender - disconnect (unbind)",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "PwZsZSqKyJv3rOI0",
+          "name": "wasender - benson2- actionnow - Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "=https://www.wasenderapi.com/api/whatsapp-sessions/{{ $('Code - resolve unbind targets').item.json.wasender_session_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [3000, 520],
+      "id": "ws-http-unbind-delete",
+      "name": "Wasender - delete session (unbind)",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "PwZsZSqKyJv3rOI0",
+          "name": "wasender - benson2- actionnow - Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM actionnow.user_whatsapp_connections\nWHERE ($1::bigint IS NOT NULL AND id = $1::bigint)\n   OR ($2::bigint IS NOT NULL AND wasender_session_id = $2::bigint)\n   OR ($3::text IS NOT NULL AND $4::text IS NOT NULL AND owner_email = $3 AND phone_number = $4)\nRETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [\n  $('Code - resolve unbind targets').item.json.connection_id,\n  $('Code - resolve unbind targets').item.json.wasender_session_id,\n  $('Code - resolve unbind targets').item.json.owner_email,\n  $('Code - resolve unbind targets').item.json.phone_number\n] }}"
+        }
+      },
+      "name": "Postgres - delete connection row",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [3280, 640],
+      "id": "ws-pg-delete-connection",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const targets = $('Code - resolve unbind targets').first().json;\nlet disconnect = null;\nlet deleteSession = null;\ntry { disconnect = $('Wasender - disconnect (unbind)').first().json; } catch (_) {}\ntry { deleteSession = $('Wasender - delete session (unbind)').first().json; } catch (_) {}\nconst deleted = $('Postgres - delete connection row').all().map((item) => item.json).filter((row) => row?.id);\nreturn [{\n  json: {\n    success: true,\n    status: 'removed',\n    message: 'WhatsApp session disconnected, deleted from Wasender, and removed from database.',\n    wasender_session_id: targets.wasender_session_id,\n    deleted_count: deleted.length,\n    deleted_connection: deleted[0] ?? null,\n    wasender_disconnect: disconnect,\n    wasender_delete: deleteSession,\n  },\n}];"
+      },
+      "name": "Code - format unbind response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3560, 640],
+      "id": "ws-code-unbind-response"
+    },
+    {
+      "parameters": { "respondWith": "allIncomingItems", "options": {} },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [3840, 640],
+      "id": "ws-resp-unbind",
+      "name": "Respond - unbind"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wasender/get-connection",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "id": "ws-wh-get-conn",
+      "name": "Webhook - get-connection",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [1600, 880],
+      "webhookId": "wasender-get-connection"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT *\nFROM actionnow.user_whatsapp_connections\nWHERE owner_email = $1\n  AND ($2::text IS NULL OR phone_number = $2)\nORDER BY updated_at DESC\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [\n  $('Webhook - get-connection').item.json.body.owner_email,\n  $('Webhook - get-connection').item.json.body.phone_number ?? null\n] }}"
+        }
+      },
+      "name": "Postgres - get connection",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1880, 880],
+      "id": "ws-pg-get-connection",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const row = $input.first().json;\nif (!row?.id) {\n  return [{ json: { success: true, found: false, connection: null } }];\n}\nreturn [{ json: { success: true, found: true, connection: row } }];"
+      },
+      "name": "Code - format get connection",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2160, 880],
+      "id": "ws-code-get-connection"
+    },
+    {
+      "parameters": { "respondWith": "allIncomingItems", "options": {} },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [2440, 880],
+      "id": "ws-resp-get-connection",
+      "name": "Respond - get-connection"
+    }
+  ],
+  "connections": {
+    "Webhook - POST whatsapp-sessions": {
+      "main": [[{ "node": "Wasender - POST whatsapp-sessions", "type": "main", "index": 0 }]]
+    },
+    "Wasender - POST whatsapp-sessions": {
+      "main": [
+        [{ "node": "Respond - POST whatsapp-sessions", "type": "main", "index": 0 }],
+        [{ "node": "Respond - POST whatsapp-sessions", "type": "main", "index": 0 }]
+      ]
+    },
+    "Webhook - GET whatsapp-sessions": {
+      "main": [[{ "node": "Wasender - GET whatsapp-sessions", "type": "main", "index": 0 }]]
+    },
+    "Wasender - GET whatsapp-sessions": {
+      "main": [
+        [{ "node": "Respond - GET whatsapp-sessions", "type": "main", "index": 0 }],
+        [{ "node": "Respond - GET whatsapp-sessions", "type": "main", "index": 0 }]
+      ]
+    },
+    "Webhook - GET whatsapp-sessions/{id}": {
+      "main": [[{ "node": "Wasender - GET whatsapp-sessions/{id}", "type": "main", "index": 0 }]]
+    },
+    "Wasender - GET whatsapp-sessions/{id}": {
+      "main": [
+        [{ "node": "Respond - GET whatsapp-sessions/{id}", "type": "main", "index": 0 }],
+        [{ "node": "Respond - GET whatsapp-sessions/{id}", "type": "main", "index": 0 }]
+      ]
+    },
+    "Webhook - PUT whatsapp-sessions/{id}": {
+      "main": [[{ "node": "Wasender - PUT whatsapp-sessions/{id}", "type": "main", "index": 0 }]]
+    },
+    "Wasender - PUT whatsapp-sessions/{id}": {
+      "main": [
+        [{ "node": "Respond - PUT whatsapp-sessions/{id}", "type": "main", "index": 0 }],
+        [{ "node": "Respond - PUT whatsapp-sessions/{id}", "type": "main", "index": 0 }]
+      ]
+    },
+    "Webhook - DELETE whatsapp-sessions/{id}": {
+      "main": [[{ "node": "Wasender - DELETE whatsapp-sessions/{id}", "type": "main", "index": 0 }]]
+    },
+    "Wasender - DELETE whatsapp-sessions/{id}": {
+      "main": [
+        [{ "node": "Respond - DELETE whatsapp-sessions/{id}", "type": "main", "index": 0 }],
+        [{ "node": "Respond - DELETE whatsapp-sessions/{id}", "type": "main", "index": 0 }]
+      ]
+    },
+    "Webhook - POST connect": {
+      "main": [[{ "node": "Wasender - POST connect", "type": "main", "index": 0 }]]
+    },
+    "Wasender - POST connect": {
+      "main": [
+        [{ "node": "Respond - POST connect", "type": "main", "index": 0 }],
+        [{ "node": "Respond - POST connect", "type": "main", "index": 0 }]
+      ]
+    },
+    "Webhook - GET qrcode": {
+      "main": [[{ "node": "Wasender - GET qrcode", "type": "main", "index": 0 }]]
+    },
+    "Wasender - GET qrcode": {
+      "main": [
+        [{ "node": "Respond - GET qrcode", "type": "main", "index": 0 }],
+        [{ "node": "Respond - GET qrcode", "type": "main", "index": 0 }]
+      ]
+    },
+    "Webhook - POST disconnect": {
+      "main": [[{ "node": "Wasender - POST disconnect", "type": "main", "index": 0 }]]
+    },
+    "Wasender - POST disconnect": {
+      "main": [
+        [{ "node": "Respond - POST disconnect", "type": "main", "index": 0 }],
+        [{ "node": "Respond - POST disconnect", "type": "main", "index": 0 }]
+      ]
+    },
+    "Webhook - POST restart": {
+      "main": [[{ "node": "Wasender - POST restart", "type": "main", "index": 0 }]]
+    },
+    "Wasender - POST restart": {
+      "main": [
+        [{ "node": "Respond - POST restart", "type": "main", "index": 0 }],
+        [{ "node": "Respond - POST restart", "type": "main", "index": 0 }]
+      ]
+    },
+    "Webhook - GET status": {
+      "main": [[{ "node": "Wasender - GET status", "type": "main", "index": 0 }]]
+    },
+    "Wasender - GET status": {
+      "main": [
+        [{ "node": "Respond - GET status", "type": "main", "index": 0 }],
+        [{ "node": "Respond - GET status", "type": "main", "index": 0 }]
+      ]
+    },
+    "Webhook - GET user": {
+      "main": [[{ "node": "Wasender - GET user", "type": "main", "index": 0 }]]
+    },
+    "Wasender - GET user": {
+      "main": [
+        [{ "node": "Respond - GET user", "type": "main", "index": 0 }],
+        [{ "node": "Respond - GET user", "type": "main", "index": 0 }]
+      ]
+    },
+    "Webhook - GET on-whatsapp": {
+      "main": [[{ "node": "Wasender - GET on-whatsapp", "type": "main", "index": 0 }]]
+    },
+    "Wasender - GET on-whatsapp": {
+      "main": [
+        [{ "node": "Respond - GET on-whatsapp", "type": "main", "index": 0 }],
+        [{ "node": "Respond - GET on-whatsapp", "type": "main", "index": 0 }]
+      ]
+    },
+    "Webhook - POST send-message": {
+      "main": [[{ "node": "Wasender - POST send-message", "type": "main", "index": 0 }]]
+    },
+    "Wasender - POST send-message": {
+      "main": [
+        [{ "node": "Respond - POST send-message", "type": "main", "index": 0 }],
+        [{ "node": "Respond - POST send-message", "type": "main", "index": 0 }]
+      ]
+    },
+    "Webhook - POST send-presence-update": {
+      "main": [[{ "node": "Wasender - POST send-presence-update", "type": "main", "index": 0 }]]
+    },
+    "Wasender - POST send-presence-update": {
+      "main": [
+        [{ "node": "Respond - POST send-presence-update", "type": "main", "index": 0 }],
+        [{ "node": "Respond - POST send-presence-update", "type": "main", "index": 0 }]
+      ]
+    },
+    "Webhook - create-and-pair": {
+      "main": [[{ "node": "Postgres - lookup connection", "type": "main", "index": 0 }]]
+    },
+    "Postgres - lookup connection": {
+      "main": [[{ "node": "IF - has wasender_session_id", "type": "main", "index": 0 }]]
+    },
+    "IF - has wasender_session_id": {
+      "main": [
+        [{ "node": "Code - resolve session id", "type": "main", "index": 0 }],
+        [{ "node": "Wasender - create session (pair)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Wasender - create session (pair)": {
+      "main": [
+        [{ "node": "Postgres - upsert after create", "type": "main", "index": 0 }],
+        [{ "node": "Respond - create-and-pair", "type": "main", "index": 0 }]
+      ]
+    },
+    "Postgres - upsert after create": {
+      "main": [[{ "node": "Code - resolve session id", "type": "main", "index": 0 }]]
+    },
+    "Code - resolve session id": {
+      "main": [[{ "node": "Wasender - get session status (pair)", "type": "main", "index": 0 }]]
+    },
+    "Wasender - get session status (pair)": {
+      "main": [
+        [{ "node": "IF - already connected", "type": "main", "index": 0 }],
+        [{ "node": "Respond - create-and-pair", "type": "main", "index": 0 }]
+      ]
+    },
+    "IF - already connected": {
+      "main": [
+        [{ "node": "Postgres - mark connected", "type": "main", "index": 0 }],
+        [{ "node": "Wasender - connect (pair)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Postgres - mark connected": {
+      "main": [[{ "node": "Code - format already connected", "type": "main", "index": 0 }]]
+    },
+    "Code - format already connected": {
+      "main": [[{ "node": "Respond - create-and-pair", "type": "main", "index": 0 }]]
+    },
+    "Wasender - connect (pair)": {
+      "main": [
+        [{ "node": "Wasender - qrcode (pair)", "type": "main", "index": 0 }],
+        [{ "node": "Respond - create-and-pair", "type": "main", "index": 0 }]
+      ]
+    },
+    "Wasender - qrcode (pair)": {
+      "main": [
+        [{ "node": "Postgres - mark pending", "type": "main", "index": 0 }],
+        [{ "node": "Respond - create-and-pair", "type": "main", "index": 0 }]
+      ]
+    },
+    "Postgres - mark pending": {
+      "main": [[{ "node": "Code - format qr response", "type": "main", "index": 0 }]]
+    },
+    "Code - format qr response": {
+      "main": [[{ "node": "Respond - create-and-pair", "type": "main", "index": 0 }]]
+    },
+    "Webhook - poll-status": {
+      "main": [[{ "node": "Postgres - lookup for poll", "type": "main", "index": 0 }]]
+    },
+    "Postgres - lookup for poll": {
+      "main": [[{ "node": "Wasender - poll session status", "type": "main", "index": 0 }]]
+    },
+    "Wasender - poll session status": {
+      "main": [
+        [{ "node": "Postgres - sync poll status", "type": "main", "index": 0 }],
+        [{ "node": "Respond - poll-status", "type": "main", "index": 0 }]
+      ]
+    },
+    "Postgres - sync poll status": {
+      "main": [[{ "node": "Code - format poll response", "type": "main", "index": 0 }]]
+    },
+    "Code - format poll response": {
+      "main": [[{ "node": "Respond - poll-status", "type": "main", "index": 0 }]]
+    },
+    "Webhook - unbind": {
+      "main": [[{ "node": "Postgres - lookup for unbind", "type": "main", "index": 0 }]]
+    },
+    "Postgres - lookup for unbind": {
+      "main": [[{ "node": "Code - resolve unbind targets", "type": "main", "index": 0 }]]
+    },
+    "Code - resolve unbind targets": {
+      "main": [[{ "node": "IF - has wasender session id", "type": "main", "index": 0 }]]
+    },
+    "IF - has wasender session id": {
+      "main": [
+        [{ "node": "Wasender - disconnect (unbind)", "type": "main", "index": 0 }],
+        [{ "node": "Postgres - delete connection row", "type": "main", "index": 0 }]
+      ]
+    },
+    "Wasender - disconnect (unbind)": {
+      "main": [
+        [{ "node": "Wasender - delete session (unbind)", "type": "main", "index": 0 }],
+        [{ "node": "Wasender - delete session (unbind)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Wasender - delete session (unbind)": {
+      "main": [
+        [{ "node": "Postgres - delete connection row", "type": "main", "index": 0 }],
+        [{ "node": "Postgres - delete connection row", "type": "main", "index": 0 }]
+      ]
+    },
+    "Postgres - delete connection row": {
+      "main": [[{ "node": "Code - format unbind response", "type": "main", "index": 0 }]]
+    },
+    "Code - format unbind response": {
+      "main": [[{ "node": "Respond - unbind", "type": "main", "index": 0 }]]
+    },
+    "Webhook - get-connection": {
+      "main": [[{ "node": "Postgres - get connection", "type": "main", "index": 0 }]]
+    },
+    "Postgres - get connection": {
+      "main": [[{ "node": "Code - format get connection", "type": "main", "index": 0 }]]
+    },
+    "Code - format get connection": {
+      "main": [[{ "node": "Respond - get-connection", "type": "main", "index": 0 }]]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

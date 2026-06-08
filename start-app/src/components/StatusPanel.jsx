@@ -24,7 +24,7 @@ function formatReportTime(iso) {
   });
 }
 
-export default function StatusPanel({ config }) {
+export default function StatusPanel({ config, ownerEmail = '', ownerPhone = '' }) {
   const groupCount = config.groups.length;
   const keywordCount = config.keywords.length;
   const recipientCount = config.bossNumbers
@@ -42,7 +42,10 @@ export default function StatusPanel({ config }) {
   const loadReports = useCallback(async (isInitial = false) => {
     if (isInitial) setReportLoading(true);
     try {
-      const items = await fetchLatestReports();
+      const items = await fetchLatestReports({
+        ownerEmail: ownerEmail || undefined,
+        ownerPhone: ownerPhone || undefined,
+      });
       setReports(items);
       setReportError(null);
       setLastReportFetch(new Date());
@@ -52,7 +55,7 @@ export default function StatusPanel({ config }) {
     } finally {
       if (isInitial) setReportLoading(false);
     }
-  }, []);
+  }, [ownerEmail, ownerPhone]);
 
   useEffect(() => {
     loadReports(true);
@@ -218,11 +221,11 @@ export default function StatusPanel({ config }) {
 
       <div
         id="toastNotification"
-        className="bg-wa-dark text-white rounded-xl p-4 flex items-center gap-3 shadow-xl transition-all duration-300"
-        style={{
-          opacity: config.showToast ? 1 : 0,
-          transform: config.showToast ? 'translateY(0)' : 'translateY(10px)',
-        }}
+        className={`fixed top-6 left-1/2 z-50 bg-wa-dark text-white rounded-xl p-4 flex items-center gap-3 shadow-xl transition-all duration-300 min-w-[320px] max-w-[90vw] ${
+          config.showToast
+            ? 'opacity-100 -translate-x-1/2 translate-y-0 pointer-events-auto'
+            : 'opacity-0 -translate-x-1/2 -translate-y-2 pointer-events-none'
+        }`}
       >
         <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
           <Bell className="w-5 h-5" />
