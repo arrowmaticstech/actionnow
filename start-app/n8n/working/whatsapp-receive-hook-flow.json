@@ -1,1838 +1,1815 @@
 {
-    "nodes": [
-      {
-        "parameters": {
-          "conditions": {
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "strict",
-              "version": 2
-            },
-            "conditions": [
-              {
-                "id": "is-audio",
-                "leftValue": "={{ $('Code - prepare storage & decrypt2').item.json.media_kind }}",
-                "rightValue": "audio",
-                "operator": {
-                  "type": "string",
-                  "operation": "equals"
-                }
-              }
-            ],
-            "combinator": "and"
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
           },
-          "options": {}
-        },
-        "id": "41dcdf1b-8ac1-4d1a-b5ec-4a75826521a4",
-        "name": "If - is audio2",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.2,
-        "position": [
-          -176,
-          352
-        ]
-      },
-      {
-        "parameters": {
-          "jsCode": "const storage = $('Code - prepare storage & decrypt2').first().json;\nconst item = $input.first();\n\nif (!item.binary?.data) {\n  return [{ json: { skipped: true, reason: 'No audio binary — download may have failed or message is not audio' } }];\n}\n\nconst buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst base64 = buffer.toString('base64');\n\nconst mime = (storage.mime_type ?? '').toLowerCase();\nconst formatMap = [\n  ['ogg', 'ogg'],\n  ['opus', 'ogg'],\n  ['mpeg', 'mp3'],\n  ['mp3', 'mp3'],\n  ['m4a', 'm4a'],\n  ['mp4', 'm4a'],\n  ['wav', 'wav'],\n  ['webm', 'webm'],\n  ['aac', 'aac'],\n  ['flac', 'flac'],\n];\n\nlet format = 'ogg';\nfor (const [needle, fmt] of formatMap) {\n  if (mime.includes(needle)) {\n    format = fmt;\n    break;\n  }\n}\n\nreturn [{\n  json: {\n    message_id: storage.message_id,\n    owner_email: storage.owner_email,\n    owner_phone_num: storage.owner_phone_num,\n    media_kind: storage.media_kind,\n    chirp_body: {\n       model: 'google/chirp-3',\n       // model:'microsoft/mai-transcribe-1.5',\n       // \"language\": \"my-MM\",\n  // \"language\": \"my\",\n    \"temperature\": 0.2,\n         // \"model\": \"openai/whisper-large-v3-turbo\",  \n      // \"model\": \"openai/whisper-large-v3\",\n      input_audio: {\n        data: base64,\n        format,\n      },\n    },\n  },\n}];"
-        },
-        "id": "41c77d1b-7f66-4074-8616-b6b2a2c84cfb",
-        "name": "Code - prepare Chirp 3 base65",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          64,
-          368
-        ]
-      },
-      {
-        "parameters": {
-          "method": "POST",
-          "url": "https://openrouter.ai/api/v1/audio/transcriptions",
-          "authentication": "genericCredentialType",
-          "genericAuthType": "httpBearerAuth",
-          "sendBody": true,
-          "specifyBody": "json",
-          "jsonBody": "=\n{{ JSON.stringify($json.chirp_body) }}",
-          "options": {
-            "timeout": 180000
-          }
-        },
-        "id": "bc2317d6-b6e4-49e3-9efd-633b6f0a9fb9",
-        "name": "OpenRouter - Chirp 3 transcript2",
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.3,
-        "position": [
-          304,
-          368
-        ],
-        "alwaysOutputData": true,
-        "credentials": {
-          "httpHeaderAuth": {
-            "id": "H7RCLIzoxRcf3Grs",
-            "name": "action now Header Auth account"
-          },
-          "httpBearerAuth": {
-            "id": "yl6LfoVa7R43Howt",
-            "name": "action now beaerauth"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "jsCode": "const prep = $('Code - prepare Chirp 3 base65').first().json;\nconst res = $input.first().json;\n\nconst text =\n  res.text ??\n  res.transcript ??\n  res.data?.text ??\n  res.choices?.[0]?.message?.content ??\n  '';\n\nif (!text) {\n  return [{ json: { skipped: true, reason: 'Chirp 3 returned no text', raw: res } }];\n}\n\nreturn [{\n  json: {\n    message_id: prep.message_id,\n    owner_email: prep.owner_email,\n    owner_phone_num: prep.owner_phone_num,\n    transcript: String(text).trim(),\n    model_name: 'google/chirp-3',\n  },\n}];"
-        },
-        "id": "a0aab4bc-5906-4cbf-8eb4-3535a0f11b75",
-        "name": "Code - parse Chirp 3 response2",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          512,
-          368
-        ]
-      },
-      {
-        "parameters": {
-          "operation": "executeQuery",
-          "query": "INSERT INTO actionnow.whatsapp_media_interpretations (\n  media_id, message_id, owner_email, owner_phone_num,\n  interpretation_type, content, status, model_provider, model_name\n)\nSELECT\n  wm.id, wm.message_id, wm.owner_email, wm.owner_phone_num,\n  'transcript', $1, 'done', 'openrouter', 'google/chirp-3'\nFROM actionnow.whatsapp_message_media wm\nWHERE wm.message_id = $2\nON CONFLICT (media_id, interpretation_type) DO UPDATE SET\n  content = EXCLUDED.content,\n  status = 'done',\n  model_provider = EXCLUDED.model_provider,\n  model_name = EXCLUDED.model_name,\n  error_message = NULL,\n  updated_date = now()\nRETURNING id, interpretation_type, content;",
-          "options": {
-            "queryReplacement": "={{ [$json.transcript, $json.message_id] }}"
-          }
-        },
-        "id": "b32305cb-0ab4-4cdd-ba76-210603710bb6",
-        "name": "Postgres - save Chirp 3 transcript2",
-        "type": "n8n-nodes-base.postgres",
-        "typeVersion": 2.6,
-        "position": [
-          736,
-          368
-        ],
-        "credentials": {
-          "postgres": {
-            "id": "UMW6mMpCtmfMWdKZ",
-            "name": "Arrowmatic supabase postgres"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "conditions": {
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "strict",
-              "version": 2
-            },
-            "conditions": [
-              {
-                "id": "is-image",
-                "leftValue": "={{ $('Code - prepare storage & decrypt2').item.json.media_kind }}",
-                "rightValue": "image",
-                "operator": {
-                  "type": "string",
-                  "operation": "equals"
-                }
-              },
-              {
-                "id": "is-sticker",
-                "leftValue": "={{ $('Code - prepare storage & decrypt2').item.json.media_kind }}",
-                "rightValue": "sticker",
-                "operator": {
-                  "type": "string",
-                  "operation": "equals"
-                }
-              }
-            ],
-            "combinator": "or"
-          },
-          "options": {}
-        },
-        "id": "314aea78-7ca6-4ffb-9e0c-1c8c59dbedda",
-        "name": "If - is image2",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.2,
-        "position": [
-          -272,
-          544
-        ]
-      },
-      {
-        "parameters": {
-          "operation": "executeQuery",
-          "query": "INSERT INTO actionnow.whatsapp_media_interpretations (\n  media_id, message_id, owner_email, owner_phone_num,\n  interpretation_type, content, status, model_provider, model_name\n)\nSELECT\n  wm.id, wm.message_id, wm.owner_email, wm.owner_phone_num,\n  t.itype, $1, 'done', 'openrouter', $2\nFROM actionnow.whatsapp_message_media wm\nCROSS JOIN (VALUES ('caption'), ('ocr')) AS t(itype)\nWHERE wm.message_id = $3\nON CONFLICT (media_id, interpretation_type) DO UPDATE SET\n  content = EXCLUDED.content,\n  status = 'done',\n  model_provider = EXCLUDED.model_provider,\n  model_name = EXCLUDED.model_name,\n  error_message = NULL,\n  updated_date = now()\nRETURNING id, interpretation_type, left(content, 80) AS preview;",
-          "options": {
-            "queryReplacement": "={{ [$json.content, $json.model_name, $json.message_id] }}"
-          }
-        },
-        "id": "acc6cf0b-8a7a-4de5-8481-bdd4cb727a13",
-        "name": "Postgres - save image interpretation2",
-        "type": "n8n-nodes-base.postgres",
-        "typeVersion": 2.6,
-        "position": [
-          752,
-          592
-        ],
-        "credentials": {
-          "postgres": {
-            "id": "UMW6mMpCtmfMWdKZ",
-            "name": "Arrowmatic supabase postgres"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "httpMethod": "POST",
-          "path": "actionnow-receive-whatsapp",
-          "responseMode": "responseNode",
-          "options": {
-            "allowedOrigins": "*",
-            "responseHeaders": {
-              "entries": [
-                {
-                  "name": "Access-Control-Allow-Origin",
-                  "value": "*"
-                }
-              ]
-            }
-          }
-        },
-        "id": "32c55591-89bd-430f-a2dd-ecade0d2fc92",
-        "name": "Webhook - receive whatsapp3",
-        "type": "n8n-nodes-base.webhook",
-        "typeVersion": 2,
-        "position": [
-          -2736,
-          368
-        ],
-        "webhookId": "actionnow-receive-whatsapp"
-      },
-      {
-        "parameters": {
-          "rules": {
-            "values": [
-              {
-                "conditions": {
-                  "options": {
-                    "caseSensitive": true,
-                    "leftValue": "",
-                    "typeValidation": "strict",
-                    "version": 2
-                  },
-                  "conditions": [
-                    {
-                      "id": "rule-group",
-                      "leftValue": "={{ $json.body.event }}",
-                      "rightValue": "messages-group.received",
-                      "operator": {
-                        "type": "string",
-                        "operation": "equals"
-                      }
-                    }
-                  ],
-                  "combinator": "and"
-                },
-                "renameOutput": true,
-                "outputKey": "group"
-              },
-              {
-                "conditions": {
-                  "options": {
-                    "caseSensitive": true,
-                    "leftValue": "",
-                    "typeValidation": "strict",
-                    "version": 2
-                  },
-                  "conditions": [
-                    {
-                      "id": "rule-personal",
-                      "leftValue": "={{ $json.body.event }}",
-                      "rightValue": "messages-personal.received",
-                      "operator": {
-                        "type": "string",
-                        "operation": "equals"
-                      }
-                    }
-                  ],
-                  "combinator": "and"
-                },
-                "renameOutput": true,
-                "outputKey": "personal"
-              },
-              {
-                "conditions": {
-                  "options": {
-                    "caseSensitive": true,
-                    "leftValue": "",
-                    "typeValidation": "strict",
-                    "version": 2
-                  },
-                  "conditions": [
-                    {
-                      "id": "rule-legacy",
-                      "leftValue": "={{ $json.body.event }}",
-                      "rightValue": "messages.received",
-                      "operator": {
-                        "type": "string",
-                        "operation": "equals"
-                      }
-                    }
-                  ],
-                  "combinator": "and"
-                },
-                "renameOutput": true,
-                "outputKey": "legacy_dm"
-              }
-            ]
-          },
-          "options": {
-            "fallbackOutput": "extra"
-          }
-        },
-        "id": "ee2b8529-8dd4-46a2-828a-53ba80e5153d",
-        "name": "Switch - message events only3",
-        "type": "n8n-nodes-base.switch",
-        "typeVersion": 3.2,
-        "position": [
-          -2592,
-          528
-        ]
-      },
-      {
-        "parameters": {
-          "assignments": {
-            "assignments": [
-              {
-                "id": "ignored",
-                "name": "success",
-                "value": true,
-                "type": "boolean"
-              },
-              {
-                "id": "action",
-                "name": "action",
-                "value": "ignored",
-                "type": "string"
-              },
-              {
-                "id": "event",
-                "name": "event",
-                "value": "={{ $json.body.event }}",
-                "type": "string"
-              },
-              {
-                "id": "reason",
-                "name": "reason",
-                "value": "Event type not handled (only messages-group.received, messages-personal.received, messages.received)",
-                "type": "string"
-              }
-            ]
-          },
-          "options": {}
-        },
-        "id": "90e54480-35cf-4297-ba21-be1b093f0892",
-        "name": "Set - ignored event3",
-        "type": "n8n-nodes-base.set",
-        "typeVersion": 3.4,
-        "position": [
-          -2192,
-          736
-        ]
-      },
-      {
-        "parameters": {
-          "operation": "executeQuery",
-          "query": "SELECT *\nFROM actionnow.user_whatsapp_connections\nWHERE (\n  NULLIF(TRIM($1::text), '') IS NOT NULL AND webhook_secret = TRIM($1::text)\n) OR (\n  NULLIF(TRIM($2::text), '') IS NOT NULL AND wasender_session_id::text = TRIM($2::text)\n)\nORDER BY\n  CASE WHEN NULLIF(TRIM($1::text), '') IS NOT NULL AND webhook_secret = TRIM($1::text) THEN 0 ELSE 1 END,\n  updated_at DESC NULLS LAST\nLIMIT 1;",
-          "options": {
-            "queryReplacement": "={{ [\n  $('Webhook - receive whatsapp3').item.json.headers?.['x-webhook-secret']\n    ?? $('Webhook - receive whatsapp3').item.json.headers?.['X-Webhook-Secret']\n    ?? '',\n  String($('Webhook - receive whatsapp3').item.json.body?.sessionId ?? $('Webhook - receive whatsapp3').item.json.body?.session_id ?? '')\n] }}"
-          }
-        },
-        "id": "ca3eff98-b681-4b4b-91b7-84a52eca676b",
-        "name": "Postgres - resolve owner from webhook3",
-        "type": "n8n-nodes-base.postgres",
-        "typeVersion": 2.6,
-        "position": [
-          -2384,
-          288
-        ],
-        "credentials": {
-          "postgres": {
-            "id": "UMW6mMpCtmfMWdKZ",
-            "name": "Arrowmatic supabase postgres"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "jsCode": "const webhook = $('Webhook - receive whatsapp3').first().json;\nconst conn = $input.first().json ?? {};\n\nif (!conn?.owner_email) {\n  throw new Error('No user_whatsapp_connections row for this webhook (check x-webhook-secret or sessionId)');\n}\n\nconst status = String(conn.status ?? '').toLowerCase();\nif (status !== 'connected') {\n  throw new Error(`WhatsApp session not connected (status: ${conn.status ?? 'unknown'})`);\n}\n\nreturn [{\n  json: {\n    ...webhook,\n    connection: conn,\n    owner_email: conn.owner_email,\n    owner_phone_num: conn.phone_number,\n    api_key: conn.api_key,\n    webhook_secret: conn.webhook_secret,\n  },\n}];"
-        },
-        "id": "99502c84-059d-44cd-9635-3fd743ac6ad7",
-        "name": "Code - merge webhook owner context3",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          -2240,
-          416
-        ]
-      },
-      {
-        "parameters": {
-          "operation": "executeQuery",
-          "query": "SELECT *\nFROM actionnow.monitor_settings\nWHERE owner_email = $1\nORDER BY created_date DESC\nLIMIT 1;",
-          "options": {
-            "queryReplacement": "={{ [$('Code - merge webhook owner context3').item.json.owner_email] }}"
-          }
-        },
-        "id": "1ab4d595-615a-411a-b068-6b43a81473a3",
-        "name": "Postgres - get monitor settings for owner3",
-        "type": "n8n-nodes-base.postgres",
-        "typeVersion": 2.6,
-        "position": [
-          -2128,
-          288
-        ],
-        "credentials": {
-          "postgres": {
-            "id": "UMW6mMpCtmfMWdKZ",
-            "name": "Arrowmatic supabase postgres"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "jsCode": "const ctx = $('Code - merge webhook owner context3').first().json;\nconst OWNER_EMAIL = ctx.owner_email;\nconst OWNER_PHONE = ctx.owner_phone_num;\n\nconst input = ctx;\nconst body = input.body ?? input;\nconst event = body.event;\nconst messages = body.data?.messages;\n\nif (!messages) {\n  throw new Error('Missing data.messages in webhook payload');\n}\n\nconst key = messages.key ?? {};\nconst keyId = String(key.id ?? messages.id ?? '').trim();\nif (!keyId) {\n  throw new Error('Missing WhatsApp message id (key.id and messages.id both empty)');\n}\n// WASender may send id in both places; prefer key.id without failing the workflow\nconst altId = messages.id != null ? String(messages.id).trim() : '';\nconst canonicalMessageId = String(key.id ?? altId).trim() || keyId;\n\nfunction unwrapMediaMessage(message) {\n  if (!message || typeof message !== 'object') return {};\n  if (message.ephemeralMessage?.message) return unwrapMediaMessage(message.ephemeralMessage.message);\n  if (message.viewOnceMessage?.message) return unwrapMediaMessage(message.viewOnceMessage.message);\n  if (message.viewOnceMessageV2?.message) return unwrapMediaMessage(message.viewOnceMessageV2.message);\n  if (message.documentWithCaptionMessage?.message) return unwrapMediaMessage(message.documentWithCaptionMessage.message);\n  if (message.imageWithCaptionMessage?.message) return unwrapMediaMessage(message.imageWithCaptionMessage.message);\n  return message;\n}\n\nfunction normalizeMediaKey(mediaKey) {\n  if (mediaKey == null) return null;\n  if (typeof mediaKey === 'string') return mediaKey;\n  if (typeof mediaKey === 'object' && mediaKey.type === 'Buffer' && Array.isArray(mediaKey.data)) {\n    return Buffer.from(mediaKey.data).toString('base64');\n  }\n  if (Array.isArray(mediaKey)) return Buffer.from(mediaKey).toString('base64');\n  return String(mediaKey);\n}\n\nconst DECRYPT_MESSAGE_KEY = {\n  pttMessage: 'audioMessage',\n  audioMessage: 'audioMessage',\n  imageMessage: 'imageMessage',\n  videoMessage: 'videoMessage',\n  documentMessage: 'documentMessage',\n  stickerMessage: 'stickerMessage',\n};\n\nfunction buildDecryptMediaBlock(details) {\n  const keep = [\n    'url', 'mimetype', 'mediaKey', 'fileSha256', 'fileLength', 'fileName',\n    'directPath', 'mediaKeyTimestamp', 'caption', 'height', 'width', 'seconds', 'ptt',\n  ];\n  const out = {};\n  for (const k of keep) {\n    if (details[k] != null && details[k] !== '') out[k] = details[k];\n  }\n  if (out.mediaKey != null) out.mediaKey = normalizeMediaKey(out.mediaKey);\n  return out;\n}\n\nconst msg = unwrapMediaMessage(messages.message ?? {});\nconst isGroup =\n  event === 'messages-group.received' ||\n  String(key.remoteJid || '').endsWith('@g.us');\n\nconst MEDIA_MAP = [\n    ['imageMessage', 'image'],\n ['videoMessage', 'video'],\n  ['audioMessage', 'audio'],\n  ['pttMessage', 'audio'],\n\n  ['documentMessage', 'document'],\n  ['stickerMessage', 'sticker'],\n];\n\nlet contentType = 'text';\nlet mediaKind = 'text';\nlet mediaDetails = null;\nlet messageKey = null;\n\nfor (const [k, kind] of MEDIA_MAP) {\n  if (msg[k]) {\n    messageKey = k;\n    contentType = kind;\n    mediaKind = kind;\n    mediaDetails = msg[k];\n    break;\n  }\n}\n\nconst hasMedia = Boolean(mediaDetails);\n\nfunction normalizeText(v) {\n  if (v == null) return null;\n  const s = String(v).trim();\n  return s === '' ? null : s;\n}\n\nfunction mediaFingerprint(details, kind) {\n  if (!details) return null;\n  const parts = [\n    kind,\n    normalizeMediaKey(details.mediaKey) ?? '',\n    details.url ?? '',\n    details.fileLength != null ? String(details.fileLength) : '',\n    details.fileSha256 ?? '',\n  ].filter(Boolean);\n  if (!parts.length) return null;\n  const raw = parts.join('|');\n  let hash = 0;\n  for (let i = 0; i < raw.length; i++) {\n    hash = ((hash << 5) - hash + raw.charCodeAt(i)) | 0;\n  }\n  return Math.abs(hash).toString(36).padStart(8, '0').slice(0, 8);\n}\n\nconst contentFingerprint = hasMedia ? mediaFingerprint(mediaDetails, mediaKind) : null;\n\nlet whatsappTimestamp = messages.messageTimestamp ?? null;\nif (whatsappTimestamp == null && body.timestamp != null) {\n  const t = Number(body.timestamp);\n  whatsappTimestamp = t > 1e12 ? Math.floor(t / 1000) : t;\n}\n\nconst messageBody =\n  normalizeText(messages.messageBody) ??\n  normalizeText(mediaDetails?.caption) ??\n  null;\n\nconst record = {\n  owner_email: OWNER_EMAIL,\n  owner_phone_num: OWNER_PHONE,\n  event_type: event,\n  whatsapp_timestamp: whatsappTimestamp,\n  message_id: canonicalMessageId,\n  from_me: Boolean(key.fromMe),\n  chat_jid: key.remoteJid,\n  is_group: isGroup,\n  addressing_mode: key.addressingMode ?? null,\n  sender_pn: isGroup ? null : (key.senderPn ?? null),\n  cleaned_sender_pn: isGroup ? null : (key.cleanedSenderPn ?? null),\n  sender_lid: isGroup ? null : (key.senderLid ?? null),\n  participant: isGroup ? (key.participant ?? null) : null,\n  participant_pn: isGroup ? (key.participantPn ?? null) : null,\n  cleaned_participant_pn: isGroup ? (key.cleanedParticipantPn ?? null) : null,\n  participant_lid: isGroup ? (key.participantLid ?? null) : null,\n  sender_phone: key.cleanedParticipantPn ?? key.cleanedSenderPn ?? null,\n  sender_lid_resolved: key.participantLid ?? key.participant ?? key.senderLid ?? null,\n  message_body: messageBody,\n  content_type: contentType,\n  content_fingerprint: contentFingerprint,\n  raw_payload: body,\n  has_media: hasMedia,\n  media_processing_status: hasMedia ? 'pending' : 'none',\n};\n\nlet media_row = null;\nlet decrypt_request = null;\n\nif (hasMedia && messageKey) {\n  media_row = {\n    owner_email: OWNER_EMAIL,\n    owner_phone_num: OWNER_PHONE,\n    message_id: canonicalMessageId,\n    media_kind: mediaKind,\n    mime_type: mediaDetails.mimetype ?? null,\n    file_name: mediaDetails.fileName ?? null,\n    file_size: mediaDetails.fileLength != null ? Number(mediaDetails.fileLength) : null,\n    caption: normalizeText(mediaDetails.caption) ?? normalizeText(messages.messageBody),\n    encrypted_url: mediaDetails.url ?? null,\n    media_key: normalizeMediaKey(mediaDetails.mediaKey),\n    decrypt_status: 'pending',\n  };\n\n  const decryptMessageKey = DECRYPT_MESSAGE_KEY[messageKey] ?? messageKey;\n  const mediaBlock = buildDecryptMediaBlock(mediaDetails);\n\n  if (!mediaBlock.url || !mediaBlock.mediaKey) {\n    throw new Error(`Media missing url or mediaKey for ${messageKey}`);\n  }\n\n  decrypt_request = {\n    data: {\n      messages: {\n        key: {\n          id: canonicalMessageId,\n          remoteJid: key.remoteJid ?? undefined,\n          participant: key.participant ?? undefined,\n        },\n        message: { [decryptMessageKey]: mediaBlock },\n      },\n    },\n  };\n\n  if (body.sessionId) decrypt_request.sessionId = body.sessionId;\n}\n\nconst monitor = $('Postgres - get monitor settings for owner3').first()?.json ?? {};\nconst groupIds = Array.isArray(monitor.from_group_ids) ? monitor.from_group_ids.filter(Boolean) : [];\nconst contactJids = Array.isArray(monitor.from_contact_jids) ? monitor.from_contact_jids.filter(Boolean) : [];\n\nif (groupIds.length || contactJids.length) {\n  const jid = String(record.chat_jid ?? '');\n  const inScope = groupIds.includes(jid) || contactJids.includes(jid);\n  if (!inScope) {\n    return [{ json: { skipped: true, reason: 'chat_jid not in monitor from_group_ids/from_contact_jids', chat_jid: jid, owner_email: OWNER_EMAIL, event_type: event } }];\n  }\n}\n\nconst allowedTypes = Array.isArray(monitor.what_content_types) ? monitor.what_content_types.filter(Boolean) : [];\nif (allowedTypes.length && !allowedTypes.includes(contentType)) {\n  return [{ json: { skipped: true, reason: 'content_type not in monitor what_content_types', content_type: contentType, owner_email: OWNER_EMAIL, event_type: event } }];\n}\n\nreturn [{ json: { ...record, media_row, decrypt_request, monitor_settings: monitor, api_key: ctx.api_key } }];"
-        },
-        "id": "7e427a4b-affc-414d-9e5a-0a88c1696668",
-        "name": "Code - parse message & media type3",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          -2016,
-          288
-        ]
-      },
-      {
-        "parameters": {
-          "conditions": {
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "strict",
-              "version": 2
-            },
-            "conditions": [
-              {
-                "id": "in-scope",
-                "leftValue": "={{ $json.skipped }}",
-                "rightValue": true,
-                "operator": {
-                  "type": "boolean",
-                  "operation": "notEquals"
-                }
-              }
-            ],
-            "combinator": "and"
-          },
-          "options": {}
-        },
-        "id": "362ae925-5484-42ef-ab0e-081d20e523dc",
-        "name": "If - message in monitor scope3",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.2,
-        "position": [
-          -1888,
-          288
-        ]
-      },
-      {
-        "parameters": {
-          "assignments": {
-            "assignments": [
-              {
-                "id": "success",
-                "name": "success",
-                "value": true,
-                "type": "boolean"
-              },
-              {
-                "id": "action",
-                "name": "action",
-                "value": "skipped",
-                "type": "string"
-              },
-              {
-                "id": "reason",
-                "name": "reason",
-                "value": "={{ $json.reason ?? 'out of monitor scope' }}",
-                "type": "string"
-              },
-              {
-                "id": "owner_email",
-                "name": "owner_email",
-                "value": "={{ $json.owner_email ?? '' }}",
-                "type": "string"
-              },
-              {
-                "id": "chat_jid",
-                "name": "chat_jid",
-                "value": "={{ $json.chat_jid ?? '' }}",
-                "type": "string"
-              }
-            ]
-          },
-          "options": {}
-        },
-        "id": "943e565f-46c2-413d-a9b4-80ed9b961883",
-        "name": "Set - skipped monitor scope3",
-        "type": "n8n-nodes-base.set",
-        "typeVersion": 3.4,
-        "position": [
-          -1760,
-          448
-        ]
-      },
-      {
-        "parameters": {
-          "operation": "executeQuery",
-          "query": "INSERT INTO actionnow.whatsapp_messages (\n  owner_email, owner_phone_num, event_type, whatsapp_timestamp,\n  message_id, from_me, chat_jid, is_group, addressing_mode,\n  sender_pn, cleaned_sender_pn, sender_lid,\n  participant, participant_pn, cleaned_participant_pn, participant_lid,\n  sender_phone, sender_lid_resolved,\n  message_body, content_type, content_fingerprint, raw_payload, has_media, media_processing_status\n) VALUES (\n  $1, $2, $3, NULLIF($4, '')::bigint, $5, $6::boolean, $7, $8::boolean, NULLIF($9, ''),\n  NULLIF($10, ''), NULLIF($11, ''), NULLIF($12, ''),\n  NULLIF($13, ''), NULLIF($14, ''), NULLIF($15, ''), NULLIF($16, ''),\n  NULLIF($17, ''), NULLIF($18, ''),\n  NULLIF($19, ''), $20, NULLIF($21, ''), $22::jsonb, $23::boolean, $24\n)\nON CONFLICT (message_id) DO NOTHING\nRETURNING message_id;",
-          "options": {
-            "queryReplacement": "={{ [$json.owner_email, $json.owner_phone_num, $json.event_type, String($json.whatsapp_timestamp ?? ''), $json.message_id, $json.from_me, $json.chat_jid, $json.is_group, $json.addressing_mode ?? '', $json.sender_pn ?? '', $json.cleaned_sender_pn ?? '', $json.sender_lid ?? '', $json.participant ?? '', $json.participant_pn ?? '', $json.cleaned_participant_pn ?? '', $json.participant_lid ?? '', $json.sender_phone ?? '', $json.sender_lid_resolved ?? '', $json.message_body ?? '', $json.content_type, $json.content_fingerprint ?? '', JSON.stringify($json.raw_payload), $json.has_media, $json.media_processing_status] }}"
-          }
-        },
-        "id": "4c3bf1c2-997f-4da3-8873-c39bbc9c2d0f",
-        "name": "Postgres - upsert whatsapp_messages2",
-        "type": "n8n-nodes-base.postgres",
-        "typeVersion": 2.6,
-        "position": [
-          -1712,
-          288
-        ],
-        "alwaysOutputData": true,
-        "credentials": {
-          "postgres": {
-            "id": "UMW6mMpCtmfMWdKZ",
-            "name": "Arrowmatic supabase postgres"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "conditions": {
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "strict",
-              "version": 2
-            },
-            "conditions": [
-              {
-                "id": "has-media",
-                "leftValue": "={{ $('Code - parse message & media type3').item.json.has_media }}",
-                "rightValue": true,
-                "operator": {
-                  "type": "boolean",
-                  "operation": "true"
-                }
-              }
-            ],
-            "combinator": "and"
-          },
-          "options": {}
-        },
-        "id": "36da6786-c115-4ed3-a331-563df5f34324",
-        "name": "If - has media3",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.2,
-        "position": [
-          -1600,
-          288
-        ]
-      },
-      {
-        "parameters": {
-          "operation": "executeQuery",
-          "query": "INSERT INTO actionnow.whatsapp_message_media (\n  owner_email, owner_phone_num, message_id, media_kind, mime_type,\n  file_name, file_size, caption, encrypted_url, media_key,\n  storage_bucket, decrypt_status\n) VALUES (\n  $1, $2, $3, $4, NULLIF($5, ''), NULLIF($6, ''), NULLIF($7, '')::bigint,\n  NULLIF($8, ''), NULLIF($9, ''), NULLIF($10, ''), 'action-now', 'pending'\n)\nON CONFLICT (message_id) DO UPDATE SET\n  mime_type = EXCLUDED.mime_type,\n  file_name = EXCLUDED.file_name,\n  file_size = EXCLUDED.file_size,\n  caption = EXCLUDED.caption,\n  encrypted_url = EXCLUDED.encrypted_url,\n  media_key = EXCLUDED.media_key,\n  updated_date = now()\nRETURNING id, message_id, media_kind;",
-          "options": {
-            "queryReplacement": "={{ [$('Code - parse message & media type3').item.json.media_row.owner_email, $('Code - parse message & media type3').item.json.media_row.owner_phone_num, $('Code - parse message & media type3').item.json.media_row.message_id, $('Code - parse message & media type3').item.json.media_row.media_kind, $('Code - parse message & media type3').item.json.media_row.mime_type ?? '', $('Code - parse message & media type3').item.json.media_row.file_name ?? '', String($('Code - parse message & media type3').item.json.media_row.file_size ?? ''), $('Code - parse message & media type3').item.json.media_row.caption ?? '', $('Code - parse message & media type3').item.json.media_row.encrypted_url ?? '', $('Code - parse message & media type3').item.json.media_row.media_key ?? ''] }}"
-          }
-        },
-        "id": "c7bba2e7-1775-473a-b05d-5bc271c85bc8",
-        "name": "Postgres - upsert whatsapp_message_media2",
-        "type": "n8n-nodes-base.postgres",
-        "typeVersion": 2.6,
-        "position": [
-          -1360,
-          176
-        ],
-        "credentials": {
-          "postgres": {
-            "id": "UMW6mMpCtmfMWdKZ",
-            "name": "Arrowmatic supabase postgres"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "method": "POST",
-          "url": "https://www.wasenderapi.com/api/decrypt-media",
-          "sendHeaders": true,
-          "headerParameters": {
-            "parameters": [
-              {
-                "name": "Authorization",
-                "value": "=Bearer {{ $('Code - merge webhook owner context3').item.json.api_key }}"
-              },
-              {
-                "name": "Content-Type",
-                "value": "application/json"
-              }
-            ]
-          },
-          "sendBody": true,
-          "specifyBody": "json",
-          "jsonBody": "={{ JSON.stringify($('Code - parse message & media type3').item.json.decrypt_request) }}",
-          "options": {
-            "timeout": 30000
-          }
-        },
-        "id": "df2d30ce-b133-4850-a25c-0a002e0cd7a2",
-        "name": "Wasender - decrypt media3",
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.3,
-        "position": [
-          -1168,
-          144
-        ],
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "jsCode": "const parsed = $('Code - parse message & media type3').first().json;\nconst media = parsed.media_row;\nconst decrypt = $input.first().json;\nconst publicUrl = decrypt.publicUrl ?? decrypt.data?.publicUrl ?? null;\nconst decryptError =\n  decrypt.error ??\n  (decrypt.success === false ? (decrypt.message ?? JSON.stringify(decrypt)) : null);\n\nconst extMap = {\n  'image/jpeg': 'jpg',\n  'image/png': 'png',\n  'image/webp': 'webp',\n  'audio/ogg; codecs=opus': 'ogg',\n  'audio/ogg': 'ogg',\n  'audio/mpeg': 'mp3',\n  'audio/mp4': 'm4a',\n  'video/mp4': 'mp4',\n  'application/pdf': 'pdf',\n};\n\nconst mime = media?.mime_type ?? 'application/octet-stream';\nconst extFromName = media?.file_name?.includes('.') ? media.file_name.split('.').pop() : null;\nconst ext = extMap[mime] ?? extFromName ?? 'bin';\nconst phone = String(parsed.owner_phone_num ?? 'unknown').replace(/\\D/g, '');\nconst d = new Date();\n\n// message_id from WhatsApp + media fingerprint (unique per attachment, even with empty caption)\nconst tag = parsed.content_fingerprint ?? parsed.message_id.slice(-8);\nconst storage_path = `${phone}/${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${parsed.message_id}_${tag}.${ext}`;\n\nconst interpretationMap = {\n  audio: ['transcript'],\n  video: ['video_transcript'],\n  image: ['caption', 'ocr'],\n  document: ['document_text'],\n  sticker: ['caption'],\n};\n\nreturn [{\n  json: {\n    message_id: parsed.message_id,\n    public_url: publicUrl,\n    decrypt_error: decryptError,\n    storage_path,\n    storage_bucket: 'action-now',\n    mime_type: mime,\n    media_kind: parsed.content_type,\n    content_fingerprint: parsed.content_fingerprint,\n    owner_email: parsed.owner_email,\n    owner_phone_num: parsed.owner_phone_num,\n    interpretation_types: interpretationMap[parsed.content_type] ?? [],\n  },\n}];"
-        },
-        "id": "b8125e4a-e172-4a6e-b789-48688b042e63",
-        "name": "Code - prepare storage & decrypt2",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          -992,
-          16
-        ]
-      },
-      {
-        "parameters": {
-          "operation": "executeQuery",
-          "query": "UPDATE actionnow.whatsapp_message_media\nSET\n  decrypt_public_url = NULLIF($1, ''),\n  decrypt_status = CASE WHEN NULLIF($1, '') IS NOT NULL THEN 'decrypted' WHEN NULLIF($3, '') IS NOT NULL THEN 'failed' ELSE 'failed' END,\n  decrypt_expires_at = CASE WHEN NULLIF($1, '') IS NOT NULL THEN now() + interval '1 hour' ELSE NULL END,\n  error_message = COALESCE(NULLIF($3, ''), CASE WHEN NULLIF($1, '') IS NULL THEN 'decrypt API did not return publicUrl' ELSE NULL END),\n  updated_date = now()\nWHERE message_id = $2;\n\nUPDATE actionnow.whatsapp_messages\nSET media_processing_status = CASE WHEN NULLIF($1, '') IS NOT NULL THEN 'processing' ELSE 'failed' END\nWHERE message_id = $2;",
-          "options": {
-            "queryReplacement": "={{ [$json.public_url ?? '', $json.message_id, $json.decrypt_error ?? ''] }}"
-          }
-        },
-        "id": "91e8effb-d335-45f1-adf5-049a8440daae",
-        "name": "Postgres - update media decrypt url3",
-        "type": "n8n-nodes-base.postgres",
-        "typeVersion": 2.6,
-        "position": [
-          -848,
-          176
-        ],
-        "credentials": {
-          "postgres": {
-            "id": "UMW6mMpCtmfMWdKZ",
-            "name": "Arrowmatic supabase postgres"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "conditions": {
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "strict",
-              "version": 2
-            },
-            "conditions": [
-              {
-                "id": "has-url",
-                "leftValue": "={{ $('Code - prepare storage & decrypt2').item.json.public_url }}",
-                "rightValue": "",
-                "operator": {
-                  "type": "string",
-                  "operation": "notEmpty"
-                }
-              }
-            ],
-            "combinator": "and"
-          },
-          "options": {}
-        },
-        "id": "4a2412c4-a431-41ce-81ae-3882d6fb7ef1",
-        "name": "If - decrypt url ready2",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.2,
-        "position": [
-          -640,
-          128
-        ]
-      },
-      {
-        "parameters": {
-          "url": "={{ $('Code - prepare storage & decrypt2').item.json.public_url }}",
-          "options": {
-            "redirect": {
-              "redirect": {
-                "maxRedirects": 10
-              }
-            },
-            "response": {
-              "response": {
-                "neverError": true,
-                "responseFormat": "file"
-              }
-            },
-            "timeout": 60000
-          }
-        },
-        "id": "2862ce8c-ada3-4514-be81-f9edd7507c0f",
-        "name": "HTTP - download decrypted media2",
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.3,
-        "position": [
-          -400,
-          48
-        ],
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "operation": "upload",
-          "bucketName": "action-now",
-          "fileName": "={{ $('Code - prepare storage & decrypt2').item.json.storage_path }}",
-          "additionalFields": {}
-        },
-        "id": "cf228802-1a4e-4f21-b0d7-e4056a43384e",
-        "name": "S3 - upload to Supabase action-now2",
-        "type": "n8n-nodes-base.s3",
-        "typeVersion": 1,
-        "position": [
-          -160,
-          48
-        ],
-        "credentials": {
-          "s3": {
-            "id": "teaHZrtYXkqaZXiX",
-            "name": "S3 account"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "operation": "executeQuery",
-          "query": "UPDATE actionnow.whatsapp_message_media\nSET\n  storage_bucket = 'action-now',\n  storage_path = $1,\n  storage_url = $2,\n  decrypt_status = 'stored',\n  updated_date = now()\nWHERE message_id = $3;\n\nUPDATE actionnow.whatsapp_messages\nSET media_processing_status = 'done'\nWHERE message_id = $3;",
-          "options": {
-            "queryReplacement": "={{ [$('Code - prepare storage & decrypt2').item.json.storage_path, 'https://edqhawzttjqhpfflzprb.supabase.co/storage/v1/object/action-now/' + $('Code - prepare storage & decrypt2').item.json.storage_path, $('Code - prepare storage & decrypt2').item.json.message_id] }}"
-          }
-        },
-        "id": "4f2896a0-38ef-4b1d-a255-d04bdc54ccfb",
-        "name": "Postgres - update storage path2",
-        "type": "n8n-nodes-base.postgres",
-        "typeVersion": 2.6,
-        "position": [
-          80,
-          48
-        ],
-        "credentials": {
-          "postgres": {
-            "id": "UMW6mMpCtmfMWdKZ",
-            "name": "Arrowmatic supabase postgres"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "jsCode": "const storage = $('Code - prepare storage & decrypt2').first().json;\nconst mediaRow = $('Postgres - upsert whatsapp_message_media2').first().json;\nconst mediaId = mediaRow?.id;\n\nif (!mediaId) {\n  return [];\n}\n\nconst types = storage.interpretation_types ?? [];\n\nreturn types.map((interpretation_type) => ({\n  json: {\n    media_id: mediaId,\n    message_id: storage.message_id,\n    owner_email: storage.owner_email,\n    owner_phone_num: storage.owner_phone_num,\n    interpretation_type,\n    status: 'pending',\n    media_kind: storage.media_kind,\n    storage_path: storage.storage_path,\n  },\n}));"
-        },
-        "id": "69009b38-a0cc-4883-ab8d-98604a25bd97",
-        "name": "Code - queue interpretation jobs2",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          2336,
-          48
-        ]
-      },
-      {
-        "parameters": {
-          "operation": "executeQuery",
-          "query": "INSERT INTO actionnow.whatsapp_media_interpretations (\n  media_id, message_id, owner_email, owner_phone_num,\n  interpretation_type, status\n) VALUES (\n  $1::uuid, $2, $3, $4, $5, 'pending'\n)\nON CONFLICT (media_id, interpretation_type) DO NOTHING\nRETURNING id, interpretation_type;",
-          "options": {
-            "queryReplacement": "={{ [$json.media_id, $json.message_id, $json.owner_email, $json.owner_phone_num, $json.interpretation_type] }}"
-          }
-        },
-        "id": "df1d8b94-6354-4837-b9db-36e37006018d",
-        "name": "Postgres - insert interpretation pending2",
-        "type": "n8n-nodes-base.postgres",
-        "typeVersion": 2.6,
-        "position": [
-          2576,
-          48
-        ],
-        "credentials": {
-          "postgres": {
-            "id": "UMW6mMpCtmfMWdKZ",
-            "name": "Arrowmatic supabase postgres"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "assignments": {
-            "assignments": [
-              {
-                "id": "ok",
-                "name": "success",
-                "value": true,
-                "type": "boolean"
-              },
-              {
-                "id": "saved",
-                "name": "action",
-                "value": "saved",
-                "type": "string"
-              },
-              {
-                "id": "mid",
-                "name": "message_id",
-                "value": "={{ $('Code - parse message & media type3').item.json.message_id }}",
-                "type": "string"
-              },
-              {
-                "id": "ctype",
-                "name": "content_type",
-                "value": "={{ $('Code - parse message & media type3').item.json.content_type }}",
-                "type": "string"
-              },
-              {
-                "id": "grp",
-                "name": "is_group",
-                "value": "={{ $('Code - parse message & media type3').item.json.is_group }}",
-                "type": "boolean"
-              },
-              {
-                "id": "media",
-                "name": "has_media",
-                "value": "={{ $('Code - parse message & media type3').item.json.has_media }}",
-                "type": "boolean"
-              }
-            ]
-          },
-          "options": {}
-        },
-        "id": "1776e772-c852-42bf-8dfb-895264d77895",
-        "name": "Set - saved response3",
-        "type": "n8n-nodes-base.set",
-        "typeVersion": 3.4,
-        "position": [
-          1280,
-          288
-        ]
-      },
-      {
-        "parameters": {
-          "respondWith": "json",
-          "responseBody": "={{ $json }}",
-          "options": {}
-        },
-        "id": "f3a6d26d-a46d-4d1b-8786-744e0814a8d5",
-        "name": "Respond to Webhook9",
-        "type": "n8n-nodes-base.respondToWebhook",
-        "typeVersion": 1.5,
-        "position": [
-          1520,
-          496
-        ]
-      },
-      {
-        "parameters": {
-          "jsCode": "const storage = $('Code - prepare storage & decrypt2').first().json;\nconst parsed = $('Code - parse message & media type3').first().json;\nconst monitor = parsed.monitor_settings ?? $('Postgres - get monitor settings for owner3').first()?.json ?? {};\nconst item = $input.first();\n\nif (!item.binary?.data) {\n  return [{ json: { skipped: true, reason: 'No image binary on item — check HTTP download outputPropertyName=data' } }];\n}\n\nconst keywords = (monitor.what_content_keywords ?? []).filter(Boolean).join(', ') || 'none specified';\nconst monitorName = monitor.monitor_name ?? 'monitoring';\nconst contentTypes = (monitor.what_content_types ?? []).filter(Boolean).join(', ') || 'all';\nconst caption = parsed.message_body ?? '';\n\nconst llm_prompt = `You are an expert alert manager for \"${monitorName}\" (owner: ${storage.owner_email}).\\nWatch for keywords: ${keywords}.\\nContent types of interest: ${contentTypes}.\\nWhatsApp caption/context: ${caption || 'n/a'}\\n\\nAnalyze this WhatsApp image. Be vividly specific about what you see. Return plain text with sections:\\nSCENE: what is shown\\nTEXT: all visible text (OCR)\\nALERTS: issues, hazards, complaints, or items matching the keywords above\\nKeep it verbose but focused on the monitoring context.`;\n\nreturn [{\n  json: {\n    message_id: storage.message_id,\n    owner_email: storage.owner_email,\n    owner_phone_num: storage.owner_phone_num,\n    model_name: 'google/gemini-2.5-flash-preview',\n    llm_prompt,\n  },\n  binary: item.binary,\n}];"
-        },
-        "name": "Code - pass image binary to LLM2",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          48,
-          624
-        ],
-        "id": "6b7ea5cd-d653-426f-bc83-a118a34492e8"
-      },
-      {
-        "parameters": {
-          "model": "google/gemini-2.5-flash-image",
-          "options": {}
-        },
-        "name": "OpenRouter Chat Model (image)2",
-        "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
-        "typeVersion": 1,
-        "position": [
-          240,
-          784
-        ],
-        "id": "d2be10e1-7f98-4d9f-8206-cc3cf7f1de46",
-        "credentials": {
-          "openRouterApi": {
-            "id": "HHHmAsaHSSyV3wgO",
-            "name": "OpenRouter account"
-          }
-        }
-      },
-      {
-        "parameters": {
-          "promptType": "define",
-          "text": "={{ $json.llm_prompt }}",
-          "messages": {
-            "messageValues": [
-              {
-                "type": "HumanMessagePromptTemplate",
-                "messageType": "imageBinary",
-                "imageDetail": "high"
-              }
-            ]
-          }
-        },
-        "name": "Basic LLM Chain - decode image2",
-        "type": "@n8n/n8n-nodes-langchain.chainLlm",
-        "typeVersion": 1.6,
-        "position": [
-          240,
-          608
-        ],
-        "id": "ab397719-424d-4de8-b6df-dd29d6555c22"
-      },
-      {
-        "parameters": {
-          "jsCode": "const prep = $('Code - pass image binary to LLM2').first().json;\nconst res = $input.first().json;\n\nconst text = res.text ?? res.response ?? res.output ?? '';\n\nif (!text) {\n  return [{ json: { skipped: true, reason: 'LLM Chain returned no text', raw: res } }];\n}\n\nreturn [{\n  json: {\n    message_id: prep.message_id,\n    content: String(text).trim(),\n    model_name: prep.model_name,\n  },\n}];"
-        },
-        "name": "Code - parse image response2",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          544,
-          608
-        ],
-        "id": "55765f6b-6943-48c4-ba6b-3a9f49eaecb9"
-      },
-      {
-        "parameters": {
-          "jsCode": "const storage = $('Code - prepare storage & decrypt2').first().json;\nconst parsed = $('Code - parse message & media type3').first().json;\nconst item = $input.first();\n\nif (!item.binary?.data) {\n  return [{ json: { skipped: true, reason: 'No document binary — check HTTP download outputPropertyName=data' } }];\n}\n\nconst mime = (storage.mime_type ?? 'application/octet-stream').toLowerCase();\nconst fileName = parsed.media_row?.file_name ?? 'document.bin';\nconst model_name = 'google/gemini-2.5-flash-preview';\n\nconst base = {\n  message_id: storage.message_id,\n  owner_email: storage.owner_email,\n  owner_phone_num: storage.owner_phone_num,\n  file_name: fileName,\n  mime_type: mime,\n  model_name,\n};\n\nconst isPlainText =\n  mime.startsWith('text/') ||\n  mime === 'application/json' ||\n  /\\.(txt|csv|md|json|log)$/i.test(fileName);\n\nif (isPlainText) {\n  const buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\n  const plain_text = buffer.toString('utf8').trim();\n  if (!plain_text) {\n    return [{ json: { ...base, skipped: true, reason: 'Text file is empty' } }];\n  }\n  return [{ json: { ...base, plain_text, needs_extract: false, source: 'utf8' } }];\n}\n\nreturn [{\n  json: { ...base, needs_extract: true, source: 'binary' },\n  binary: item.binary,\n}];"
-        },
-        "id": "2c54da0f-9a73-433f-9eea-dd558cc42ec2",
-        "name": "Code - read document text2",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          -352,
-          1584
-        ]
-      },
-      {
-        "parameters": {
-          "conditions": {
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "strict",
-              "version": 2
-            },
-            "conditions": [
-              {
-                "id": "needs-extract",
-                "leftValue": "={{ $json.needs_extract }}",
-                "rightValue": true,
-                "operator": {
-                  "type": "boolean",
-                  "operation": "true"
-                }
-              }
-            ],
-            "combinator": "and"
-          },
-          "options": {}
-        },
-        "id": "4215cb3a-2708-4985-bdd9-e80fbc172c01",
-        "name": "If - needs PDF extract2",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.2,
-        "position": [
-          -112,
-          1584
-        ]
-      },
-      {
-        "parameters": {
-          "operation": "pdf",
-          "options": {}
-        },
-        "id": "12fa322e-0640-4595-923b-a9cb1965aa41",
-        "name": "Extract From File - document2",
-        "type": "n8n-nodes-base.extractFromFile",
-        "typeVersion": 1,
-        "position": [
-          128,
-          1488
-        ]
-      },
-      {
-        "parameters": {
-          "jsCode": "const reader = $('Code - read document text2').first().json;\nconst parsed = $('Code - parse message & media type3').first().json;\nconst monitor = parsed.monitor_settings ?? $('Postgres - get monitor settings for owner3').first()?.json ?? {};\nconst item = $input.first().json;\n\nlet plain_text = reader.plain_text ?? '';\n\nif (reader.needs_extract) {\n  plain_text = String(item.text ?? item.data ?? '').trim();\n}\n\nif (!plain_text) {\n  return [{\n    json: {\n      skipped: true,\n      reason: 'No text extracted — PDF may be scanned/image-only; try OpenRouter file fallback or OCR',\n      message_id: reader.message_id,\n      file_name: reader.file_name,\n    },\n  }];\n}\n\nconst keywords = (monitor.what_content_keywords ?? []).filter(Boolean).join(', ') || 'none specified';\nconst monitorName = monitor.monitor_name ?? 'monitoring';\nconst contentTypes = (monitor.what_content_types ?? []).filter(Boolean).join(', ') || 'all';\nconst caption = parsed.message_body ?? '';\n\nconst llm_prompt = `Analyze this WhatsApp document for business monitoring (\"${monitorName}\", owner: ${reader.owner_email}).\\nWatch for keywords: ${keywords}.\\nContent types of interest: ${contentTypes}.\\nWhatsApp caption/context: ${caption || 'n/a'}\\n\\nReturn plain text with sections:\\nSUMMARY: main points\\nKEY TEXT: important names, dates, amounts, references\\nALERTS: issues, deadlines, complaints, or items matching the keywords above\\n\\n--- DOCUMENT ---\\n${plain_text}`;\n\nreturn [{\n  json: {\n    message_id: reader.message_id,\n    owner_email: reader.owner_email,\n    owner_phone_num: reader.owner_phone_num,\n    plain_text,\n    model_name: reader.model_name,\n    source: reader.source,\n    llm_prompt,\n  },\n}];"
-        },
-        "id": "d6f6fd27-abca-4569-8859-8b902c766565",
-        "name": "Code - pass document text to LLM2",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          368,
-          1584
-        ]
-      },
-      {
-        "parameters": {
-          "model": "google/gemini-2.5-flash",
-          "options": {}
-        },
-        "id": "7279548d-14d5-441e-9f8e-2d33dfc0bf21",
-        "name": "OpenRouter Chat Model (document)2",
-        "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
-        "typeVersion": 1,
-        "position": [
-          560,
-          1744
-        ],
-        "credentials": {
-          "openRouterApi": {
-            "id": "HHHmAsaHSSyV3wgO",
-            "name": "OpenRouter account"
-          }
-        }
-      },
-      {
-        "parameters": {
-          "promptType": "define",
-          "text": "={{ $json.llm_prompt }}"
-        },
-        "id": "541a520f-77a0-4e6c-b7ec-cf3f3ae6c357",
-        "name": "Basic LLM Chain - analyze document2",
-        "type": "@n8n/n8n-nodes-langchain.chainLlm",
-        "typeVersion": 1.6,
-        "position": [
-          560,
-          1568
-        ]
-      },
-      {
-        "parameters": {
-          "conditions": {
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "strict",
-              "version": 2
-            },
-            "conditions": [
-              {
-                "id": "is-document",
-                "leftValue": "={{ $('Code - prepare storage & decrypt2').item.json.media_kind }}",
-                "rightValue": "document",
-                "operator": {
-                  "type": "string",
-                  "operation": "equals"
-                }
-              }
-            ],
-            "combinator": "and"
-          },
-          "options": {}
-        },
-        "id": "37a2f088-7c98-448b-baf5-39bc2bbe9cfb",
-        "name": "If - is document2",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.2,
-        "position": [
-          -592,
-          1568
-        ]
-      },
-      {
-        "parameters": {
-          "jsCode": "const prep = $('Code - pass document text to LLM2').first().json;\nconst res = $input.first().json;\n\nconst text = res.text ?? res.response ?? res.output ?? '';\n\nif (!text) {\n  return [{ json: { skipped: true, reason: 'LLM Chain returned no text', raw: res } }];\n}\n\nreturn [{\n  json: {\n    message_id: prep.message_id,\n    content: String(text).trim(),\n    model_name: prep.model_name,\n  },\n}];"
-        },
-        "id": "4cbcd9c2-7542-49e9-b7dc-9bd927e4d4cf",
-        "name": "Code - parse document response2",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          832,
-          1568
-        ]
-      },
-      {
-        "parameters": {
-          "operation": "executeQuery",
-          "query": "INSERT INTO actionnow.whatsapp_media_interpretations (\n  media_id, message_id, owner_email, owner_phone_num,\n  interpretation_type, content, status, model_provider, model_name\n)\nSELECT\n  wm.id, wm.message_id, wm.owner_email, wm.owner_phone_num,\n  'document_text', $1, 'done', 'openrouter', $2\nFROM actionnow.whatsapp_message_media wm\nWHERE wm.message_id = $3\nON CONFLICT (media_id, interpretation_type) DO UPDATE SET\n  content = EXCLUDED.content,\n  status = 'done',\n  model_provider = EXCLUDED.model_provider,\n  model_name = EXCLUDED.model_name,\n  error_message = NULL,\n  updated_date = now()\nRETURNING id, interpretation_type, left(content, 80) AS preview;",
-          "options": {
-            "queryReplacement": "={{ [$json.content, $json.model_name, $json.message_id] }}"
-          }
-        },
-        "id": "6ca2b4bb-a096-44c4-a4a9-4bb8022f9a33",
-        "name": "Postgres - save document interpretation2",
-        "type": "n8n-nodes-base.postgres",
-        "typeVersion": 2.6,
-        "position": [
-          1040,
-          1568
-        ],
-        "credentials": {
-          "postgres": {
-            "id": "UMW6mMpCtmfMWdKZ",
-            "name": "Arrowmatic supabase postgres"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "content": "## Doc",
-          "height": 80,
-          "width": 150
-        },
-        "type": "n8n-nodes-base.stickyNote",
-        "position": [
-          -592,
-          1456
-        ],
-        "typeVersion": 1,
-        "id": "ab9eafaf-ea07-4c1d-b332-5abe56c98435",
-        "name": "Sticky Note11"
-      },
-      {
-        "parameters": {
-          "content": "## Image",
-          "height": 80,
-          "width": 150
-        },
-        "type": "n8n-nodes-base.stickyNote",
-        "position": [
-          -272,
-          704
-        ],
-        "typeVersion": 1,
-        "id": "4433c5e8-36cd-477b-9333-7617b9835eb4",
-        "name": "Sticky Note12"
-      },
-      {
-        "parameters": {
-          "content": "## Audio",
-          "height": 80,
-          "width": 150
-        },
-        "type": "n8n-nodes-base.stickyNote",
-        "position": [
-          -160,
-          256
-        ],
-        "typeVersion": 1,
-        "id": "31f28756-38ca-46a2-89a6-46d24858b801",
-        "name": "Sticky Note13"
-      },
-      {
-        "parameters": {
-          "content": "##Shared media ",
-          "height": 80,
-          "width": 150
-        },
-        "type": "n8n-nodes-base.stickyNote",
-        "position": [
-          -192,
-          -48
-        ],
-        "typeVersion": 1,
-        "id": "51ee0f37-f536-4e2f-b42e-b0991dbac766",
-        "name": "Sticky Note14"
-      },
-      {
-        "parameters": {
-          "content": "# whatsapp webhook",
-          "height": 80,
-          "width": 560
-        },
-        "type": "n8n-nodes-base.stickyNote",
-        "position": [
-          -2608,
-          80
-        ],
-        "typeVersion": 1,
-        "id": "3d19b038-1163-4ff8-8039-314be5b74219",
-        "name": "Sticky Note15"
-      },
-      {
-        "parameters": {},
-        "type": "n8n-nodes-base.noOp",
-        "typeVersion": 1,
-        "position": [
-          -32,
-          480
-        ],
-        "id": "9f943992-5dba-4718-910a-d56660d80f70",
-        "name": "No Operation, do nothing"
-      },
-      {
-        "parameters": {},
-        "type": "n8n-nodes-base.noOp",
-        "typeVersion": 1,
-        "position": [
-          -272,
-          1888
-        ],
-        "id": "b690a2f3-d70c-406e-9888-3406440ddf9b",
-        "name": "No Operation, do nothing1"
-      }
-    ],
-    "connections": {
-      "If - is audio2": {
-        "main": [
-          [
+          "conditions": [
             {
-              "node": "Code - prepare Chirp 3 base65",
-              "type": "main",
-              "index": 0
+              "id": "is-audio",
+              "leftValue": "={{ $('Code - prepare storage & decrypt2').item.json.media_kind }}",
+              "rightValue": "audio",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ],
-          [
-            {
-              "node": "No Operation, do nothing",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
+          "combinator": "and"
+        },
+        "options": {}
       },
-      "Code - prepare Chirp 3 base65": {
-        "main": [
-          [
-            {
-              "node": "OpenRouter - Chirp 3 transcript2",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "OpenRouter - Chirp 3 transcript2": {
-        "main": [
-          [
-            {
-              "node": "Code - parse Chirp 3 response2",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Code - parse Chirp 3 response2": {
-        "main": [
-          [
-            {
-              "node": "Postgres - save Chirp 3 transcript2",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Postgres - save Chirp 3 transcript2": {
-        "main": [
-          [
-            {
-              "node": "Set - saved response3",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "If - is image2": {
-        "main": [
-          [
-            {
-              "node": "Code - pass image binary to LLM2",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          [
-            {
-              "node": "Respond to Webhook9",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Postgres - save image interpretation2": {
-        "main": [
-          [
-            {
-              "node": "Set - saved response3",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Webhook - receive whatsapp3": {
-        "main": [
-          [
-            {
-              "node": "Switch - message events only3",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Switch - message events only3": {
-        "main": [
-          [
-            {
-              "node": "Postgres - resolve owner from webhook3",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          [
-            {
-              "node": "Postgres - resolve owner from webhook3",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          [
-            {
-              "node": "Postgres - resolve owner from webhook3",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          [
-            {
-              "node": "Set - ignored event3",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Set - ignored event3": {
-        "main": [
-          [
-            {
-              "node": "Respond to Webhook9",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Postgres - resolve owner from webhook3": {
-        "main": [
-          [
-            {
-              "node": "Code - merge webhook owner context3",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Code - merge webhook owner context3": {
-        "main": [
-          [
-            {
-              "node": "Postgres - get monitor settings for owner3",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Postgres - get monitor settings for owner3": {
-        "main": [
-          [
-            {
-              "node": "Code - parse message & media type3",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Code - parse message & media type3": {
-        "main": [
-          [
-            {
-              "node": "If - message in monitor scope3",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "If - message in monitor scope3": {
-        "main": [
-          [
-            {
-              "node": "Postgres - upsert whatsapp_messages2",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          [
-            {
-              "node": "Set - skipped monitor scope3",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Set - skipped monitor scope3": {
-        "main": [
-          [
-            {
-              "node": "Respond to Webhook9",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Postgres - upsert whatsapp_messages2": {
-        "main": [
-          [
-            {
-              "node": "If - has media3",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "If - has media3": {
-        "main": [
-          [
-            {
-              "node": "Postgres - upsert whatsapp_message_media2",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          [
-            {
-              "node": "Set - saved response3",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Postgres - upsert whatsapp_message_media2": {
-        "main": [
-          [
-            {
-              "node": "Wasender - decrypt media3",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Wasender - decrypt media3": {
-        "main": [
-          [
-            {
-              "node": "Code - prepare storage & decrypt2",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Code - prepare storage & decrypt2": {
-        "main": [
-          [
-            {
-              "node": "Postgres - update media decrypt url3",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Postgres - update media decrypt url3": {
-        "main": [
-          [
-            {
-              "node": "If - decrypt url ready2",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "If - decrypt url ready2": {
-        "main": [
-          [
-            {
-              "node": "HTTP - download decrypted media2",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          [
-            {
-              "node": "Set - saved response3",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "HTTP - download decrypted media2": {
-        "main": [
-          [
-            {
-              "node": "S3 - upload to Supabase action-now2",
-              "type": "main",
-              "index": 0
-            },
-            {
-              "node": "If - is audio2",
-              "type": "main",
-              "index": 0
-            },
-            {
-              "node": "If - is image2",
-              "type": "main",
-              "index": 0
-            },
-            {
-              "node": "If - is document2",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "S3 - upload to Supabase action-now2": {
-        "main": [
-          [
-            {
-              "node": "Postgres - update storage path2",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Postgres - update storage path2": {
-        "main": [
-          [
-            {
-              "node": "Code - queue interpretation jobs2",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Code - queue interpretation jobs2": {
-        "main": [
-          [
-            {
-              "node": "Postgres - insert interpretation pending2",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Postgres - insert interpretation pending2": {
-        "main": [
-          [
-            {
-              "node": "Set - saved response3",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Set - saved response3": {
-        "main": [
-          [
-            {
-              "node": "Respond to Webhook9",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Code - pass image binary to LLM2": {
-        "main": [
-          [
-            {
-              "node": "Basic LLM Chain - decode image2",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "OpenRouter Chat Model (image)2": {
-        "ai_languageModel": [
-          [
-            {
-              "node": "Basic LLM Chain - decode image2",
-              "type": "ai_languageModel",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Basic LLM Chain - decode image2": {
-        "main": [
-          [
-            {
-              "node": "Code - parse image response2",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Code - parse image response2": {
-        "main": [
-          [
-            {
-              "node": "Postgres - save image interpretation2",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Code - read document text2": {
-        "main": [
-          [
-            {
-              "node": "If - needs PDF extract2",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "If - needs PDF extract2": {
-        "main": [
-          [
-            {
-              "node": "Extract From File - document2",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          [
-            {
-              "node": "Code - pass document text to LLM2",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Extract From File - document2": {
-        "main": [
-          [
-            {
-              "node": "Code - pass document text to LLM2",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Code - pass document text to LLM2": {
-        "main": [
-          [
-            {
-              "node": "Basic LLM Chain - analyze document2",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "OpenRouter Chat Model (document)2": {
-        "ai_languageModel": [
-          [
-            {
-              "node": "Basic LLM Chain - analyze document2",
-              "type": "ai_languageModel",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Basic LLM Chain - analyze document2": {
-        "main": [
-          [
-            {
-              "node": "Code - parse document response2",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "If - is document2": {
-        "main": [
-          [
-            {
-              "node": "Code - read document text2",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          [
-            {
-              "node": "No Operation, do nothing1",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Code - parse document response2": {
-        "main": [
-          [
-            {
-              "node": "Postgres - save document interpretation2",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Postgres - save document interpretation2": {
-        "main": [
-          [
-            {
-              "node": "Respond to Webhook9",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      }
-    },
-    "pinData": {
-      "Webhook - receive whatsapp3": [
-        {
-          "headers": {
-            "host": "arrowmatics.app.n8n.cloud",
-            "user-agent": "axios/1.16.1",
-            "content-length": "1485",
-            "accept": "application/json, text/plain, */*",
-            "accept-encoding": "gzip, br",
-            "cdn-loop": "cloudflare; loops=1; subreqs=1",
-            "cf-connecting-ip": "2a02:4780:2d:a509::1",
-            "cf-ew-via": "15",
-            "cf-ipcountry": "US",
-            "cf-ray": "a083db8a5cbb4cc6-BOS",
-            "cf-visitor": "{\"scheme\":\"https\"}",
-            "cf-worker": "n8n.cloud",
-            "content-type": "application/json",
-            "x-forwarded-for": "2a02:4780:2d:a509::1, 172.68.54.113",
-            "x-forwarded-host": "arrowmatics.app.n8n.cloud",
-            "x-forwarded-port": "443",
-            "x-forwarded-proto": "https",
-            "x-forwarded-server": "traefik-prod-users-gwc-82-65d5995466-wbrzx",
-            "x-is-trusted": "yes",
-            "x-real-ip": "2a02:4780:2d:a509::1",
-            "x-webhook-secret": "61d00192bcac0574893f6c1258150a83",
-            "x-webhook-signature": "61d00192bcac0574893f6c1258150a83"
-          },
-          "params": {},
-          "query": {},
-          "body": {
-            "event": "messages-group.received",
-            "sessionId": "2ab96616cbd8c3188e780683082a050fa059d762ea79cd7c6c8c11e26be2babb",
-            "data": {
-              "messages": {
-                "key": {
-                  "id": "3EB080B9AF3E3AC233F2C1",
-                  "fromMe": false,
-                  "remoteJid": "120363409988615072@g.us",
-                  "participant": "218807914250471@lid",
-                  "participantPn": "60103369433@s.whatsapp.net",
-                  "cleanedParticipantPn": "60103369433",
-                  "participantLid": "218807914250471@lid",
-                  "addressingMode": "lid"
-                },
-                "messageTimestamp": 1780879356,
-                "pushName": "Suarify Sdn Bhd",
-                "broadcast": false,
-                "message": {
-                  "audioMessage": {
-                    "url": "https://mmg.whatsapp.net/v/t62.7117-24/719308774_1028162913055967_4667757335535394879_n.enc?ccb=11-4&oh=01_Q5Aa4wETHceaTDLCdWg3C8edeL-FjXVQ5-zaoO54HXuhX_Uq1Q&oe=6A4D6F37&_nc_sid=5e03e0&mms3=true",
-                    "mimetype": "audio/ogg; codecs=opus",
-                    "fileSha256": "wTc5WMLOzG42DrA3yRUG27gAXLjoDRnvB7vsBZZcUrg=",
-                    "fileLength": "13072",
-                    "seconds": 6,
-                    "ptt": true,
-                    "mediaKey": "rmxa/Cylb/lvgYnATHE0hi3FJeLB/S8Cb4BkMuV5DUA=",
-                    "fileEncSha256": "PYwvr5P1L5nN9NZZr6oGnzOirIw61pbL2ZDWEOl5GeI=",
-                    "directPath": "/v/t62.7117-24/719308774_1028162913055967_4667757335535394879_n.enc?ccb=11-4&oh=01_Q5Aa4wETHceaTDLCdWg3C8edeL-FjXVQ5-zaoO54HXuhX_Uq1Q&oe=6A4D6F37&_nc_sid=5e03e0",
-                    "mediaKeyTimestamp": "1780879355",
-                    "waveform": "AAAkMDImHhAFCgUNDAwTBAQqPTxARkNCOi1KPh8aHB4pKSArHREhFBMOERANDQoHEBUSEhISCxMNCQ4QEw0NDA==",
-                    "viewOnce": false
-                  },
-                  "messageContextInfo": {
-                    "messageSecret": "WZQrvGO7DilGyRi72nFYdea7vqBTFlBMtaXAL1QM7b8="
-                  }
-                },
-                "remoteJid": "120363409988615072@g.us",
-                "id": "3EB080B9AF3E3AC233F2C1"
-              }
-            },
-            "timestamp": 1780879356431
-          },
-          "webhookUrl": "https://arrowmatics.app.n8n.cloud/webhook/actionnow-receive-whatsapp",
-          "executionMode": "production"
-        }
+      "id": "41dcdf1b-8ac1-4d1a-b5ec-4a75826521a4",
+      "name": "If - is audio2",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -176,
+        352
       ]
     },
-    "meta": {
-      "instanceId": "f5c9600193afd1d3ab92a54a0de2f82d56566faf5c6d6e2302f937327546ecf0"
+    {
+      "parameters": {
+        "jsCode": "const storage = $('Code - prepare storage & decrypt2').first().json;\nconst item = $input.first();\n\nif (!item.binary?.data) {\n  return [{ json: { skipped: true, reason: 'No audio binary — download may have failed or message is not audio' } }];\n}\n\nconst buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst base64 = buffer.toString('base64');\n\nconst mime = (storage.mime_type ?? '').toLowerCase();\nconst formatMap = [\n  ['ogg', 'ogg'],\n  ['opus', 'ogg'],\n  ['mpeg', 'mp3'],\n  ['mp3', 'mp3'],\n  ['m4a', 'm4a'],\n  ['mp4', 'm4a'],\n  ['wav', 'wav'],\n  ['webm', 'webm'],\n  ['aac', 'aac'],\n  ['flac', 'flac'],\n];\n\nlet format = 'ogg';\nfor (const [needle, fmt] of formatMap) {\n  if (mime.includes(needle)) {\n    format = fmt;\n    break;\n  }\n}\n\nreturn [{\n  json: {\n    message_id: storage.message_id,\n    owner_email: storage.owner_email,\n    owner_phone_num: storage.owner_phone_num,\n    media_kind: storage.media_kind,\n    chirp_body: {\n       model: 'google/chirp-3',\n       // model:'microsoft/mai-transcribe-1.5',\n       // \"language\": \"my-MM\",\n  // \"language\": \"my\",\n    \"temperature\": 0.2,\n         // \"model\": \"openai/whisper-large-v3-turbo\",  \n      // \"model\": \"openai/whisper-large-v3\",\n      input_audio: {\n        data: base64,\n        format,\n      },\n    },\n  },\n}];"
+      },
+      "id": "41c77d1b-7f66-4074-8616-b6b2a2c84cfb",
+      "name": "Code - prepare Chirp 3 base65",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/audio/transcriptions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "=\n{{ JSON.stringify($json.chirp_body) }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "bc2317d6-b6e4-49e3-9efd-633b6f0a9fb9",
+      "name": "OpenRouter - Chirp 3 transcript2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        304,
+        368
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "H7RCLIzoxRcf3Grs",
+          "name": "action now Header Auth account"
+        },
+        "httpBearerAuth": {
+          "id": "yl6LfoVa7R43Howt",
+          "name": "action now beaerauth"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prep = $('Code - prepare Chirp 3 base65').first().json;\nconst res = $input.first().json;\n\nconst text =\n  res.text ??\n  res.transcript ??\n  res.data?.text ??\n  res.choices?.[0]?.message?.content ??\n  '';\n\nif (!text) {\n  return [{ json: { skipped: true, reason: 'Chirp 3 returned no text', raw: res } }];\n}\n\nreturn [{\n  json: {\n    message_id: prep.message_id,\n    owner_email: prep.owner_email,\n    owner_phone_num: prep.owner_phone_num,\n    transcript: String(text).trim(),\n    model_name: 'google/chirp-3',\n  },\n}];"
+      },
+      "id": "a0aab4bc-5906-4cbf-8eb4-3535a0f11b75",
+      "name": "Code - parse Chirp 3 response2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO actionnow.whatsapp_media_interpretations (\n  media_id, message_id, owner_email, owner_phone_num,\n  interpretation_type, content, status, model_provider, model_name\n)\nSELECT\n  wm.id, wm.message_id, wm.owner_email, wm.owner_phone_num,\n  'transcript', $1, 'done', 'openrouter', 'google/chirp-3'\nFROM actionnow.whatsapp_message_media wm\nWHERE wm.message_id = $2\nON CONFLICT (media_id, interpretation_type) DO UPDATE SET\n  content = EXCLUDED.content,\n  status = 'done',\n  model_provider = EXCLUDED.model_provider,\n  model_name = EXCLUDED.model_name,\n  error_message = NULL,\n  updated_date = now()\nRETURNING id, interpretation_type, content;",
+        "options": {
+          "queryReplacement": "={{ [$json.transcript, $json.message_id] }}"
+        }
+      },
+      "id": "b32305cb-0ab4-4cdd-ba76-210603710bb6",
+      "name": "Postgres - save Chirp 3 transcript2",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        736,
+        368
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "is-image",
+              "leftValue": "={{ $('Code - prepare storage & decrypt2').item.json.media_kind }}",
+              "rightValue": "image",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "is-sticker",
+              "leftValue": "={{ $('Code - prepare storage & decrypt2').item.json.media_kind }}",
+              "rightValue": "sticker",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "314aea78-7ca6-4ffb-9e0c-1c8c59dbedda",
+      "name": "If - is image2",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -272,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO actionnow.whatsapp_media_interpretations (\n  media_id, message_id, owner_email, owner_phone_num,\n  interpretation_type, content, status, model_provider, model_name\n)\nSELECT\n  wm.id, wm.message_id, wm.owner_email, wm.owner_phone_num,\n  t.itype, $1, 'done', 'openrouter', $2\nFROM actionnow.whatsapp_message_media wm\nCROSS JOIN (VALUES ('caption'), ('ocr')) AS t(itype)\nWHERE wm.message_id = $3\nON CONFLICT (media_id, interpretation_type) DO UPDATE SET\n  content = EXCLUDED.content,\n  status = 'done',\n  model_provider = EXCLUDED.model_provider,\n  model_name = EXCLUDED.model_name,\n  error_message = NULL,\n  updated_date = now()\nRETURNING id, interpretation_type, left(content, 80) AS preview;",
+        "options": {
+          "queryReplacement": "={{ [$json.content, $json.model_name, $json.message_id] }}"
+        }
+      },
+      "id": "acc6cf0b-8a7a-4de5-8481-bdd4cb727a13",
+      "name": "Postgres - save image interpretation2",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        752,
+        592
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "actionnow-receive-whatsapp",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "32c55591-89bd-430f-a2dd-ecade0d2fc92",
+      "name": "Webhook - receive whatsapp3",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -2736,
+        368
+      ],
+      "webhookId": "actionnow-receive-whatsapp"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "rule-group",
+                    "leftValue": "={{ $json.body.event }}",
+                    "rightValue": "messages-group.received",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "group"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "rule-personal",
+                    "leftValue": "={{ $json.body.event }}",
+                    "rightValue": "messages-personal.received",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "personal"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "rule-legacy",
+                    "leftValue": "={{ $json.body.event }}",
+                    "rightValue": "messages.received",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "legacy_dm"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "ee2b8529-8dd4-46a2-828a-53ba80e5153d",
+      "name": "Switch - message events only3",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -2592,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ignored",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "action",
+              "name": "action",
+              "value": "ignored",
+              "type": "string"
+            },
+            {
+              "id": "event",
+              "name": "event",
+              "value": "={{ $json.body.event }}",
+              "type": "string"
+            },
+            {
+              "id": "reason",
+              "name": "reason",
+              "value": "Event type not handled (only messages-group.received, messages-personal.received, messages.received)",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "90e54480-35cf-4297-ba21-be1b093f0892",
+      "name": "Set - ignored event3",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2192,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT *\nFROM actionnow.user_whatsapp_connections\nWHERE (\n  NULLIF(TRIM($1::text), '') IS NOT NULL AND webhook_secret = TRIM($1::text)\n) OR (\n  NULLIF(TRIM($2::text), '') IS NOT NULL AND wasender_session_id::text = TRIM($2::text)\n)\nORDER BY\n  CASE WHEN NULLIF(TRIM($1::text), '') IS NOT NULL AND webhook_secret = TRIM($1::text) THEN 0 ELSE 1 END,\n  updated_at DESC NULLS LAST\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [\n  $('Webhook - receive whatsapp3').item.json.headers?.['x-webhook-secret']\n    ?? $('Webhook - receive whatsapp3').item.json.headers?.['X-Webhook-Secret']\n    ?? '',\n  String($('Webhook - receive whatsapp3').item.json.body?.sessionId ?? $('Webhook - receive whatsapp3').item.json.body?.session_id ?? '')\n] }}"
+        }
+      },
+      "id": "ca3eff98-b681-4b4b-91b7-84a52eca676b",
+      "name": "Postgres - resolve owner from webhook3",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2384,
+        288
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhook = $('Webhook - receive whatsapp3').first().json;\nconst conn = $input.first().json ?? {};\n\nif (!conn?.owner_email) {\n  throw new Error('No user_whatsapp_connections row for this webhook (check x-webhook-secret or sessionId)');\n}\n\nconst status = String(conn.status ?? '').toLowerCase();\nif (status !== 'connected') {\n  throw new Error(`WhatsApp session not connected (status: ${conn.status ?? 'unknown'})`);\n}\n\nreturn [{\n  json: {\n    ...webhook,\n    connection: conn,\n    owner_email: conn.owner_email,\n    owner_phone_num: conn.phone_number,\n    api_key: conn.api_key,\n    webhook_secret: conn.webhook_secret,\n  },\n}];"
+      },
+      "id": "99502c84-059d-44cd-9635-3fd743ac6ad7",
+      "name": "Code - merge webhook owner context3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2240,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT *\nFROM actionnow.monitor_settings\nWHERE owner_email = $1\nORDER BY created_date DESC\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [$('Code - merge webhook owner context3').item.json.owner_email] }}"
+        }
+      },
+      "id": "1ab4d595-615a-411a-b068-6b43a81473a3",
+      "name": "Postgres - get monitor settings for owner3",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2128,
+        288
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $('Code - merge webhook owner context3').first().json;\nconst OWNER_EMAIL = ctx.owner_email;\nconst OWNER_PHONE = ctx.owner_phone_num;\n\nconst input = ctx;\nconst body = input.body ?? input;\nconst event = body.event;\nconst messages = body.data?.messages;\n\nif (!messages) {\n  throw new Error('Missing data.messages in webhook payload');\n}\n\nconst key = messages.key ?? {};\nconst keyId = String(key.id ?? messages.id ?? '').trim();\nif (!keyId) {\n  throw new Error('Missing WhatsApp message id (key.id and messages.id both empty)');\n}\n// WASender may send id in both places; prefer key.id without failing the workflow\nconst altId = messages.id != null ? String(messages.id).trim() : '';\nconst canonicalMessageId = String(key.id ?? altId).trim() || keyId;\n\nfunction unwrapMediaMessage(message) {\n  if (!message || typeof message !== 'object') return {};\n  if (message.ephemeralMessage?.message) return unwrapMediaMessage(message.ephemeralMessage.message);\n  if (message.viewOnceMessage?.message) return unwrapMediaMessage(message.viewOnceMessage.message);\n  if (message.viewOnceMessageV2?.message) return unwrapMediaMessage(message.viewOnceMessageV2.message);\n  if (message.documentWithCaptionMessage?.message) return unwrapMediaMessage(message.documentWithCaptionMessage.message);\n  if (message.imageWithCaptionMessage?.message) return unwrapMediaMessage(message.imageWithCaptionMessage.message);\n  return message;\n}\n\nfunction normalizeMediaKey(mediaKey) {\n  if (mediaKey == null) return null;\n  if (typeof mediaKey === 'string') return mediaKey;\n  if (typeof mediaKey === 'object' && mediaKey.type === 'Buffer' && Array.isArray(mediaKey.data)) {\n    return Buffer.from(mediaKey.data).toString('base64');\n  }\n  if (Array.isArray(mediaKey)) return Buffer.from(mediaKey).toString('base64');\n  return String(mediaKey);\n}\n\nconst DECRYPT_MESSAGE_KEY = {\n  pttMessage: 'audioMessage',\n  audioMessage: 'audioMessage',\n  imageMessage: 'imageMessage',\n  videoMessage: 'videoMessage',\n  documentMessage: 'documentMessage',\n  stickerMessage: 'stickerMessage',\n};\n\nfunction buildDecryptMediaBlock(details) {\n  const keep = [\n    'url', 'mimetype', 'mediaKey', 'fileSha256', 'fileLength', 'fileName',\n    'directPath', 'mediaKeyTimestamp', 'caption', 'height', 'width', 'seconds', 'ptt',\n  ];\n  const out = {};\n  for (const k of keep) {\n    if (details[k] != null && details[k] !== '') out[k] = details[k];\n  }\n  if (out.mediaKey != null) out.mediaKey = normalizeMediaKey(out.mediaKey);\n  return out;\n}\n\nconst msg = unwrapMediaMessage(messages.message ?? {});\nconst isGroup =\n  event === 'messages-group.received' ||\n  String(key.remoteJid || '').endsWith('@g.us');\n\nconst MEDIA_MAP = [\n    ['imageMessage', 'image'],\n ['videoMessage', 'video'],\n  ['audioMessage', 'audio'],\n  ['pttMessage', 'audio'],\n\n  ['documentMessage', 'document'],\n  ['stickerMessage', 'sticker'],\n];\n\nlet contentType = 'text';\nlet mediaKind = 'text';\nlet mediaDetails = null;\nlet messageKey = null;\n\nfor (const [k, kind] of MEDIA_MAP) {\n  if (msg[k]) {\n    messageKey = k;\n    contentType = kind;\n    mediaKind = kind;\n    mediaDetails = msg[k];\n    break;\n  }\n}\n\nconst hasMedia = Boolean(mediaDetails);\n\nfunction normalizeText(v) {\n  if (v == null) return null;\n  const s = String(v).trim();\n  return s === '' ? null : s;\n}\n\nfunction mediaFingerprint(details, kind) {\n  if (!details) return null;\n  const parts = [\n    kind,\n    normalizeMediaKey(details.mediaKey) ?? '',\n    details.url ?? '',\n    details.fileLength != null ? String(details.fileLength) : '',\n    details.fileSha256 ?? '',\n  ].filter(Boolean);\n  if (!parts.length) return null;\n  const raw = parts.join('|');\n  let hash = 0;\n  for (let i = 0; i < raw.length; i++) {\n    hash = ((hash << 5) - hash + raw.charCodeAt(i)) | 0;\n  }\n  return Math.abs(hash).toString(36).padStart(8, '0').slice(0, 8);\n}\n\nconst contentFingerprint = hasMedia ? mediaFingerprint(mediaDetails, mediaKind) : null;\n\nlet whatsappTimestamp = messages.messageTimestamp ?? null;\nif (whatsappTimestamp == null && body.timestamp != null) {\n  const t = Number(body.timestamp);\n  whatsappTimestamp = t > 1e12 ? Math.floor(t / 1000) : t;\n}\n\nconst messageBody =\n  normalizeText(messages.messageBody) ??\n  normalizeText(mediaDetails?.caption) ??\n  null;\n\nconst record = {\n  owner_email: OWNER_EMAIL,\n  owner_phone_num: OWNER_PHONE,\n  event_type: event,\n  whatsapp_timestamp: whatsappTimestamp,\n  message_id: canonicalMessageId,\n  from_me: Boolean(key.fromMe),\n  chat_jid: key.remoteJid,\n  is_group: isGroup,\n  addressing_mode: key.addressingMode ?? null,\n  sender_pn: isGroup ? null : (key.senderPn ?? null),\n  cleaned_sender_pn: isGroup ? null : (key.cleanedSenderPn ?? null),\n  sender_lid: isGroup ? null : (key.senderLid ?? null),\n  participant: isGroup ? (key.participant ?? null) : null,\n  participant_pn: isGroup ? (key.participantPn ?? null) : null,\n  cleaned_participant_pn: isGroup ? (key.cleanedParticipantPn ?? null) : null,\n  participant_lid: isGroup ? (key.participantLid ?? null) : null,\n  sender_phone: key.cleanedParticipantPn ?? key.cleanedSenderPn ?? null,\n  sender_lid_resolved: key.participantLid ?? key.participant ?? key.senderLid ?? null,\n  message_body: messageBody,\n  content_type: contentType,\n  content_fingerprint: contentFingerprint,\n  raw_payload: body,\n  has_media: hasMedia,\n  media_processing_status: hasMedia ? 'pending' : 'none',\n};\n\nlet media_row = null;\nlet decrypt_request = null;\n\nif (hasMedia && messageKey) {\n  media_row = {\n    owner_email: OWNER_EMAIL,\n    owner_phone_num: OWNER_PHONE,\n    message_id: canonicalMessageId,\n    media_kind: mediaKind,\n    mime_type: mediaDetails.mimetype ?? null,\n    file_name: mediaDetails.fileName ?? null,\n    file_size: mediaDetails.fileLength != null ? Number(mediaDetails.fileLength) : null,\n    caption: normalizeText(mediaDetails.caption) ?? normalizeText(messages.messageBody),\n    encrypted_url: mediaDetails.url ?? null,\n    media_key: normalizeMediaKey(mediaDetails.mediaKey),\n    decrypt_status: 'pending',\n  };\n\n  const decryptMessageKey = DECRYPT_MESSAGE_KEY[messageKey] ?? messageKey;\n  const mediaBlock = buildDecryptMediaBlock(mediaDetails);\n\n  if (!mediaBlock.url || !mediaBlock.mediaKey) {\n    throw new Error(`Media missing url or mediaKey for ${messageKey}`);\n  }\n\n  decrypt_request = {\n    data: {\n      messages: {\n        key: {\n          id: canonicalMessageId,\n          remoteJid: key.remoteJid ?? undefined,\n          participant: key.participant ?? undefined,\n        },\n        message: { [decryptMessageKey]: mediaBlock },\n      },\n    },\n  };\n\n  if (body.sessionId) decrypt_request.sessionId = body.sessionId;\n}\n\nconst monitor = $('Postgres - get monitor settings for owner3').first()?.json ?? {};\nconst groupIds = Array.isArray(monitor.from_group_ids) ? monitor.from_group_ids.filter(Boolean) : [];\nconst contactJids = Array.isArray(monitor.from_contact_jids) ? monitor.from_contact_jids.filter(Boolean) : [];\n\nif (groupIds.length || contactJids.length) {\n  const jid = String(record.chat_jid ?? '');\n  const inScope = groupIds.includes(jid) || contactJids.includes(jid);\n  if (!inScope) {\n    return [{ json: { skipped: true, reason: 'chat_jid not in monitor from_group_ids/from_contact_jids', chat_jid: jid, owner_email: OWNER_EMAIL, event_type: event } }];\n  }\n}\n\nconst allowedTypes = Array.isArray(monitor.what_content_types) ? monitor.what_content_types.filter(Boolean) : [];\nif (allowedTypes.length && !allowedTypes.includes(contentType)) {\n  return [{ json: { skipped: true, reason: 'content_type not in monitor what_content_types', content_type: contentType, owner_email: OWNER_EMAIL, event_type: event } }];\n}\n\nreturn [{ json: { ...record, media_row, decrypt_request, monitor_settings: monitor, api_key: ctx.api_key } }];"
+      },
+      "id": "7e427a4b-affc-414d-9e5a-0a88c1696668",
+      "name": "Code - parse message & media type3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2016,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "in-scope",
+              "leftValue": "={{ $json.skipped }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "362ae925-5484-42ef-ab0e-081d20e523dc",
+      "name": "If - message in monitor scope3",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1888,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "action",
+              "name": "action",
+              "value": "skipped",
+              "type": "string"
+            },
+            {
+              "id": "reason",
+              "name": "reason",
+              "value": "={{ $json.reason ?? 'out of monitor scope' }}",
+              "type": "string"
+            },
+            {
+              "id": "owner_email",
+              "name": "owner_email",
+              "value": "={{ $json.owner_email ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "chat_jid",
+              "name": "chat_jid",
+              "value": "={{ $json.chat_jid ?? '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "943e565f-46c2-413d-a9b4-80ed9b961883",
+      "name": "Set - skipped monitor scope3",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1760,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO actionnow.whatsapp_messages (\n  owner_email, owner_phone_num, event_type, whatsapp_timestamp,\n  message_id, from_me, chat_jid, is_group, addressing_mode,\n  sender_pn, cleaned_sender_pn, sender_lid,\n  participant, participant_pn, cleaned_participant_pn, participant_lid,\n  sender_phone, sender_lid_resolved,\n  message_body, content_type, content_fingerprint, raw_payload, has_media, media_processing_status\n) VALUES (\n  $1, $2, $3, NULLIF($4, '')::bigint, $5, $6::boolean, $7, $8::boolean, NULLIF($9, ''),\n  NULLIF($10, ''), NULLIF($11, ''), NULLIF($12, ''),\n  NULLIF($13, ''), NULLIF($14, ''), NULLIF($15, ''), NULLIF($16, ''),\n  NULLIF($17, ''), NULLIF($18, ''),\n  NULLIF($19, ''), $20, NULLIF($21, ''), $22::jsonb, $23::boolean, $24\n)\nON CONFLICT (message_id) DO NOTHING\nRETURNING message_id;",
+        "options": {
+          "queryReplacement": "={{ [$json.owner_email, $json.owner_phone_num, $json.event_type, String($json.whatsapp_timestamp ?? ''), $json.message_id, $json.from_me, $json.chat_jid, $json.is_group, $json.addressing_mode ?? '', $json.sender_pn ?? '', $json.cleaned_sender_pn ?? '', $json.sender_lid ?? '', $json.participant ?? '', $json.participant_pn ?? '', $json.cleaned_participant_pn ?? '', $json.participant_lid ?? '', $json.sender_phone ?? '', $json.sender_lid_resolved ?? '', $json.message_body ?? '', $json.content_type, $json.content_fingerprint ?? '', JSON.stringify($json.raw_payload), $json.has_media, $json.media_processing_status] }}"
+        }
+      },
+      "id": "4c3bf1c2-997f-4da3-8873-c39bbc9c2d0f",
+      "name": "Postgres - upsert whatsapp_messages2",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1712,
+        288
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-media",
+              "leftValue": "={{ $('Code - parse message & media type3').item.json.has_media }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "36da6786-c115-4ed3-a331-563df5f34324",
+      "name": "If - has media3",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1600,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO actionnow.whatsapp_message_media (\n  owner_email, owner_phone_num, message_id, media_kind, mime_type,\n  file_name, file_size, caption, encrypted_url, media_key,\n  storage_bucket, decrypt_status\n) VALUES (\n  $1, $2, $3, $4, NULLIF($5, ''), NULLIF($6, ''), NULLIF($7, '')::bigint,\n  NULLIF($8, ''), NULLIF($9, ''), NULLIF($10, ''), 'action-now', 'pending'\n)\nON CONFLICT (message_id) DO UPDATE SET\n  mime_type = EXCLUDED.mime_type,\n  file_name = EXCLUDED.file_name,\n  file_size = EXCLUDED.file_size,\n  caption = EXCLUDED.caption,\n  encrypted_url = EXCLUDED.encrypted_url,\n  media_key = EXCLUDED.media_key,\n  updated_date = now()\nRETURNING id, message_id, media_kind;",
+        "options": {
+          "queryReplacement": "={{ [$('Code - parse message & media type3').item.json.media_row.owner_email, $('Code - parse message & media type3').item.json.media_row.owner_phone_num, $('Code - parse message & media type3').item.json.media_row.message_id, $('Code - parse message & media type3').item.json.media_row.media_kind, $('Code - parse message & media type3').item.json.media_row.mime_type ?? '', $('Code - parse message & media type3').item.json.media_row.file_name ?? '', String($('Code - parse message & media type3').item.json.media_row.file_size ?? ''), $('Code - parse message & media type3').item.json.media_row.caption ?? '', $('Code - parse message & media type3').item.json.media_row.encrypted_url ?? '', $('Code - parse message & media type3').item.json.media_row.media_key ?? ''] }}"
+        }
+      },
+      "id": "c7bba2e7-1775-473a-b05d-5bc271c85bc8",
+      "name": "Postgres - upsert whatsapp_message_media2",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1360,
+        176
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.wasenderapi.com/api/decrypt-media",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Code - merge webhook owner context3').item.json.api_key }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('Code - parse message & media type3').item.json.decrypt_request) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "df2d30ce-b133-4850-a25c-0a002e0cd7a2",
+      "name": "Wasender - decrypt media3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1168,
+        144
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const parsed = $('Code - parse message & media type3').first().json;\nconst media = parsed.media_row;\nconst decrypt = $input.first().json;\nconst publicUrl = decrypt.publicUrl ?? decrypt.data?.publicUrl ?? null;\nconst decryptError =\n  decrypt.error ??\n  (decrypt.success === false ? (decrypt.message ?? JSON.stringify(decrypt)) : null);\n\nconst extMap = {\n  'image/jpeg': 'jpg',\n  'image/png': 'png',\n  'image/webp': 'webp',\n  'audio/ogg; codecs=opus': 'ogg',\n  'audio/ogg': 'ogg',\n  'audio/mpeg': 'mp3',\n  'audio/mp4': 'm4a',\n  'video/mp4': 'mp4',\n  'application/pdf': 'pdf',\n};\n\nconst mime = media?.mime_type ?? 'application/octet-stream';\nconst extFromName = media?.file_name?.includes('.') ? media.file_name.split('.').pop() : null;\nconst ext = extMap[mime] ?? extFromName ?? 'bin';\nconst phone = String(parsed.owner_phone_num ?? 'unknown').replace(/\\D/g, '');\nconst d = new Date();\n\n// message_id from WhatsApp + media fingerprint (unique per attachment, even with empty caption)\nconst tag = parsed.content_fingerprint ?? parsed.message_id.slice(-8);\nconst storage_path = `${phone}/${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${parsed.message_id}_${tag}.${ext}`;\n\nconst interpretationMap = {\n  audio: ['transcript'],\n  video: ['video_transcript'],\n  image: ['caption', 'ocr'],\n  document: ['document_text'],\n  sticker: ['caption'],\n};\n\nreturn [{\n  json: {\n    message_id: parsed.message_id,\n    public_url: publicUrl,\n    decrypt_error: decryptError,\n    storage_path,\n    storage_bucket: 'action-now',\n    mime_type: mime,\n    media_kind: parsed.content_type,\n    content_fingerprint: parsed.content_fingerprint,\n    owner_email: parsed.owner_email,\n    owner_phone_num: parsed.owner_phone_num,\n    interpretation_types: interpretationMap[parsed.content_type] ?? [],\n  },\n}];"
+      },
+      "id": "b8125e4a-e172-4a6e-b789-48688b042e63",
+      "name": "Code - prepare storage & decrypt2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -992,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE actionnow.whatsapp_message_media\nSET\n  decrypt_public_url = NULLIF($1, ''),\n  decrypt_status = CASE WHEN NULLIF($1, '') IS NOT NULL THEN 'decrypted' WHEN NULLIF($3, '') IS NOT NULL THEN 'failed' ELSE 'failed' END,\n  decrypt_expires_at = CASE WHEN NULLIF($1, '') IS NOT NULL THEN now() + interval '1 hour' ELSE NULL END,\n  error_message = COALESCE(NULLIF($3, ''), CASE WHEN NULLIF($1, '') IS NULL THEN 'decrypt API did not return publicUrl' ELSE NULL END),\n  updated_date = now()\nWHERE message_id = $2;\n\nUPDATE actionnow.whatsapp_messages\nSET media_processing_status = CASE WHEN NULLIF($1, '') IS NOT NULL THEN 'processing' ELSE 'failed' END\nWHERE message_id = $2;",
+        "options": {
+          "queryReplacement": "={{ [$json.public_url ?? '', $json.message_id, $json.decrypt_error ?? ''] }}"
+        }
+      },
+      "id": "91e8effb-d335-45f1-adf5-049a8440daae",
+      "name": "Postgres - update media decrypt url3",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -848,
+        176
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-url",
+              "leftValue": "={{ $('Code - prepare storage & decrypt2').item.json.public_url }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4a2412c4-a431-41ce-81ae-3882d6fb7ef1",
+      "name": "If - decrypt url ready2",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -640,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Code - prepare storage & decrypt2').item.json.public_url }}",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "maxRedirects": 10
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "2862ce8c-ada3-4514-be81-f9edd7507c0f",
+      "name": "HTTP - download decrypted media2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -400,
+        48
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "bucketName": "action-now",
+        "fileName": "={{ $('Code - prepare storage & decrypt2').item.json.storage_path }}",
+        "additionalFields": {}
+      },
+      "id": "cf228802-1a4e-4f21-b0d7-e4056a43384e",
+      "name": "S3 - upload to Supabase action-now2",
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        48
+      ],
+      "credentials": {
+        "s3": {
+          "id": "teaHZrtYXkqaZXiX",
+          "name": "S3 account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE actionnow.whatsapp_message_media\nSET\n  storage_bucket = 'action-now',\n  storage_path = $1,\n  storage_url = $2,\n  decrypt_status = 'stored',\n  updated_date = now()\nWHERE message_id = $3;\n\nUPDATE actionnow.whatsapp_messages\nSET media_processing_status = 'done'\nWHERE message_id = $3;",
+        "options": {
+          "queryReplacement": "={{ [$('Code - prepare storage & decrypt2').item.json.storage_path, 'https://edqhawzttjqhpfflzprb.supabase.co/storage/v1/object/action-now/' + $('Code - prepare storage & decrypt2').item.json.storage_path, $('Code - prepare storage & decrypt2').item.json.message_id] }}"
+        }
+      },
+      "id": "4f2896a0-38ef-4b1d-a255-d04bdc54ccfb",
+      "name": "Postgres - update storage path2",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        80,
+        48
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const storage = $('Code - prepare storage & decrypt2').first().json;\nconst mediaRow = $('Postgres - upsert whatsapp_message_media2').first().json;\nconst mediaId = mediaRow?.id;\n\nif (!mediaId) {\n  return [];\n}\n\nconst types = storage.interpretation_types ?? [];\n\nreturn types.map((interpretation_type) => ({\n  json: {\n    media_id: mediaId,\n    message_id: storage.message_id,\n    owner_email: storage.owner_email,\n    owner_phone_num: storage.owner_phone_num,\n    interpretation_type,\n    status: 'pending',\n    media_kind: storage.media_kind,\n    storage_path: storage.storage_path,\n  },\n}));"
+      },
+      "id": "69009b38-a0cc-4883-ab8d-98604a25bd97",
+      "name": "Code - queue interpretation jobs2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2336,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO actionnow.whatsapp_media_interpretations (\n  media_id, message_id, owner_email, owner_phone_num,\n  interpretation_type, status\n) VALUES (\n  $1::uuid, $2, $3, $4, $5, 'pending'\n)\nON CONFLICT (media_id, interpretation_type) DO NOTHING\nRETURNING id, interpretation_type;",
+        "options": {
+          "queryReplacement": "={{ [$json.media_id, $json.message_id, $json.owner_email, $json.owner_phone_num, $json.interpretation_type] }}"
+        }
+      },
+      "id": "df1d8b94-6354-4837-b9db-36e37006018d",
+      "name": "Postgres - insert interpretation pending2",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2576,
+        48
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ok",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "saved",
+              "name": "action",
+              "value": "saved",
+              "type": "string"
+            },
+            {
+              "id": "mid",
+              "name": "message_id",
+              "value": "={{ $('Code - parse message & media type3').item.json.message_id }}",
+              "type": "string"
+            },
+            {
+              "id": "ctype",
+              "name": "content_type",
+              "value": "={{ $('Code - parse message & media type3').item.json.content_type }}",
+              "type": "string"
+            },
+            {
+              "id": "grp",
+              "name": "is_group",
+              "value": "={{ $('Code - parse message & media type3').item.json.is_group }}",
+              "type": "boolean"
+            },
+            {
+              "id": "media",
+              "name": "has_media",
+              "value": "={{ $('Code - parse message & media type3').item.json.has_media }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1776e772-c852-42bf-8dfb-895264d77895",
+      "name": "Set - saved response3",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1280,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "f3a6d26d-a46d-4d1b-8786-744e0814a8d5",
+      "name": "Respond to Webhook9",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1520,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const storage = $('Code - prepare storage & decrypt2').first().json;\nconst parsed = $('Code - parse message & media type3').first().json;\nconst monitor = parsed.monitor_settings ?? $('Postgres - get monitor settings for owner3').first()?.json ?? {};\nconst item = $input.first();\n\nif (!item.binary?.data) {\n  return [{ json: { skipped: true, reason: 'No image binary on item — check HTTP download outputPropertyName=data' } }];\n}\n\nconst keywords = (monitor.what_content_keywords ?? []).filter(Boolean).join(', ') || 'none specified';\nconst monitorName = monitor.monitor_name ?? 'monitoring';\nconst contentTypes = (monitor.what_content_types ?? []).filter(Boolean).join(', ') || 'all';\nconst caption = parsed.message_body ?? '';\n\nconst llm_prompt = `You are an expert alert manager for \"${monitorName}\" (owner: ${storage.owner_email}).\\nWatch for keywords: ${keywords}.\\nContent types of interest: ${contentTypes}.\\nWhatsApp caption/context: ${caption || 'n/a'}\\n\\nAnalyze this WhatsApp image. Be vividly specific about what you see. Return plain text with sections:\\nSCENE: what is shown\\nTEXT: all visible text (OCR)\\nALERTS: issues, hazards, complaints, or items matching the keywords above\\nKeep it verbose but focused on the monitoring context.`;\n\nreturn [{\n  json: {\n    message_id: storage.message_id,\n    owner_email: storage.owner_email,\n    owner_phone_num: storage.owner_phone_num,\n    model_name: 'google/gemini-2.5-flash-preview',\n    llm_prompt,\n  },\n  binary: item.binary,\n}];"
+      },
+      "name": "Code - pass image binary to LLM2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48,
+        624
+      ],
+      "id": "6b7ea5cd-d653-426f-bc83-a118a34492e8"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.5-flash-image",
+        "options": {}
+      },
+      "name": "OpenRouter Chat Model (image)2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        240,
+        784
+      ],
+      "id": "d2be10e1-7f98-4d9f-8206-cc3cf7f1de46",
+      "credentials": {
+        "openRouterApi": {
+          "id": "HHHmAsaHSSyV3wgO",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.llm_prompt }}",
+        "messages": {
+          "messageValues": [
+            {
+              "type": "HumanMessagePromptTemplate",
+              "messageType": "imageBinary",
+              "imageDetail": "high"
+            }
+          ]
+        }
+      },
+      "name": "Basic LLM Chain - decode image2",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        240,
+        608
+      ],
+      "id": "ab397719-424d-4de8-b6df-dd29d6555c22"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prep = $('Code - pass image binary to LLM2').first().json;\nconst res = $input.first().json;\n\nconst text = res.text ?? res.response ?? res.output ?? '';\n\nif (!text) {\n  return [{ json: { skipped: true, reason: 'LLM Chain returned no text', raw: res } }];\n}\n\nreturn [{\n  json: {\n    message_id: prep.message_id,\n    content: String(text).trim(),\n    model_name: prep.model_name,\n  },\n}];"
+      },
+      "name": "Code - parse image response2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        608
+      ],
+      "id": "55765f6b-6943-48c4-ba6b-3a9f49eaecb9"
+    },
+    {
+      "parameters": {
+        "jsCode": "const storage = $('Code - prepare storage & decrypt2').first().json;\nconst parsed = $('Code - parse message & media type3').first().json;\nconst item = $input.first();\n\nif (!item.binary?.data) {\n  return [{ json: { skipped: true, reason: 'No document binary — check HTTP download outputPropertyName=data' } }];\n}\n\nconst mime = (storage.mime_type ?? 'application/octet-stream').toLowerCase();\nconst fileName = parsed.media_row?.file_name ?? 'document.bin';\nconst model_name = 'google/gemini-2.5-flash-preview';\n\nconst base = {\n  message_id: storage.message_id,\n  owner_email: storage.owner_email,\n  owner_phone_num: storage.owner_phone_num,\n  file_name: fileName,\n  mime_type: mime,\n  model_name,\n};\n\nconst isPlainText =\n  mime.startsWith('text/') ||\n  mime === 'application/json' ||\n  /\\.(txt|csv|md|json|log)$/i.test(fileName);\n\nif (isPlainText) {\n  const buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\n  const plain_text = buffer.toString('utf8').trim();\n  if (!plain_text) {\n    return [{ json: { ...base, skipped: true, reason: 'Text file is empty' } }];\n  }\n  return [{ json: { ...base, plain_text, needs_extract: false, source: 'utf8' } }];\n}\n\nreturn [{\n  json: { ...base, needs_extract: true, source: 'binary' },\n  binary: item.binary,\n}];"
+      },
+      "id": "2c54da0f-9a73-433f-9eea-dd558cc42ec2",
+      "name": "Code - read document text2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -352,
+        1584
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "needs-extract",
+              "leftValue": "={{ $json.needs_extract }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4215cb3a-2708-4985-bdd9-e80fbc172c01",
+      "name": "If - needs PDF extract2",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -112,
+        1584
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "id": "12fa322e-0640-4595-923b-a9cb1965aa41",
+      "name": "Extract From File - document2",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        128,
+        1488
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const reader = $('Code - read document text2').first().json;\nconst parsed = $('Code - parse message & media type3').first().json;\nconst monitor = parsed.monitor_settings ?? $('Postgres - get monitor settings for owner3').first()?.json ?? {};\nconst item = $input.first().json;\n\nlet plain_text = reader.plain_text ?? '';\n\nif (reader.needs_extract) {\n  plain_text = String(item.text ?? item.data ?? '').trim();\n}\n\nif (!plain_text) {\n  return [{\n    json: {\n      skipped: true,\n      reason: 'No text extracted — PDF may be scanned/image-only; try OpenRouter file fallback or OCR',\n      message_id: reader.message_id,\n      file_name: reader.file_name,\n    },\n  }];\n}\n\nconst keywords = (monitor.what_content_keywords ?? []).filter(Boolean).join(', ') || 'none specified';\nconst monitorName = monitor.monitor_name ?? 'monitoring';\nconst contentTypes = (monitor.what_content_types ?? []).filter(Boolean).join(', ') || 'all';\nconst caption = parsed.message_body ?? '';\n\nconst llm_prompt = `Analyze this WhatsApp document for business monitoring (\"${monitorName}\", owner: ${reader.owner_email}).\\nWatch for keywords: ${keywords}.\\nContent types of interest: ${contentTypes}.\\nWhatsApp caption/context: ${caption || 'n/a'}\\n\\nReturn plain text with sections:\\nSUMMARY: main points\\nKEY TEXT: important names, dates, amounts, references\\nALERTS: issues, deadlines, complaints, or items matching the keywords above\\n\\n--- DOCUMENT ---\\n${plain_text}`;\n\nreturn [{\n  json: {\n    message_id: reader.message_id,\n    owner_email: reader.owner_email,\n    owner_phone_num: reader.owner_phone_num,\n    plain_text,\n    model_name: reader.model_name,\n    source: reader.source,\n    llm_prompt,\n  },\n}];"
+      },
+      "id": "d6f6fd27-abca-4569-8859-8b902c766565",
+      "name": "Code - pass document text to LLM2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        368,
+        1584
+      ]
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.5-flash",
+        "options": {}
+      },
+      "id": "7279548d-14d5-441e-9f8e-2d33dfc0bf21",
+      "name": "OpenRouter Chat Model (document)2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        560,
+        1744
+      ],
+      "credentials": {
+        "openRouterApi": {
+          "id": "HHHmAsaHSSyV3wgO",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.llm_prompt }}"
+      },
+      "id": "541a520f-77a0-4e6c-b7ec-cf3f3ae6c357",
+      "name": "Basic LLM Chain - analyze document2",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        560,
+        1568
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "is-document",
+              "leftValue": "={{ $('Code - prepare storage & decrypt2').item.json.media_kind }}",
+              "rightValue": "document",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "37a2f088-7c98-448b-baf5-39bc2bbe9cfb",
+      "name": "If - is document2",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -592,
+        1568
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const prep = $('Code - pass document text to LLM2').first().json;\nconst res = $input.first().json;\n\nconst text = res.text ?? res.response ?? res.output ?? '';\n\nif (!text) {\n  return [{ json: { skipped: true, reason: 'LLM Chain returned no text', raw: res } }];\n}\n\nreturn [{\n  json: {\n    message_id: prep.message_id,\n    content: String(text).trim(),\n    model_name: prep.model_name,\n  },\n}];"
+      },
+      "id": "4cbcd9c2-7542-49e9-b7dc-9bd927e4d4cf",
+      "name": "Code - parse document response2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        1568
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO actionnow.whatsapp_media_interpretations (\n  media_id, message_id, owner_email, owner_phone_num,\n  interpretation_type, content, status, model_provider, model_name\n)\nSELECT\n  wm.id, wm.message_id, wm.owner_email, wm.owner_phone_num,\n  'document_text', $1, 'done', 'openrouter', $2\nFROM actionnow.whatsapp_message_media wm\nWHERE wm.message_id = $3\nON CONFLICT (media_id, interpretation_type) DO UPDATE SET\n  content = EXCLUDED.content,\n  status = 'done',\n  model_provider = EXCLUDED.model_provider,\n  model_name = EXCLUDED.model_name,\n  error_message = NULL,\n  updated_date = now()\nRETURNING id, interpretation_type, left(content, 80) AS preview;",
+        "options": {
+          "queryReplacement": "={{ [$json.content, $json.model_name, $json.message_id] }}"
+        }
+      },
+      "id": "6ca2b4bb-a096-44c4-a4a9-4bb8022f9a33",
+      "name": "Postgres - save document interpretation2",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1040,
+        1568
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## Doc",
+        "height": 80,
+        "width": 150
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -592,
+        1456
+      ],
+      "typeVersion": 1,
+      "id": "ab9eafaf-ea07-4c1d-b332-5abe56c98435",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "content": "## Image",
+        "height": 80,
+        "width": 150
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -272,
+        704
+      ],
+      "typeVersion": 1,
+      "id": "4433c5e8-36cd-477b-9333-7617b9835eb4",
+      "name": "Sticky Note12"
+    },
+    {
+      "parameters": {
+        "content": "## Audio",
+        "height": 80,
+        "width": 150
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -160,
+        256
+      ],
+      "typeVersion": 1,
+      "id": "31f28756-38ca-46a2-89a6-46d24858b801",
+      "name": "Sticky Note13"
+    },
+    {
+      "parameters": {
+        "content": "##Shared media ",
+        "height": 80,
+        "width": 150
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -192,
+        -48
+      ],
+      "typeVersion": 1,
+      "id": "51ee0f37-f536-4e2f-b42e-b0991dbac766",
+      "name": "Sticky Note14"
+    },
+    {
+      "parameters": {
+        "content": "# whatsapp webhook",
+        "height": 80,
+        "width": 560
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2608,
+        80
+      ],
+      "typeVersion": 1,
+      "id": "3d19b038-1163-4ff8-8039-314be5b74219",
+      "name": "Sticky Note15"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        480
+      ],
+      "id": "9f943992-5dba-4718-910a-d56660d80f70",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -272,
+        1888
+      ],
+      "id": "b690a2f3-d70c-406e-9888-3406440ddf9b",
+      "name": "No Operation, do nothing1"
     }
+  ],
+  "connections": {
+    "If - is audio2": {
+      "main": [
+        [
+          {
+            "node": "Code - prepare Chirp 3 base65",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - prepare Chirp 3 base65": {
+      "main": [
+        [
+          {
+            "node": "OpenRouter - Chirp 3 transcript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter - Chirp 3 transcript2": {
+      "main": [
+        [
+          {
+            "node": "Code - parse Chirp 3 response2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - parse Chirp 3 response2": {
+      "main": [
+        [
+          {
+            "node": "Postgres - save Chirp 3 transcript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - save Chirp 3 transcript2": {
+      "main": [
+        [
+          {
+            "node": "Set - saved response3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - is image2": {
+      "main": [
+        [
+          {
+            "node": "Code - pass image binary to LLM2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - save image interpretation2": {
+      "main": [
+        [
+          {
+            "node": "Set - saved response3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - receive whatsapp3": {
+      "main": [
+        [
+          {
+            "node": "Switch - message events only3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch - message events only3": {
+      "main": [
+        [
+          {
+            "node": "Postgres - resolve owner from webhook3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Postgres - resolve owner from webhook3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Postgres - resolve owner from webhook3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set - ignored event3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - ignored event3": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - resolve owner from webhook3": {
+      "main": [
+        [
+          {
+            "node": "Code - merge webhook owner context3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - merge webhook owner context3": {
+      "main": [
+        [
+          {
+            "node": "Postgres - get monitor settings for owner3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - get monitor settings for owner3": {
+      "main": [
+        [
+          {
+            "node": "Code - parse message & media type3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - parse message & media type3": {
+      "main": [
+        [
+          {
+            "node": "If - message in monitor scope3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - message in monitor scope3": {
+      "main": [
+        [
+          {
+            "node": "Postgres - upsert whatsapp_messages2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set - skipped monitor scope3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - skipped monitor scope3": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - upsert whatsapp_messages2": {
+      "main": [
+        [
+          {
+            "node": "If - has media3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - has media3": {
+      "main": [
+        [
+          {
+            "node": "Postgres - upsert whatsapp_message_media2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set - saved response3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - upsert whatsapp_message_media2": {
+      "main": [
+        [
+          {
+            "node": "Wasender - decrypt media3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wasender - decrypt media3": {
+      "main": [
+        [
+          {
+            "node": "Code - prepare storage & decrypt2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - prepare storage & decrypt2": {
+      "main": [
+        [
+          {
+            "node": "Postgres - update media decrypt url3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - update media decrypt url3": {
+      "main": [
+        [
+          {
+            "node": "If - decrypt url ready2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - decrypt url ready2": {
+      "main": [
+        [
+          {
+            "node": "HTTP - download decrypted media2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set - saved response3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - download decrypted media2": {
+      "main": [
+        [
+          {
+            "node": "S3 - upload to Supabase action-now2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If - is audio2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If - is image2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If - is document2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "S3 - upload to Supabase action-now2": {
+      "main": [
+        [
+          {
+            "node": "Postgres - update storage path2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - update storage path2": {
+      "main": [
+        [
+          {
+            "node": "Code - queue interpretation jobs2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - queue interpretation jobs2": {
+      "main": [
+        [
+          {
+            "node": "Postgres - insert interpretation pending2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - insert interpretation pending2": {
+      "main": [
+        [
+          {
+            "node": "Set - saved response3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - saved response3": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - pass image binary to LLM2": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain - decode image2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model (image)2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain - decode image2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain - decode image2": {
+      "main": [
+        [
+          {
+            "node": "Code - parse image response2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - parse image response2": {
+      "main": [
+        [
+          {
+            "node": "Postgres - save image interpretation2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - read document text2": {
+      "main": [
+        [
+          {
+            "node": "If - needs PDF extract2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - needs PDF extract2": {
+      "main": [
+        [
+          {
+            "node": "Extract From File - document2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - pass document text to LLM2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract From File - document2": {
+      "main": [
+        [
+          {
+            "node": "Code - pass document text to LLM2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - pass document text to LLM2": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain - analyze document2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model (document)2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain - analyze document2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain - analyze document2": {
+      "main": [
+        [
+          {
+            "node": "Code - parse document response2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - is document2": {
+      "main": [
+        [
+          {
+            "node": "Code - read document text2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - parse document response2": {
+      "main": [
+        [
+          {
+            "node": "Postgres - save document interpretation2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - save document interpretation2": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "Webhook - receive whatsapp3": [
+      {
+        "headers": {
+          "host": "arrowmatics.app.n8n.cloud",
+          "user-agent": "axios/1.16.1",
+          "content-length": "396",
+          "accept": "application/json, text/plain, */*",
+          "accept-encoding": "gzip, br",
+          "cdn-loop": "cloudflare; loops=1; subreqs=1",
+          "cf-connecting-ip": "2a02:4780:2d:643a::1",
+          "cf-ew-via": "15",
+          "cf-ipcountry": "US",
+          "cf-ray": "a086b205bd147583-BOS",
+          "cf-visitor": "{\"scheme\":\"https\"}",
+          "cf-worker": "n8n.cloud",
+          "content-type": "application/json",
+          "x-forwarded-for": "2a02:4780:2d:643a::1, 162.159.99.97",
+          "x-forwarded-host": "arrowmatics.app.n8n.cloud",
+          "x-forwarded-port": "443",
+          "x-forwarded-proto": "https",
+          "x-forwarded-server": "traefik-prod-users-gwc-82-65d5995466-wbrzx",
+          "x-is-trusted": "yes",
+          "x-real-ip": "2a02:4780:2d:643a::1",
+          "x-webhook-secret": "007d24ccd6075762f468f9f2b4cc8f77",
+          "x-webhook-signature": "007d24ccd6075762f468f9f2b4cc8f77"
+        },
+        "params": {},
+        "query": {},
+        "body": {
+          "event": "message-receipt.update",
+          "sessionId": "689d061bc5feecce428e0f5412dc0a2a2f3c724daa57ce6c8767cea314907002",
+          "data": {
+            "message": {
+              "key": {
+                "id": "3EB05BE3C43ACBF9A0A6FE",
+                "fromMe": true,
+                "remoteJid": "120363407315310603@g.us",
+                "participant": "39432195457199@lid",
+                "participantLid": "39432195457199@lid"
+              },
+              "receipt": {
+                "userJid": "39432195457199@lid",
+                "receiptTimestamp": 1780909110
+              }
+            }
+          },
+          "timestamp": 1780909113232
+        },
+        "webhookUrl": "https://arrowmatics.app.n8n.cloud/webhook/actionnow-receive-whatsapp",
+        "executionMode": "production"
+      }
+    ]
+  },
+  "meta": {
+    "instanceId": "f5c9600193afd1d3ab92a54a0de2f82d56566faf5c6d6e2302f937327546ecf0"
   }
+}
