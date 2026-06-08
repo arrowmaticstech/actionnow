@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import QRCodePkg from 'react-qr-code';
 
 const QRCode = QRCodePkg?.default ?? QRCodePkg?.QRCode ?? QRCodePkg;
@@ -18,6 +18,7 @@ import {
   QR_TTL_SECONDS,
   STATUS_POLL_MS,
 } from '../api/wasender';
+import { PAGE_RELOAD_AFTER_UNBIND_MS } from '../utils/pairingRecovery';
 
 function PairingQrDisplay({ value }) {
   if (!value) return null;
@@ -59,7 +60,7 @@ function clearIdentity() {
   localStorage.removeItem(STORAGE_KEY);
 }
 
-export default function WhatsAppPairingPanel({ onOwnerChange }) {
+const WhatsAppPairingPanel = forwardRef(function WhatsAppPairingPanel({ onOwnerChange }, ref) {
   const saved = loadSavedIdentity();
 
   const [ownerEmail, setOwnerEmail] = useState(saved?.ownerEmail ?? '');
@@ -72,7 +73,7 @@ export default function WhatsAppPairingPanel({ onOwnerChange }) {
   const [busy, setBusy] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [sessionId, setSessionId] = useState(saved?.wasenderSessionId ?? null);
-
+  const panelRef = useRef(null);
   const pollRef = useRef(null);
   const qrTimerRef = useRef(null);
   const loadedSessionRef = useRef(null);
@@ -225,12 +226,36 @@ export default function WhatsAppPairingPanel({ onOwnerChange }) {
     beginPairing({ ownerEmail: email, phoneNumber: phone, deviceName: name, sessionId }, { isRefresh: true });
   };
 
-  const handleUnbind = async () => {
+  const resetLocalPairingState = useCallback((email, phone, name) => {
+    setStatus('disconnected');
+    setQrCode(null);
+    setQrSecondsLeft(0);
+    setSessionId(null);
+    loadedSessionRef.current = null;
+    clearIdentity();
+    notifyOwner({
+      ownerEmail: email,
+      phoneNumber: phone,
+      deviceName: name,
+      status: 'disconnected',
+      sessionId: null,
+    });
+  }, [notifyOwner]);
+
+  const performUnbind = useCallback(async ({ skipConfirm = false } = {}) => {
     const email = ownerEmail.trim();
     const phone = phoneNumber.trim();
-    if (!email || !phone) return;
+    const name = deviceName.trim() || 'WhatsApp Device';
 
-    if (!window.confirm('Disconnect this WhatsApp device? You will need to scan a new QR code to pair again.')) {
+    if (!email || !phone) {
+      resetLocalPairingState(email, phone, name);
+      return;
+    }
+
+    if (
+      !skipConfirm
+      && !window.confirm('Disconnect this WhatsApp device? You will need to scan a new QR code to pair again.')
+    ) {
       return;
     }
 
@@ -245,25 +270,50 @@ export default function WhatsAppPairingPanel({ onOwnerChange }) {
         phoneNumber: phone,
         whatsappSession: sessionId,
       });
-      setStatus('disconnected');
-      setQrCode(null);
-      setQrSecondsLeft(0);
-      setSessionId(null);
-      loadedSessionRef.current = null;
-      clearIdentity();
-      notifyOwner({
-        ownerEmail: email,
-        phoneNumber: phone,
-        deviceName: deviceName.trim(),
-        status: 'disconnected',
-        sessionId: null,
-      });
+      resetLocalPairingState(email, phone, name);
     } catch (err) {
-      setError(err.message || 'Failed to unbind');
+      if (skipConfirm) {
+        console.warn('Recovery unbind API failed — clearing local pairing state:', err);
+        resetLocalPairingState(email, phone, name);
+      } else {
+        setError(err.message || 'Failed to unbind');
+      }
     } finally {
       setBusy(false);
     }
-  };
+  }, [deviceName, ownerEmail, phoneNumber, resetLocalPairingState, sessionId, stopPolling, stopQrTimer]);
+
+  const handleUnbind = () => performUnbind({ skipConfirm: false });
+
+  const recoverStalePairing = useCallback(async () => {
+    const email = ownerEmail.trim();
+    const phone = phoneNumber.trim();
+
+    setBusy(true);
+    stopPolling();
+    stopQrTimer();
+
+    try {
+      if (email && phone) {
+        await unbindConnection({
+          ownerEmail: email,
+          phoneNumber: phone,
+          whatsappSession: sessionId,
+        });
+      }
+    } catch (err) {
+      console.warn('Recovery unbind API failed:', err);
+    } finally {
+      clearIdentity();
+      setBusy(false);
+    }
+
+    window.setTimeout(() => {
+      window.location.reload();
+    }, PAGE_RELOAD_AFTER_UNBIND_MS);
+  }, [ownerEmail, phoneNumber, sessionId, stopPolling, stopQrTimer]);
+
+  useImperativeHandle(ref, () => ({ recoverStalePairing }), [recoverStalePairing]);
 
   useEffect(() => {
     let cancelled = false;
@@ -380,7 +430,11 @@ export default function WhatsAppPairingPanel({ onOwnerChange }) {
   }
 
   return (
-    <div className="w-full mb-10 rounded-2xl border border-wa-green/20 bg-gradient-to-r from-wa-green/5 via-white to-wa-green/5 shadow-sm px-5 py-4 sm:px-8 sm:py-5">
+    <div
+      ref={panelRef}
+      id="whatsapp-pairing-panel"
+      className="w-full mb-10 rounded-2xl border border-wa-green/20 bg-gradient-to-r from-wa-green/5 via-white to-wa-green/5 shadow-sm px-5 py-4 sm:px-8 sm:py-5"
+    >
       <div className="flex items-start justify-between gap-4 mb-4">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 rounded-xl bg-wa-green/15 flex items-center justify-center flex-shrink-0">
@@ -398,6 +452,7 @@ export default function WhatsAppPairingPanel({ onOwnerChange }) {
 
         {canUnbind && (
           <button
+            id="whatsapp-unbind-btn"
             type="button"
             onClick={handleUnbind}
             disabled={busy}
@@ -560,4 +615,6 @@ export default function WhatsAppPairingPanel({ onOwnerChange }) {
       )}
     </div>
   );
-}
+});
+
+export default WhatsAppPairingPanel;

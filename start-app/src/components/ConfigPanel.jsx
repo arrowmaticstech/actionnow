@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   MapPin, Phone, Download, X, Users, PlusCircle, Plus, Send,
-  Search, Tag, FileText, Clock, Calendar, Repeat, Save, Loader2,
+  Search, Tag, FileText, Clock, Calendar, Repeat, Save, Loader2, Filter,
 } from 'lucide-react';
 import { fetchWhatsAppGroups, fetchWhatsAppContacts, saveConfiguration } from '../api/start';
 import { pickRandomGroupName, SAVE_FLASH_MS, SUGGESTED_KEYWORDS } from '../lib/main';
@@ -21,6 +21,8 @@ export default function ConfigPanel({
   config,
   setConfig,
   onSave,
+  onPairingRequired,
+  onListFetchError,
   ownerEmail = '',
   ownerPhone = '',
   isWhatsAppConnected = false,
@@ -31,11 +33,14 @@ export default function ConfigPanel({
   const [groupPage, setGroupPage] = useState(1);
   const [groupHasMore, setGroupHasMore] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showGroupFilter, setShowGroupFilter] = useState(false);
+  const [groupSearch, setGroupSearch] = useState('');
   const [isFetchingContacts, setIsFetchingContacts] = useState(false);
   const [fetchedContacts, setFetchedContacts] = useState([]);
   const [contactPage, setContactPage] = useState(1);
   const [contactHasMore, setContactHasMore] = useState(false);
   const [showContactDropdown, setShowContactDropdown] = useState(false);
+  const [showContactFilter, setShowContactFilter] = useState(false);
   const [contactSearch, setContactSearch] = useState('');
   const [manualPhoneInput, setManualPhoneInput] = useState('');
   const [manualFromContactInput, setManualFromContactInput] = useState('');
@@ -76,6 +81,14 @@ export default function ConfigPanel({
       setShowDropdown(true);
     } catch (error) {
       console.error('Error fetching groups:', error);
+      if (error?.code === 'WHATSAPP_NOT_PAIRED') {
+        onPairingRequired?.(error.message);
+        return;
+      }
+      if (error?.code === 'WHATSAPP_FETCH_TIMEOUT') {
+        onListFetchError?.(error.message, 'timeout');
+        return;
+      }
       alert(error.message === 'Failed to fetch groups'
         ? 'Failed to fetch groups. Please try again.'
         : 'An error occurred while fetching groups.');
@@ -84,7 +97,17 @@ export default function ConfigPanel({
     }
   };
 
-  const handleFetchGroups = () => loadGroups(1);
+  const handleFetchGroups = () => {
+    setGroupSearch('');
+    setShowGroupFilter(false);
+    loadGroups(1);
+  };
+
+  const filteredGroups = fetchedGroups.filter((group) => {
+    const q = groupSearch.trim().toLowerCase();
+    if (!q) return true;
+    return group.label.toLowerCase().includes(q) || group.value.toLowerCase().includes(q);
+  });
 
   const getGroupJids = () =>
     config.groups.map(getGroupValue).map((id) => id.trim()).filter(Boolean);
@@ -151,6 +174,14 @@ export default function ConfigPanel({
       setShowContactDropdown(true);
     } catch (error) {
       console.error('Error fetching contacts:', error);
+      if (error?.code === 'WHATSAPP_NOT_PAIRED') {
+        onPairingRequired?.(error.message);
+        return;
+      }
+      if (error?.code === 'WHATSAPP_FETCH_TIMEOUT') {
+        onListFetchError?.(error.message, 'timeout');
+        return;
+      }
       alert(error.message === 'Failed to fetch contacts'
         ? 'Failed to fetch contacts. Please try again.'
         : 'An error occurred while fetching contacts.');
@@ -161,6 +192,7 @@ export default function ConfigPanel({
 
   const handleFetchContacts = () => {
     setContactSearch('');
+    setShowContactFilter(false);
     loadContacts(1);
   };
 
@@ -195,9 +227,11 @@ export default function ConfigPanel({
     }));
   };
 
-  const filteredContacts = fetchedContacts.filter((contact) =>
-    contact.label.toLowerCase().includes(contactSearch.trim().toLowerCase())
-  );
+  const filteredContacts = fetchedContacts.filter((contact) => {
+    const q = contactSearch.trim().toLowerCase();
+    if (!q) return true;
+    return contact.label.toLowerCase().includes(q) || contact.value.toLowerCase().includes(q);
+  });
 
   const handleUpdateBossNumber = (index, value) => {
     const newBossNumbers = [...config.bossNumbers];
@@ -314,18 +348,57 @@ export default function ConfigPanel({
                   id="fetchedDropdown"
                   className="ml-4 mt-4 bg-white border border-gray-200 rounded-lg shadow-sm max-h-56 overflow-hidden z-10 flex flex-col"
                 >
-                  <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex justify-between items-center">
+                  <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex justify-between items-center gap-2">
                     <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Select existing groups
                     </span>
-                    <button
-                      id="closeDropdownBtn"
-                      onClick={() => setShowDropdown(false)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        id="groupFilterToggleBtn"
+                        onClick={() => setShowGroupFilter((open) => !open)}
+                        className={`p-1.5 rounded-md transition-colors ${
+                          showGroupFilter
+                            ? 'bg-wa-green/15 text-wa-green'
+                            : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                        }`}
+                        title="Filter groups"
+                        aria-label="Filter groups"
+                        aria-pressed={showGroupFilter}
+                      >
+                        <Filter className="w-4 h-4" />
+                      </button>
+                      <button
+                        id="closeDropdownBtn"
+                        type="button"
+                        onClick={() => {
+                          setShowDropdown(false);
+                          setShowGroupFilter(false);
+                          setGroupSearch('');
+                        }}
+                        className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                        aria-label="Close groups list"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
+                  {showGroupFilter && (
+                    <div className="p-2 border-b border-gray-100 bg-white">
+                      <div className="relative">
+                        <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          id="groupSearchInput"
+                          value={groupSearch}
+                          onChange={(e) => setGroupSearch(e.target.value)}
+                          placeholder="Filter groups by name or JID..."
+                          autoFocus
+                          className="w-full bg-wa-gray border-0 rounded-lg pl-9 pr-4 py-2 text-sm focus:ring-2 focus:ring-wa-green focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  )}
                   <div className="p-1 overflow-y-auto max-h-40" id="fetchedDropdownList">
                     {isFetching ? (
                       <p className="text-sm text-gray-500 p-2 flex items-center gap-2">
@@ -333,8 +406,10 @@ export default function ConfigPanel({
                       </p>
                     ) : fetchedGroups.length === 0 ? (
                       <p className="text-sm text-gray-500 p-2">No groups found.</p>
+                    ) : filteredGroups.length === 0 ? (
+                      <p className="text-sm text-gray-500 p-2">No matching groups.</p>
                     ) : (
-                      fetchedGroups.map((g, i) => (
+                      filteredGroups.map((g, i) => (
                         <div
                           key={i}
                           onClick={() => handleAddGroup(g)}
@@ -456,35 +531,57 @@ export default function ConfigPanel({
                   id="fetchedContactDropdown"
                   className="ml-4 mt-2 bg-white border border-gray-200 rounded-lg shadow-sm max-h-56 overflow-hidden z-10 flex flex-col"
                 >
-                  <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex justify-between items-center">
-                    {/* <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Select Contacts to Add
-                    </span> */}
-                    
-            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-              Add Existing Contacts    <Phone className="w-4 h-4 text-gray-400" /> 
-            </label>
-                    <button
-                      id="closeContactDropdownBtn"
-                      onClick={() => setShowContactDropdown(false)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="p-2 border-b border-gray-100 bg-white">
-                    <div className="relative">
-                      <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        id="contactSearchInput"
-                        value={contactSearch}
-                        onChange={(e) => setContactSearch(e.target.value)}
-                        placeholder="Search contacts..."
-                        className="w-full bg-wa-gray border-0 rounded-lg pl-9 pr-4 py-2 text-sm focus:ring-2 focus:ring-wa-green focus:outline-none"
-                      />
+                  <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex justify-between items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Select contacts
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        id="contactFilterToggleBtn"
+                        onClick={() => setShowContactFilter((open) => !open)}
+                        className={`p-1.5 rounded-md transition-colors ${
+                          showContactFilter
+                            ? 'bg-wa-green/15 text-wa-green'
+                            : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                        }`}
+                        title="Filter contacts"
+                        aria-label="Filter contacts"
+                        aria-pressed={showContactFilter}
+                      >
+                        <Filter className="w-4 h-4" />
+                      </button>
+                      <button
+                        id="closeContactDropdownBtn"
+                        type="button"
+                        onClick={() => {
+                          setShowContactDropdown(false);
+                          setShowContactFilter(false);
+                          setContactSearch('');
+                        }}
+                        className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                        aria-label="Close contacts list"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
+                  {showContactFilter && (
+                    <div className="p-2 border-b border-gray-100 bg-white">
+                      <div className="relative">
+                        <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          id="contactSearchInput"
+                          value={contactSearch}
+                          onChange={(e) => setContactSearch(e.target.value)}
+                          placeholder="Filter contacts by name or number..."
+                          autoFocus
+                          className="w-full bg-wa-gray border-0 rounded-lg pl-9 pr-4 py-2 text-sm focus:ring-2 focus:ring-wa-green focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  )}
                   <div className="p-1 overflow-y-auto max-h-40" id="fetchedContactDropdownList">
                     {isFetchingContacts ? (
                       <p className="text-sm text-gray-500 p-2 flex items-center gap-2">

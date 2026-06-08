@@ -16,7 +16,7 @@ const LID_TO_PHONE_URL = `${API_BASE}/get-whatsapp-pin-from-lid/v2`;
 
 export const REPORT_POLL_MS = 60_000;
 
-export const LIST_PAGE_LIMIT = 30;
+export const LIST_PAGE_LIMIT = 35;
 
 function buildPaginatedListBody(phoneNumber, page, ownerEmail) {
   const params = new URLSearchParams({
@@ -31,10 +31,115 @@ function buildPaginatedListBody(phoneNumber, page, ownerEmail) {
   return params;
 }
 
+export class WhatsAppNotPairedError extends Error {
+  constructor(message = 'No WhatsApp connection found. Pair your device first.') {
+    super(message);
+    this.name = 'WhatsAppNotPairedError';
+    this.code = 'WHATSAPP_NOT_PAIRED';
+  }
+}
+
+export class WhatsAppFetchTimeoutError extends Error {
+  constructor(message = 'Oops! It took longer than expected. Please try again in a moment.') {
+    super(message);
+    this.name = 'WhatsAppFetchTimeoutError';
+    this.code = 'WHATSAPP_FETCH_TIMEOUT';
+  }
+}
+
 function getResponseRoot(data) {
   if (Array.isArray(data) && data.length > 0 && data[0].success !== undefined) {
     return data[0];
   }
+  return data;
+}
+
+function parseNestedApiMessage(raw) {
+  const str = String(raw ?? '').trim();
+  if (!str) return '';
+
+  const jsonMatch = str.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      const parsed = JSON.parse(jsonMatch[0]);
+      const inner = parsed.message ?? parsed.error;
+      if (inner) return String(inner).trim();
+    } catch {
+      // fall through
+    }
+  }
+
+  return str;
+}
+
+function extractListErrorMessage(data, status) {
+  const candidates = [];
+
+  if (data?.message) candidates.push(data.message);
+  if (data?.error) candidates.push(data.error);
+
+  const root = getResponseRoot(data);
+  if (root?.message) candidates.push(root.message);
+  if (root?.error) candidates.push(root.error);
+
+  for (const candidate of candidates) {
+    const parsed = parseNestedApiMessage(candidate);
+    if (parsed) return parsed;
+  }
+
+  if (status === 408 || status === 504) {
+    return 'Oops! It took longer than expected. Please try again in a moment.';
+  }
+
+  return `Request failed (${status})`;
+}
+
+function isTimeoutLike(status, message) {
+  return status === 408
+    || status === 504
+    || status === 503
+    || /took longer than expected/i.test(message)
+    || /try again in a moment/i.test(message)
+    || /timeout/i.test(message);
+}
+
+function isNotPairedLike(message) {
+  return /no whatsapp connection/i.test(message)
+    || /pair your device/i.test(message);
+}
+
+function throwListWebhookFailure(message, status = 0) {
+  if (isTimeoutLike(status, message)) {
+    throw new WhatsAppFetchTimeoutError(message);
+  }
+  if (isNotPairedLike(message)) {
+    throw new WhatsAppNotPairedError(message);
+  }
+  throw new Error(message || 'Request failed');
+}
+
+async function readListWebhookResponse(response) {
+  const rawText = await response.text();
+  let data = null;
+
+  try {
+    data = rawText ? JSON.parse(rawText) : {};
+  } catch {
+    data = { message: rawText };
+  }
+
+  const message = extractListErrorMessage(data, response.status);
+
+  if (!response.ok) {
+    throwListWebhookFailure(message, response.status);
+  }
+
+  const root = getResponseRoot(data);
+  if (root?.success === false) {
+    const msg = String(root.error ?? root.message ?? message).trim();
+    throwListWebhookFailure(msg || message, response.status);
+  }
+
   return data;
 }
 
@@ -123,11 +228,7 @@ export async function fetchWhatsAppGroups(phoneNumber, page = 1, ownerEmail = ''
     body: buildPaginatedListBody(phoneNumber, page, ownerEmail),
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch groups');
-  }
-
-  const data = await response.json();
+  const data = await readListWebhookResponse(response);
   const items = parseGroupListResponse(data);
   return { items, ...extractPaginationMeta(data, items.length, page) };
 }
@@ -138,11 +239,7 @@ export async function fetchWhatsAppContacts(phoneNumber, page = 1, ownerEmail = 
     body: buildPaginatedListBody(phoneNumber, page, ownerEmail),
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch contacts');
-  }
-
-  const data = await response.json();
+  const data = await readListWebhookResponse(response);
   const items = parseContactListResponse(data);
   return { items, ...extractPaginationMeta(data, items.length, page) };
 }
