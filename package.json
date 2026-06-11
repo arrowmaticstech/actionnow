@@ -1,0 +1,19 @@
+{
+    "name": "actionNow",
+    "private": true,
+    "version": "0.1.0",
+    "type": "module",
+    "scripts": {
+      "dev": "npx http-serve",
+      "build": "echo 'build'",
+      "deploy": "  wrangler deploy" 
+    },
+    "dependencies": {
+ 
+    },
+    "devDependencies": {
+  
+      "wrangler": "^4.14.0"
+    }
+  }
+  
