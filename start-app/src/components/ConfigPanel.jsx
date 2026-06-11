@@ -4,6 +4,7 @@ import {
   Search, Tag, FileText, Clock, Calendar, Repeat, Save, Loader2, Filter,
 } from 'lucide-react';
 import { fetchWhatsAppGroups, fetchWhatsAppContacts, saveConfiguration } from '../api/start';
+import { DEFAULT_OWNER_EMAIL } from '../lib/main';
 import { pickRandomGroupName, SAVE_FLASH_MS, SUGGESTED_KEYWORDS } from '../lib/main';
 import ListPagination from './ListPagination';
 import {
@@ -25,6 +26,7 @@ export default function ConfigPanel({
   onListFetchError,
   ownerEmail = '',
   ownerPhone = '',
+  wasenderSessionId = null,
   isWhatsAppConnected = false,
 }) {
   const [waPhoneNumber, setWaPhoneNumber] = useState('');
@@ -73,7 +75,7 @@ export default function ConfigPanel({
       const { items, page: currentPage, hasMore } = await fetchWhatsAppGroups(
         waPhoneNumber.trim(),
         page,
-        ownerEmail,
+        { ownerEmail: DEFAULT_OWNER_EMAIL, ownerPhone, wasenderSessionId },
       );
       setFetchedGroups(items);
       setGroupPage(currentPage);
@@ -166,7 +168,7 @@ export default function ConfigPanel({
       const { items, page: currentPage, hasMore } = await fetchWhatsAppContacts(
         waPhoneNumber.trim(),
         page,
-        ownerEmail,
+        { ownerEmail: DEFAULT_OWNER_EMAIL, ownerPhone, wasenderSessionId },
       );
       setFetchedContacts(items);
       setContactPage(currentPage);
@@ -270,7 +272,7 @@ export default function ConfigPanel({
   const handleSave = async () => {
     setSaveState('saving');
     try {
-      await saveConfiguration(config, { ownerEmail, ownerPhone });
+      await saveConfiguration(config, { ownerEmail: DEFAULT_OWNER_EMAIL, ownerPhone });
       onSave();
       setSaveState('saved');
       setTimeout(() => setSaveState('idle'), SAVE_FLASH_MS);

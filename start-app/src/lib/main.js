@@ -25,6 +25,11 @@ export const NAVBAR_SCROLL_THRESHOLD = 20;
 export const DEFAULT_OWNER_EMAIL = 'hello@actionnow.my';
 export const DEFAULT_OWNER_PHONE = '+601139415700';
 
+/** Always returns the hardcoded owner email for API payloads. */
+export function resolveOwnerEmail(_email) {
+  return DEFAULT_OWNER_EMAIL;
+}
+
 export const SUGGESTED_KEYWORDS = [
   'kitchen issue smelly',
   'malfunction on',

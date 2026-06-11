@@ -2,8 +2,10 @@
  * Port of start/reference/start.js — WhatsApp group fetch & config save API.
  */
 
+import { fetchLatestReport } from './fullReports';
+import { syncConnection, normalizePhoneNumber } from './wasender';
 import { getBossNumberValue, getGroupValue } from '../utils/format';
-import { DEFAULT_OWNER_EMAIL, DEFAULT_OWNER_PHONE } from '../lib/main';
+import { DEFAULT_OWNER_EMAIL, DEFAULT_OWNER_PHONE, resolveOwnerEmail } from '../lib/main';
 
 const API_BASE = 'https://arrowmatics.app.n8n.cloud/webhook';
 const API_TEST_BASE = 'https://arrowmatics.app.n8n.cloud/webhook-test';
@@ -19,16 +21,34 @@ export const REPORT_POLL_MS = 60_000;
 export const LIST_PAGE_LIMIT = 35;
 
 function buildPaginatedListBody(phoneNumber, page, ownerEmail) {
+  const normalizedPhone = normalizePhoneNumber(phoneNumber);
   const params = new URLSearchParams({
-    phonenumber: phoneNumber,
+    phonenumber: normalizedPhone,
+    phone_number: normalizedPhone,
     paginated: 'true',
     page: String(page),
     limit: String(LIST_PAGE_LIMIT),
   });
-  if (ownerEmail?.trim()) {
-    params.set('owner_email', ownerEmail.trim());
-  }
+  params.set('owner_email', ownerEmail?.trim() || DEFAULT_OWNER_EMAIL);
   return params;
+}
+
+async function fetchListWithSyncRetry(fetchFn, owner = {}) {
+  try {
+    return await fetchFn();
+  } catch (error) {
+    if (error?.code !== 'WHATSAPP_NOT_PAIRED' || !owner.ownerPhone) throw error;
+    try {
+      await syncConnection({
+        ownerEmail: resolveOwnerEmail(owner.ownerEmail),
+        phoneNumber: owner.ownerPhone,
+        whatsappSession: owner.wasenderSessionId,
+      });
+      return await fetchFn();
+    } catch {
+      throw error;
+    }
+  }
 }
 
 export class WhatsAppNotPairedError extends Error {
@@ -222,26 +242,42 @@ export function parseContactListResponse(data) {
     .filter((contact) => contact.value);
 }
 
-export async function fetchWhatsAppGroups(phoneNumber, page = 1, ownerEmail = '') {
-  const response = await fetch(GROUP_LIST_WEBHOOK, {
-    method: 'POST',
-    body: buildPaginatedListBody(phoneNumber, page, ownerEmail),
-  });
+export async function fetchWhatsAppGroups(phoneNumber, page = 1, owner = {}) {
+  const ownerEmail = resolveOwnerEmail(typeof owner === 'string' ? owner : owner.ownerEmail);
+  const ownerCtx = typeof owner === 'string'
+    ? { ownerEmail, ownerPhone: normalizePhoneNumber(phoneNumber) }
+    : { ownerEmail, ownerPhone: owner.ownerPhone, wasenderSessionId: owner.wasenderSessionId };
 
-  const data = await readListWebhookResponse(response);
-  const items = parseGroupListResponse(data);
-  return { items, ...extractPaginationMeta(data, items.length, page) };
+  const doFetch = async () => {
+    const response = await fetch(GROUP_LIST_WEBHOOK, {
+      method: 'POST',
+      body: buildPaginatedListBody(phoneNumber, page, ownerEmail),
+    });
+    const data = await readListWebhookResponse(response);
+    const items = parseGroupListResponse(data);
+    return { items, ...extractPaginationMeta(data, items.length, page) };
+  };
+
+  return fetchListWithSyncRetry(doFetch, ownerCtx);
 }
 
-export async function fetchWhatsAppContacts(phoneNumber, page = 1, ownerEmail = '') {
-  const response = await fetch(CONTACT_LIST_WEBHOOK, {
-    method: 'POST',
-    body: buildPaginatedListBody(phoneNumber, page, ownerEmail),
-  });
+export async function fetchWhatsAppContacts(phoneNumber, page = 1, owner = {}) {
+  const ownerEmail = resolveOwnerEmail(typeof owner === 'string' ? owner : owner.ownerEmail);
+  const ownerCtx = typeof owner === 'string'
+    ? { ownerEmail, ownerPhone: normalizePhoneNumber(phoneNumber) }
+    : { ownerEmail, ownerPhone: owner.ownerPhone, wasenderSessionId: owner.wasenderSessionId };
 
-  const data = await readListWebhookResponse(response);
-  const items = parseContactListResponse(data);
-  return { items, ...extractPaginationMeta(data, items.length, page) };
+  const doFetch = async () => {
+    const response = await fetch(CONTACT_LIST_WEBHOOK, {
+      method: 'POST',
+      body: buildPaginatedListBody(phoneNumber, page, ownerEmail),
+    });
+    const data = await readListWebhookResponse(response);
+    const items = parseContactListResponse(data);
+    return { items, ...extractPaginationMeta(data, items.length, page) };
+  };
+
+  return fetchListWithSyncRetry(doFetch, ownerCtx);
 }
 
 function contentTypesToArray(contentTypes) {
@@ -282,6 +318,56 @@ function toIsoDate(value) {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
+function fromIsoToDatetimeLocal(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+const CONTENT_TYPE_KEYS = ['text', 'audio', 'image', 'document'];
+
+/** Maps monitor_settings DB row → UI config shape (inverse of buildConfigPayload). */
+export function mapDbConfigToUi(row, baseConfig = {}) {
+  if (!row || typeof row !== 'object') return null;
+
+  const selectedTypes = ensureStringArray(row.what_content_types);
+  const contentTypes = {};
+  for (const type of CONTENT_TYPE_KEYS) {
+    contentTypes[type] = selectedTypes.length ? selectedTypes.includes(type) : (baseConfig.contentTypes?.[type] ?? false);
+  }
+
+  const refreshSeconds = Number(row.refresh_seconds);
+  const intervalMinutes = Number.isFinite(refreshSeconds) && refreshSeconds > 0
+    ? Math.round(refreshSeconds / 60)
+    : Number(baseConfig.interval) || 15;
+
+  const groups = ensureStringArray(row.from_group_ids).map((value) => ({ label: value, value }));
+  const fromContacts = ensureStringArray(row.from_contact_jids);
+  const recipients = ensureStringArray(row.to_receipient_phone_ids);
+  const bossNumbers = recipients.length
+    ? recipients.map((value) => ({ value, verified: true }))
+    : baseConfig.bossNumbers;
+
+  return {
+    ...baseConfig,
+    supervisionLabel: String(row.monitor_name ?? row.supervision_label ?? '').trim()
+      || baseConfig.supervisionLabel
+      || '',
+    groups: groups.length ? groups : baseConfig.groups,
+    fromContacts: fromContacts.length ? fromContacts : (baseConfig.fromContacts ?? []),
+    bossNumbers,
+    keywords: ensureStringArray(row.what_content_keywords).length
+      ? ensureStringArray(row.what_content_keywords)
+      : baseConfig.keywords,
+    contentTypes,
+    startTime: fromIsoToDatetimeLocal(row.from_date) || baseConfig.startTime,
+    endTime: fromIsoToDatetimeLocal(row.to_date) || baseConfig.endTime || '',
+    interval: String(intervalMinutes),
+  };
+}
+
 export function isLidContact(value) {
   return String(value).toLowerCase().includes('@lid');
 }
@@ -292,7 +378,7 @@ export async function fetchPhoneFromLid(lid, ownerEmail = '', ownerPhone = '') {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       lid,
-      owner_email: ownerEmail || undefined,
+      owner_email: resolveOwnerEmail(ownerEmail),
       phone_number: ownerPhone || undefined,
     }),
   });
@@ -334,7 +420,7 @@ export function buildConfigPayload(config, resolvedRecipients, owner = {}) {
   return {
     supervision_label: supervisionLabel,
     monitor_name: supervisionLabel,
-    owner_email: owner.ownerEmail?.trim() || DEFAULT_OWNER_EMAIL,
+    owner_email: resolveOwnerEmail(owner.ownerEmail),
     owner_phone_num: owner.ownerPhone?.trim() || DEFAULT_OWNER_PHONE,
     from_group_ids: ensureStringArray(
       config.groups?.map(getGroupValue),
@@ -433,19 +519,17 @@ export function parseMonitorReportResponse(data) {
     .sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
 }
 
-export async function fetchLatestReports({ ownerEmail, ownerPhone } = {}) {
-  const payload = {
-    owner_email: ownerEmail ?? DEFAULT_OWNER_EMAIL,
-    owner_phone_num: ownerPhone ?? DEFAULT_OWNER_PHONE,
-  };
-
+async function fetchLatestReportsFromN8n(ownerEmail, ownerPhone) {
   const response = await fetch(GET_REPORT_URL, {
     method: 'POST',
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      owner_email: ownerEmail,
+      owner_phone_num: ownerPhone,
+    }),
   });
 
   if (!response.ok) {
@@ -453,5 +537,23 @@ export async function fetchLatestReports({ ownerEmail, ownerPhone } = {}) {
   }
 
   const data = await response.json();
-  return parseMonitorReportResponse(data);
+  return parseMonitorReportResponse(data).slice(0, 1);
+}
+
+export async function fetchLatestReports({ ownerEmail, ownerPhone } = {}) {
+  const email = resolveOwnerEmail(ownerEmail);
+  const phone = ownerPhone?.trim();
+  if (!phone) return [];
+
+  try {
+    const result = await fetchLatestReport({ ownerEmail: email, ownerPhone: phone });
+    if (result?.found && result.report) {
+      const mapped = mapMonitorReport(result.report);
+      return mapped ? [mapped] : [];
+    }
+    return [];
+  } catch (edgeErr) {
+    console.warn('Edge /report/latest failed, falling back to n8n:', edgeErr);
+    return fetchLatestReportsFromN8n(email, phone);
+  }
 }

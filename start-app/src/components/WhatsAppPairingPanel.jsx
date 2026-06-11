@@ -11,6 +11,7 @@ import {
   pollStatus,
   unbindConnection,
   getConnection,
+  syncConnection,
   listWhatsAppSessions,
   deleteWhatsAppSession,
   normalizePhoneNumber,
@@ -18,7 +19,10 @@ import {
   QR_TTL_SECONDS,
   STATUS_POLL_MS,
 } from '../api/wasender';
+import { DEFAULT_OWNER_EMAIL, resolveOwnerEmail } from '../lib/main';
 import { PAGE_RELOAD_AFTER_UNBIND_MS } from '../utils/pairingRecovery';
+
+const OWNER_EMAIL = DEFAULT_OWNER_EMAIL;
 
 function PairingQrDisplay({ value }) {
   if (!value) return null;
@@ -45,15 +49,18 @@ function loadSavedIdentity() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (!parsed?.ownerEmail) return null;
-    return parsed;
+    if (!parsed?.phoneNumber) return null;
+    return { ...parsed, ownerEmail: OWNER_EMAIL };
   } catch {
     return null;
   }
 }
 
 function saveIdentity(identity) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    ...identity,
+    ownerEmail: OWNER_EMAIL,
+  }));
 }
 
 function clearIdentity() {
@@ -63,7 +70,6 @@ function clearIdentity() {
 const WhatsAppPairingPanel = forwardRef(function WhatsAppPairingPanel({ onOwnerChange }, ref) {
   const saved = loadSavedIdentity();
 
-  const [ownerEmail, setOwnerEmail] = useState(saved?.ownerEmail ?? '');
   const [phoneNumber, setPhoneNumber] = useState(saved?.phoneNumber ?? '');
   const [deviceName, setDeviceName] = useState(saved?.deviceName ?? '');
   const [status, setStatus] = useState('idle');
@@ -80,7 +86,7 @@ const WhatsAppPairingPanel = forwardRef(function WhatsAppPairingPanel({ onOwnerC
 
   const notifyOwner = useCallback((next) => {
     onOwnerChange?.({
-      ownerEmail: next.ownerEmail,
+      ownerEmail: resolveOwnerEmail(),
       ownerPhone: normalizePhoneNumber(next.phoneNumber),
       deviceName: next.deviceName,
       status: next.status,
@@ -102,13 +108,27 @@ const WhatsAppPairingPanel = forwardRef(function WhatsAppPairingPanel({ onOwnerC
     }
   }, []);
 
-  const applyConnected = useCallback((identity) => {
+  const applyConnected = useCallback(async (identity) => {
     stopPolling();
     stopQrTimer();
     setQrCode(null);
     setQrSecondsLeft(0);
     setStatus('connected');
     setError(null);
+
+    const phone = normalizePhoneNumber(identity.phoneNumber ?? '');
+    if (phone) {
+      try {
+        await syncConnection({
+          ownerEmail: OWNER_EMAIL,
+          phoneNumber: phone,
+          whatsappSession: identity.sessionId,
+        });
+      } catch (err) {
+        console.warn('DB sync after connect failed (will retry on first fetch):', err);
+      }
+    }
+
     saveIdentity(identity);
     notifyOwner({ ...identity, status: 'connected' });
   }, [notifyOwner, stopPolling, stopQrTimer]);
@@ -202,31 +222,32 @@ const WhatsAppPairingPanel = forwardRef(function WhatsAppPairingPanel({ onOwnerC
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const email = ownerEmail.trim();
     const phone = phoneNumber.trim();
     const name = deviceName.trim() || 'WhatsApp Device';
 
-    if (!email || !phone) {
-      setError('Email and phone number are required.');
+    if (!phone) {
+      setError('Phone number is required.');
       return;
     }
 
     const hasExisting = !!(sessionId || loadedSessionRef.current?.id);
     beginPairing(
-      { ownerEmail: email, phoneNumber: phone, deviceName: name, sessionId },
+      { ownerEmail: OWNER_EMAIL, phoneNumber: phone, deviceName: name, sessionId },
       { replaceExisting: hasExisting },
     );
   };
 
   const handleRefreshQr = () => {
-    const email = ownerEmail.trim();
     const phone = phoneNumber.trim();
     const name = deviceName.trim() || 'WhatsApp Device';
-    if (!email || !phone) return;
-    beginPairing({ ownerEmail: email, phoneNumber: phone, deviceName: name, sessionId }, { isRefresh: true });
+    if (!phone) return;
+    beginPairing(
+      { ownerEmail: OWNER_EMAIL, phoneNumber: phone, deviceName: name, sessionId },
+      { isRefresh: true },
+    );
   };
 
-  const resetLocalPairingState = useCallback((email, phone, name) => {
+  const resetLocalPairingState = useCallback((phone, name) => {
     setStatus('disconnected');
     setQrCode(null);
     setQrSecondsLeft(0);
@@ -234,7 +255,7 @@ const WhatsAppPairingPanel = forwardRef(function WhatsAppPairingPanel({ onOwnerC
     loadedSessionRef.current = null;
     clearIdentity();
     notifyOwner({
-      ownerEmail: email,
+      ownerEmail: OWNER_EMAIL,
       phoneNumber: phone,
       deviceName: name,
       status: 'disconnected',
@@ -243,12 +264,11 @@ const WhatsAppPairingPanel = forwardRef(function WhatsAppPairingPanel({ onOwnerC
   }, [notifyOwner]);
 
   const performUnbind = useCallback(async ({ skipConfirm = false } = {}) => {
-    const email = ownerEmail.trim();
     const phone = phoneNumber.trim();
     const name = deviceName.trim() || 'WhatsApp Device';
 
-    if (!email || !phone) {
-      resetLocalPairingState(email, phone, name);
+    if (!phone) {
+      resetLocalPairingState(phone, name);
       return;
     }
 
@@ -266,27 +286,26 @@ const WhatsAppPairingPanel = forwardRef(function WhatsAppPairingPanel({ onOwnerC
 
     try {
       await unbindConnection({
-        ownerEmail: email,
+        ownerEmail: OWNER_EMAIL,
         phoneNumber: phone,
         whatsappSession: sessionId,
       });
-      resetLocalPairingState(email, phone, name);
+      resetLocalPairingState(phone, name);
     } catch (err) {
       if (skipConfirm) {
         console.warn('Recovery unbind API failed — clearing local pairing state:', err);
-        resetLocalPairingState(email, phone, name);
+        resetLocalPairingState(phone, name);
       } else {
         setError(err.message || 'Failed to unbind');
       }
     } finally {
       setBusy(false);
     }
-  }, [deviceName, ownerEmail, phoneNumber, resetLocalPairingState, sessionId, stopPolling, stopQrTimer]);
+  }, [deviceName, phoneNumber, resetLocalPairingState, sessionId, stopPolling, stopQrTimer]);
 
   const handleUnbind = () => performUnbind({ skipConfirm: false });
 
   const recoverStalePairing = useCallback(async () => {
-    const email = ownerEmail.trim();
     const phone = phoneNumber.trim();
 
     setBusy(true);
@@ -294,9 +313,9 @@ const WhatsAppPairingPanel = forwardRef(function WhatsAppPairingPanel({ onOwnerC
     stopQrTimer();
 
     try {
-      if (email && phone) {
+      if (phone) {
         await unbindConnection({
-          ownerEmail: email,
+          ownerEmail: OWNER_EMAIL,
           phoneNumber: phone,
           whatsappSession: sessionId,
         });
@@ -311,7 +330,7 @@ const WhatsAppPairingPanel = forwardRef(function WhatsAppPairingPanel({ onOwnerC
     window.setTimeout(() => {
       window.location.reload();
     }, PAGE_RELOAD_AFTER_UNBIND_MS);
-  }, [ownerEmail, phoneNumber, sessionId, stopPolling, stopQrTimer]);
+  }, [phoneNumber, sessionId, stopPolling, stopQrTimer]);
 
   useImperativeHandle(ref, () => ({ recoverStalePairing }), [recoverStalePairing]);
 
@@ -327,30 +346,16 @@ const WhatsAppPairingPanel = forwardRef(function WhatsAppPairingPanel({ onOwnerC
         if (top) {
           loadedSessionRef.current = top;
           const sessionStatus = String(top.status ?? '').toLowerCase();
-          let email = saved?.ownerEmail ?? '';
           const phone = top.phone_number ?? saved?.phoneNumber ?? '';
           const name = top.name ?? saved?.deviceName ?? '';
           const id = top.id ?? null;
 
-          setOwnerEmail(email);
           setPhoneNumber(phone);
           setDeviceName(name);
           setSessionId(id);
 
-          if (email && phone) {
-            try {
-              const db = await getConnection({ ownerEmail: email, phoneNumber: phone });
-              if (!cancelled && db.found && db.connection?.owner_email) {
-                email = db.connection.owner_email;
-                setOwnerEmail(email);
-              }
-            } catch {
-              // DB lookup is optional enrichment
-            }
-          }
-
           const identity = {
-            ownerEmail: email,
+            ownerEmail: OWNER_EMAIL,
             phoneNumber: phone,
             deviceName: name,
             sessionId: id,
@@ -365,11 +370,10 @@ const WhatsAppPairingPanel = forwardRef(function WhatsAppPairingPanel({ onOwnerC
           return;
         }
 
-        const email = saved?.ownerEmail;
         const phone = saved?.phoneNumber;
-        if (!email || !phone) return;
+        if (!phone) return;
 
-        const result = await getConnection({ ownerEmail: email, phoneNumber: phone });
+        const result = await getConnection({ ownerEmail: OWNER_EMAIL, phoneNumber: phone });
         if (cancelled) return;
 
         const connection = result.connection;
@@ -377,12 +381,11 @@ const WhatsAppPairingPanel = forwardRef(function WhatsAppPairingPanel({ onOwnerC
 
         if (result.found && connStatus === 'connected') {
           const identity = {
-            ownerEmail: email,
+            ownerEmail: OWNER_EMAIL,
             phoneNumber: phone,
             deviceName: connection.name ?? saved.deviceName ?? '',
             sessionId: connection.wasender_session_id ?? null,
           };
-          setOwnerEmail(email);
           setPhoneNumber(phone);
           setDeviceName(identity.deviceName);
           setSessionId(identity.sessionId);
@@ -393,7 +396,7 @@ const WhatsAppPairingPanel = forwardRef(function WhatsAppPairingPanel({ onOwnerC
         } else if (result.found) {
           setStatus(connStatus || 'disconnected');
           notifyOwner({
-            ownerEmail: email,
+            ownerEmail: OWNER_EMAIL,
             phoneNumber: phone,
             deviceName: saved.deviceName ?? '',
             status: connStatus || 'disconnected',
@@ -472,7 +475,7 @@ const WhatsAppPairingPanel = forwardRef(function WhatsAppPairingPanel({ onOwnerC
           </div>
           <div className="flex items-center gap-2 min-w-0">
             <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
-            <span className="font-medium text-gray-800 truncate">{ownerEmail}</span>
+            <span className="font-medium text-gray-800 truncate">{OWNER_EMAIL}</span>
           </div>
           <div className="hidden sm:block w-px h-5 bg-wa-green/20" aria-hidden="true" />
           <div className="flex items-center gap-2 min-w-0">
@@ -491,25 +494,10 @@ const WhatsAppPairingPanel = forwardRef(function WhatsAppPairingPanel({ onOwnerC
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid sm:grid-cols-3 gap-3">
-            <div>
-              <label htmlFor="pair-email" className="block text-xs font-semibold text-gray-600 mb-1.5">
-                Email
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  id="pair-email"
-                  type="email"
-                  value={ownerEmail}
-                  onChange={(e) => setOwnerEmail(e.target.value)}
-                  placeholder="you@company.com"
-                  required
-                  disabled={busy || status === 'pending'}
-                  className="w-full pl-9 pr-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-wa-green focus:border-wa-green focus:outline-none disabled:bg-gray-50"
-                />
-              </div>
-            </div>
+          <p className="text-xs text-gray-500">
+            Account email: <span className="font-mono text-gray-700">{OWNER_EMAIL}</span>
+          </p>
+          <div className="grid sm:grid-cols-2 gap-3">
             <div>
               <label htmlFor="pair-phone" className="block text-xs font-semibold text-gray-600 mb-1.5">
                 Phone number

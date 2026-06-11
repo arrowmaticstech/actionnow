@@ -1,4 +1,19 @@
-<script>
-
-    location.href = 'https://actionnow.my?ref=not-found'
-</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>ActionNow</title>
+  <script>
+    (function () {
+      var path = window.location.pathname;
+      if (path.indexOf('/start') === 0) {
+        sessionStorage.setItem('spa-redirect', window.location.href);
+        window.location.replace('/start/');
+        return;
+      }
+      window.location.href = 'https://actionnow.my?ref=not-found';
+    })();
+  </script>
+</head>
+<body></body>
+</html>

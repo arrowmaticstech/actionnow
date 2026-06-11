@@ -1393,9 +1393,9 @@
       {
         "parameters": {
           "operation": "executeQuery",
-          "query": "UPDATE actionnow.user_whatsapp_connections\nSET status = $2, updated_at = now()\nWHERE wasender_session_id = $1\nRETURNING *;",
+          "query": "UPDATE actionnow.user_whatsapp_connections\nSET status = $2,\n    api_key = COALESCE($3, api_key),\n    webhook_secret = COALESCE($4, webhook_secret),\n    updated_at = now()\nWHERE wasender_session_id = $1\nRETURNING *;",
           "options": {
-            "queryReplacement": "={{ [\n  $('Postgres - lookup for poll').item.json.wasender_session_id,\n  String($json.data?.status || $json.status || 'disconnected').toLowerCase()\n] }}"
+            "queryReplacement": "={{ [\n  $('Postgres - lookup for poll').item.json.wasender_session_id,\n  String($json.data?.status || $json.status || 'disconnected').toLowerCase(),\n  $json.data?.api_key ?? null,\n  $json.data?.webhook_secret ?? null\n] }}"
           }
         },
         "name": "Postgres - sync poll status",
@@ -2029,7 +2029,7 @@
       {
         "parameters": {
           "operation": "executeQuery",
-          "query": "SELECT *\nFROM actionnow.user_whatsapp_connections\nWHERE ($1::text IS NOT NULL AND owner_email = $1)\n   OR ($2::text IS NOT NULL AND phone_number = $2)\nORDER BY updated_at DESC\nLIMIT 1;",
+          "query": "SELECT *\nFROM actionnow.user_whatsapp_connections\nWHERE ($1::text IS NOT NULL AND $1 <> '' AND lower(owner_email) = lower($1))\n   OR ($2::text IS NOT NULL AND $2 <> '' AND (\n        phone_number = $2\n        OR phone_number = regexp_replace($2, '^\\\\+', '')\n        OR phone_number = ('+' || regexp_replace($2, '\\\\D', '', 'g'))\n        OR regexp_replace(phone_number, '\\\\D', '', 'g') = regexp_replace($2, '\\\\D', '', 'g')\n      ))\nORDER BY updated_at DESC\nLIMIT 1;",
           "options": {
             "queryReplacement": "={{ [\n  $json.body?.owner_email ?? $json.body?.ownerEmail ?? null,\n  $json.body?.phone_number ?? $json.body?.phonenumber ?? null\n] }}"
           }
@@ -2130,7 +2130,7 @@
       {
         "parameters": {
           "operation": "executeQuery",
-          "query": "SELECT *\nFROM actionnow.user_whatsapp_connections\nWHERE ($1::text IS NOT NULL AND owner_email = $1)\n   OR ($2::text IS NOT NULL AND phone_number = $2)\nORDER BY updated_at DESC\nLIMIT 1;",
+          "query": "SELECT *\nFROM actionnow.user_whatsapp_connections\nWHERE ($1::text IS NOT NULL AND $1 <> '' AND lower(owner_email) = lower($1))\n   OR ($2::text IS NOT NULL AND $2 <> '' AND (\n        phone_number = $2\n        OR phone_number = regexp_replace($2, '^\\\\+', '')\n        OR phone_number = ('+' || regexp_replace($2, '\\\\D', '', 'g'))\n        OR regexp_replace(phone_number, '\\\\D', '', 'g') = regexp_replace($2, '\\\\D', '', 'g')\n      ))\nORDER BY updated_at DESC\nLIMIT 1;",
           "options": {
             "queryReplacement": "={{ [\n  $json.body?.owner_email ?? $json.body?.ownerEmail ?? null,\n  $json.body?.phone_number ?? $json.body?.phonenumber ?? null\n] }}"
           }
@@ -2702,7 +2702,7 @@
       {
         "parameters": {
           "operation": "executeQuery",
-          "query": "SELECT *\nFROM actionnow.monitor_results\nWHERE owner_email = $1\n  AND ($2::text IS NULL OR $2 = '' OR owner_phone_num = $2)\nORDER BY created_date DESC\nLIMIT 50;",
+          "query": "SELECT *\nFROM actionnow.monitor_results\nWHERE lower(owner_email) = lower($1)\n  AND (\n    $2::text IS NULL OR $2 = ''\n    OR owner_phone_num = $2\n    OR owner_phone_num = regexp_replace($2, '^\\+', '')\n    OR owner_phone_num = ('+' || regexp_replace($2, '\\D', '', 'g'))\n    OR regexp_replace(owner_phone_num, '\\D', '', 'g') = regexp_replace($2, '\\D', '', 'g')\n  )\nORDER BY created_date DESC\nLIMIT 1;",
           "options": {
             "queryReplacement": "={{ [\n  $('Webhook - get report configuration1').item.json.body.owner_email,\n  $('Webhook - get report configuration1').item.json.body.owner_phone_num ?? null\n] }}"
           }

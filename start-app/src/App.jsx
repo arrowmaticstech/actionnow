@@ -8,9 +8,10 @@ export default function App() {
   return (
     <BrowserRouter basename={base}>
       <Routes>
-        <Route index element={<HomePage />} />
+        <Route index element={<Navigate to="/main" replace />} />
+        <Route path="main" element={<HomePage />} />
         <Route path="full-reports" element={<FullReports />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/main" replace />} />
       </Routes>
     </BrowserRouter>
   );

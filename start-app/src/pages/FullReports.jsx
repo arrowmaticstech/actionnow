@@ -8,6 +8,7 @@ import {
   Loader2,
   RefreshCw,
   Send,
+  Settings,
   Smartphone,
 } from 'lucide-react';
 import Footer from '../components/Footer';
@@ -15,9 +16,11 @@ import Navbar from '../components/Navbar';
 import AgentThinkingSection from '../components/fullReports/AgentThinkingSection';
 import ManagerReportsSection from '../components/fullReports/ManagerReportsSection';
 import MessagesReceivedSection from '../components/fullReports/MessagesReceivedSection';
+import MonitorSettingsSection from '../components/fullReports/MonitorSettingsSection';
 import ReportSection from '../components/fullReports/ReportSection';
 import { fetchBundle } from '../api/fullReports';
 import { resolveConnectedOwner } from '../lib/ownerIdentity';
+import { DEFAULT_OWNER_EMAIL } from '../lib/main';
 
 export default function FullReports() {
   const [owner, setOwner] = useState(null);
@@ -52,20 +55,20 @@ export default function FullReports() {
     loadOwner();
   }, [loadOwner]);
 
-  const ownerForApi = owner?.connected
-    ? { ownerEmail: owner.ownerEmail, ownerPhone: owner.ownerPhone }
+  const ownerForApi = owner?.connected && owner.ownerPhone
+    ? { ownerEmail: DEFAULT_OWNER_EMAIL, ownerPhone: owner.ownerPhone }
     : null;
 
   useEffect(() => {
     if (ownerForApi) loadBundle(ownerForApi);
     else setBundle(null);
-  }, [ownerForApi?.ownerEmail, ownerForApi?.ownerPhone, loadBundle]);
+  }, [ownerForApi?.ownerPhone, loadBundle]);
 
   const handleRefresh = async () => {
     const resolved = await loadOwner();
     if (resolved?.connected) {
       await loadBundle({
-        ownerEmail: resolved.ownerEmail,
+        ownerEmail: DEFAULT_OWNER_EMAIL,
         ownerPhone: resolved.ownerPhone,
       });
     }
@@ -80,7 +83,7 @@ export default function FullReports() {
       <main className="flex-1 pt-24 pb-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-wa-dark">
+            <Link to="/main" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-wa-dark">
               <ArrowLeft className="w-4 h-4" />
               Back to dashboard
             </Link>
@@ -113,7 +116,7 @@ export default function FullReports() {
               <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-semibold text-amber-900">Pair WhatsApp first</p>
-                <Link to="/#demo" className="inline-block mt-3 text-sm font-semibold text-wa-dark hover:underline">
+                <Link to="/main#demo" className="inline-block mt-3 text-sm font-semibold text-wa-dark hover:underline">
                   Go to pairing →
                 </Link>
               </div>
@@ -127,12 +130,20 @@ export default function FullReports() {
                   <p className="text-gray-600 font-mono">{owner.ownerPhone}</p>
                   {c && (
                     <p className="text-xs text-gray-400 mt-1">
-                      {c.text_messages} text · {c.media} media · {c.interpretations} interpretations ·{' '}
-                      {c.attempt_logs} attempts · {c.monitor_results} reports
+                      {c.monitor_settings} settings · {c.text_messages} text · {c.media} media ·{' '}
+                      {c.interpretations} interpretations · {c.attempt_logs} attempts ·{' '}
+                      {c.monitor_results} reports
                     </p>
                   )}
-                  {bundle?._meta?.filter && (
-                    <p className="text-xs text-gray-400 mt-0.5 font-mono">{bundle._meta.filter}</p>
+                  {bundle?._meta?.owner_email && (
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      email: <span className="font-mono">{bundle._meta.owner_email}</span>
+                    </p>
+                  )}
+                  {bundle?._meta?.filters?.attempt_logs && (
+                    <p className="text-xs text-gray-400 mt-0.5 font-mono">
+                      attempts: {bundle._meta.filters.attempt_logs}
+                    </p>
                   )}
                 </div>
               </div>
@@ -150,6 +161,15 @@ export default function FullReports() {
                 </div>
               ) : (
                 <div className="space-y-20">
+                  <ReportSection
+                    id="monitor-settings"
+                    title="Monitor Settings"
+                    subtitle="monitor_settings — all columns (groups, recipients, keywords, schedule)"
+                    icon={Settings}
+                  >
+                    <MonitorSettingsSection monitorSettings={bundle?.monitor_settings} />
+                  </ReportSection>
+
                   <ReportSection
                     id="messages-received"
                     title="Messages Received"

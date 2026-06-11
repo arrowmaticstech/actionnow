@@ -3,6 +3,7 @@ import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
+const DEFAULT_OWNER_EMAIL = 'hello@actionnow.my';
 
 /** public views — see migration 010_public_actionnow_read_views.sql */
 const T = {
@@ -12,7 +13,10 @@ const T = {
   interpretations: 'an_whatsapp_media_interpretations',
   attemptLogs: 'an_monitor_attempt_logs',
   results: 'an_monitor_results',
+  monitorSettings: 'an_monitor_settings',
 } as const;
+
+const ROUTES_WITHOUT_CONNECTION = new Set(['/config', '/report/latest']);
 
 const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -126,6 +130,41 @@ function phoneFilterDescription(phone: string) {
   return `owner_phone_num IN (${variants.map((v) => `'${v}'`).join(', ')})`;
 }
 
+type BundleOrderCol = 'received_at' | 'created_date';
+
+/** Phone variants first; if no rows, fall back to owner_email. */
+async function queryBundleTable(
+  sb: DbClient,
+  table: string,
+  owner: OwnerContext,
+  orderCol: BundleOrderCol,
+) {
+  const phone = owner.owner_phone_num;
+  const variants = phoneVariants(phone);
+  const phoneFilter = phoneFilterDescription(phone);
+
+  const phoneRes = await sb
+    .from(table)
+    .select('*')
+    .in('owner_phone_num', variants)
+    .order(orderCol, { ascending: false });
+
+  if (phoneRes.error) return { ...phoneRes, _filter: phoneFilter };
+  if ((phoneRes.data?.length ?? 0) > 0) {
+    return { ...phoneRes, _filter: phoneFilter };
+  }
+
+  const email = normalizeEmail(owner.owner_email || DEFAULT_OWNER_EMAIL);
+  const emailFilter = `owner_email ILIKE '${email}' (fallback — no phone match)`;
+  const emailRes = await sb
+    .from(table)
+    .select('*')
+    .ilike('owner_email', email)
+    .order(orderCol, { ascending: false });
+
+  return { ...emailRes, _filter: emailRes.data?.length ? emailFilter : phoneFilter };
+}
+
 /** @deprecated list routes — email scope */
 function forOwner<T extends { ilike: (col: string, val: string) => T }>(query: T, owner: OwnerContext): T {
   return query.ilike('owner_email', normalizeEmail(owner.owner_email));
@@ -147,36 +186,76 @@ function sampleIds(rows: Array<{ id?: string; message_id?: string }> | null) {
   return (rows ?? []).slice(0, 3).map((r) => r.id ?? r.message_id ?? '?');
 }
 
+type ConnectionRow = {
+  id: string;
+  status: string;
+  phone_number: string;
+  owner_email?: string;
+};
+
 async function findConnectedConnection(sb: DbClient, email: string, phone: string) {
   const variants = phoneVariants(phone);
   const { data, error: qErr } = await sb
     .from(T.connections)
-    .select('id, status, phone_number')
+    .select('id, status, phone_number, owner_email')
     .ilike('owner_email', normalizeEmail(email))
     .in('phone_number', variants)
     .eq('status', 'connected')
     .limit(1)
     .maybeSingle();
   if (qErr) throw qErr;
-  return { row: data, matched_phone: data?.phone_number ?? null };
+  return { row: data as ConnectionRow | null, matched_phone: data?.phone_number ?? null };
+}
+
+async function findConnectedConnectionByPhone(sb: DbClient, phone: string) {
+  const variants = phoneVariants(phone);
+  const { data, error: qErr } = await sb
+    .from(T.connections)
+    .select('id, status, phone_number, owner_email')
+    .in('phone_number', variants)
+    .eq('status', 'connected')
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (qErr) throw qErr;
+  return { row: data as ConnectionRow | null, matched_phone: data?.phone_number ?? null };
+}
+
+function parseOwnerContext(body: Record<string, unknown>): OwnerContext {
+  const email = String(body.owner_email ?? '').trim() || DEFAULT_OWNER_EMAIL;
+  const phone = normalizePhone(String(body.owner_phone_num ?? ''));
+  if (!phone) {
+    throw new Response(JSON.stringify({ error: 'owner_phone_num required' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+  return {
+    owner_email: normalizeEmail(email),
+    owner_phone_num: phone,
+  };
 }
 
 async function assertConnectedOwner(sb: DbClient, owner: OwnerContext) {
-  const email = owner.owner_email?.trim();
   const phone = normalizePhone(owner.owner_phone_num);
-  if (!email || !phone) {
-    throw new Response(JSON.stringify({ error: 'owner_email and owner_phone_num required' }), {
+  if (!phone) {
+    throw new Response(JSON.stringify({ error: 'owner_phone_num required' }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 
-  let connectionRow: { id: string; status: string; phone_number: string } | null = null;
+  let resolvedEmail = normalizeEmail(owner.owner_email || DEFAULT_OWNER_EMAIL);
+  let connectionRow: ConnectionRow | null = null;
   let matchedPhone: string | null = null;
+
   try {
-    const found = await findConnectedConnection(sb, email, phone);
+    const found = await findConnectedConnectionByPhone(sb, phone);
     connectionRow = found.row;
     matchedPhone = found.matched_phone;
+    if (connectionRow?.owner_email) {
+      resolvedEmail = normalizeEmail(connectionRow.owner_email);
+    }
   } catch (qErr) {
     const message = qErr instanceof Error ? qErr.message : 'Connection lookup failed';
     throw new Response(JSON.stringify({ error: message }), {
@@ -186,18 +265,19 @@ async function assertConnectedOwner(sb: DbClient, owner: OwnerContext) {
   }
 
   if (!connectionRow) {
-    const { data: anyConn } = await sb
-      .from(T.connections)
-      .select('phone_number, status')
-      .ilike('owner_email', normalizeEmail(email));
+    const variants = phoneVariants(phone);
+    const connQuery = resolvedEmail
+      ? sb.from(T.connections).select('phone_number, status, owner_email').ilike('owner_email', resolvedEmail)
+      : sb.from(T.connections).select('phone_number, status, owner_email').in('phone_number', variants);
+    const { data: anyConn } = await connQuery;
     throw new Response(
       JSON.stringify({
         error: 'No connected WhatsApp device for this owner',
         debug: {
-          requested_email: email,
+          requested_email: resolvedEmail || null,
           requested_phone: phone,
-          phone_variants_tried: phoneVariants(phone),
-          connections_for_email: anyConn ?? [],
+          phone_variants_tried: variants,
+          connections_found: anyConn ?? [],
         },
       }),
       { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
@@ -205,13 +285,13 @@ async function assertConnectedOwner(sb: DbClient, owner: OwnerContext) {
   }
 
   logLine('assertConnectedOwner', {
-    owner_email: email,
+    owner_email: resolvedEmail || null,
     owner_phone_num: phone,
     connection_phone_in_db: connectionRow.phone_number,
     matched_phone: matchedPhone,
   });
 
-  return { owner_email: normalizeEmail(email), owner_phone_num: phone };
+  return { owner_email: resolvedEmail, owner_phone_num: phone };
 }
 
 async function dbCountsForOwner(sb: DbClient, owner: OwnerContext) {
@@ -491,6 +571,95 @@ async function routeReportsDetail(sb: DbClient, body: Record<string, unknown>, o
   return json({ report, linked_attempts: linked_attempts ?? [] });
 }
 
+/** Latest row: phone-only, or phone+email then email fallback when email provided. */
+async function latestRowForOwner(
+  sb: DbClient,
+  table: string,
+  owner: OwnerContext,
+) {
+  const email = owner.owner_email?.trim();
+  const phoneFilter = phoneFilterDescription(owner.owner_phone_num);
+  const variants = phoneVariants(owner.owner_phone_num);
+
+  if (!email) {
+    const byPhoneOnly = await sb
+      .from(table)
+      .select('*')
+      .in('owner_phone_num', variants)
+      .order('created_date', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    return {
+      data: byPhoneOnly.data ?? null,
+      error: byPhoneOnly.error,
+      filter: phoneFilter,
+    };
+  }
+
+  const byPhoneAndEmail = await sb
+    .from(table)
+    .select('*')
+    .ilike('owner_email', email)
+    .in('owner_phone_num', variants)
+    .order('created_date', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (byPhoneAndEmail.error) return { data: null, error: byPhoneAndEmail.error, filter: phoneFilter };
+  if (byPhoneAndEmail.data) {
+    return {
+      data: byPhoneAndEmail.data,
+      error: null,
+      filter: `${ownerFilterDescription(owner)} AND ${phoneFilter}`,
+    };
+  }
+
+  const byEmail = await sb
+    .from(table)
+    .select('*')
+    .ilike('owner_email', email)
+    .order('created_date', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return {
+    data: byEmail.data ?? null,
+    error: byEmail.error,
+    filter: byEmail.data
+      ? `${ownerFilterDescription(owner)} (email fallback — no phone match)`
+      : `${ownerFilterDescription(owner)} AND ${phoneFilter}`,
+  };
+}
+
+/** Latest monitor_settings row for owner (no active connection required). */
+async function routeConfig(sb: DbClient, _body: Record<string, unknown>, owner: OwnerContext) {
+  const { data, error: qErr, filter } = await latestRowForOwner(sb, T.monitorSettings, owner);
+  if (qErr) return error(qErr.message, 500);
+
+  logLine('routeConfig', { found: !!data, filter });
+
+  return json({
+    found: !!data,
+    config: data,
+    _meta: { filter, owner_email: owner.owner_email, owner_phone_num: owner.owner_phone_num },
+  });
+}
+
+/** Latest monitor_results row — no date filter, limit 1. */
+async function routeReportLatest(sb: DbClient, _body: Record<string, unknown>, owner: OwnerContext) {
+  const { data, error: qErr, filter } = await latestRowForOwner(sb, T.results, owner);
+  if (qErr) return error(qErr.message, 500);
+
+  logLine('routeReportLatest', { found: !!data, filter });
+
+  return json({
+    found: !!data,
+    report: data,
+    _meta: { filter, owner_email: owner.owner_email, owner_phone_num: owner.owner_phone_num },
+  });
+}
+
 /**
  * One call — full rows, filtered by owner_phone_num on paired device.
  * Media rows include nested interpretations linked by media_id.
@@ -499,16 +668,21 @@ async function routeBundle(sb: DbClient, _body: Record<string, unknown>, owner: 
   const phone = owner.owner_phone_num;
   const filter = phoneFilterDescription(phone);
 
-  logLine('routeBundle', { phone, filter });
+  logLine('routeBundle', {
+    phone,
+    owner_email: owner.owner_email,
+    phone_filter: phoneFilterDescription(phone),
+  });
 
-  const [textRes, mediaRes, attemptsRes, reportsRes] = await Promise.all([
-    forPhone(sb.from(T.messages).select('*'), phone).order('received_at', { ascending: false }),
-    forPhone(sb.from(T.messageMedia).select('*'), phone).order('created_date', { ascending: false }),
-    forPhone(sb.from(T.attemptLogs).select('*'), phone).order('created_date', { ascending: false }),
-    forPhone(sb.from(T.results).select('*'), phone).order('created_date', { ascending: false }),
+  const [textRes, mediaRes, attemptsRes, reportsRes, settingsRes] = await Promise.all([
+    queryBundleTable(sb, T.messages, owner, 'received_at'),
+    queryBundleTable(sb, T.messageMedia, owner, 'created_date'),
+    queryBundleTable(sb, T.attemptLogs, owner, 'created_date'),
+    queryBundleTable(sb, T.results, owner, 'created_date'),
+    queryBundleTable(sb, T.monitorSettings, owner, 'created_date'),
   ]);
 
-  const errors = [textRes, mediaRes, attemptsRes, reportsRes]
+  const errors = [textRes, mediaRes, attemptsRes, reportsRes, settingsRes]
     .map((r) => r.error?.message)
     .filter(Boolean);
   if (errors.length) {
@@ -542,6 +716,7 @@ async function routeBundle(sb: DbClient, _body: Record<string, unknown>, owner: 
   const text_messages = textRes.data ?? [];
   const attempt_logs = attemptsRes.data ?? [];
   const monitor_results = reportsRes.data ?? [];
+  const monitor_settings = settingsRes.data ?? [];
 
   logLine('routeBundle result', {
     phone,
@@ -550,6 +725,7 @@ async function routeBundle(sb: DbClient, _body: Record<string, unknown>, owner: 
     interpretations: interpretationRows.length,
     attempt_logs: attempt_logs.length,
     monitor_results: monitor_results.length,
+    monitor_settings: monitor_settings.length,
   });
 
   return json({
@@ -557,23 +733,32 @@ async function routeBundle(sb: DbClient, _body: Record<string, unknown>, owner: 
     media,
     attempt_logs,
     monitor_results,
+    monitor_settings,
     counts: {
       text_messages: text_messages.length,
       media: media.length,
       interpretations: interpretationRows.length,
       attempt_logs: attempt_logs.length,
       monitor_results: monitor_results.length,
+      monitor_settings: monitor_settings.length,
     },
     _meta: {
-      filter,
       owner_email: owner.owner_email,
       owner_phone_num: phone,
+      filters: {
+        text_messages: textRes._filter,
+        media: mediaRes._filter,
+        attempt_logs: attemptsRes._filter,
+        monitor_results: reportsRes._filter,
+        monitor_settings: settingsRes._filter,
+      },
       tables: {
         text: 'actionnow.whatsapp_messages',
         media: 'actionnow.whatsapp_message_media',
         interpretations: 'actionnow.whatsapp_media_interpretations',
         thinking: 'actionnow.monitor_attempt_logs',
         reports: 'actionnow.monitor_results',
+        settings: 'actionnow.monitor_settings',
       },
     },
   });
@@ -603,12 +788,15 @@ Deno.serve(async (req) => {
 
   try {
     const sb = db();
-    const owner = await assertConnectedOwner(sb, {
-      owner_email: String(body.owner_email ?? ''),
-      owner_phone_num: normalizePhone(String(body.owner_phone_num ?? '')),
-    });
+    const owner = ROUTES_WITHOUT_CONNECTION.has(route)
+      ? parseOwnerContext(body)
+      : await assertConnectedOwner(sb, parseOwnerContext(body));
 
     switch (route) {
+      case '/config':
+        return await routeConfig(sb, body, owner);
+      case '/report/latest':
+        return await routeReportLatest(sb, body, owner);
       case '/messages':
         return await routeMessages(sb, body, owner);
       case '/messages/media':
@@ -629,7 +817,7 @@ Deno.serve(async (req) => {
         return await routeBundle(sb, body, owner);
       default:
         return error(
-          'Unknown route. Use: /bundle (recommended), /messages, /thinking, /reports, /debug',
+          'Unknown route. Use: /bundle, /config, /report/latest, /messages, /thinking, /reports, /debug',
           404,
         );
     }

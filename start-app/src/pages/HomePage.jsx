@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import ConfigPanel from '../components/ConfigPanel';
 import StatusPanel from '../components/StatusPanel';
 import WhatsAppPairingPanel from '../components/WhatsAppPairingPanel';
@@ -6,9 +6,10 @@ import AppToast from '../components/AppToast';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 import useMouseRipple from '../hooks/useMouseRipple';
-import { TOAST_VISIBLE_MS } from '../lib/main';
+import { fetchMonitorConfig } from '../api/fullReports';
+import { mapDbConfigToUi } from '../api/start';
+import { DEFAULT_OWNER_EMAIL, TOAST_VISIBLE_MS } from '../lib/main';
 import { getDatetimeLocalNow } from '../utils/format';
-import { PAGE_RELOAD_AFTER_UNBIND_MS } from '../utils/pairingRecovery';
 
 const INITIAL_CONFIG = {
   supervisionLabel: '',
@@ -30,7 +31,7 @@ const INITIAL_CONFIG = {
 };
 
 const INITIAL_OWNER = {
-  ownerEmail: '',
+  ownerEmail: DEFAULT_OWNER_EMAIL,
   ownerPhone: '',
   deviceName: '',
   status: 'idle',
@@ -42,8 +43,38 @@ export default function HomePage() {
 
   const [config, setConfig] = useState(INITIAL_CONFIG);
   const [owner, setOwner] = useState(INITIAL_OWNER);
+  const [configLoadedFor, setConfigLoadedFor] = useState('');
   const [appToast, setAppToast] = useState({ show: false, title: '', message: '', variant: 'info' });
   const pairingPanelRef = useRef(null);
+
+  useEffect(() => {
+    if (owner.status !== 'connected') return;
+
+    const phone = owner.ownerPhone?.trim();
+    if (!phone) return;
+
+    const key = `${DEFAULT_OWNER_EMAIL}|${phone}`;
+    if (configLoadedFor === key) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const result = await fetchMonitorConfig({ ownerEmail: DEFAULT_OWNER_EMAIL, ownerPhone: phone });
+        if (cancelled || !result?.found || !result.config) return;
+
+        setConfig((prev) => ({
+          ...mapDbConfigToUi(result.config, prev),
+          lastChecked: 'Loaded from server',
+        }));
+        setConfigLoadedFor(key);
+      } catch (err) {
+        console.warn('Failed to load saved monitor config:', err);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [owner.status, owner.ownerEmail, owner.ownerPhone, configLoadedFor]);
 
   const showAppToast = useCallback((title, message, options = {}) => {
     const {
@@ -68,16 +99,15 @@ export default function HomePage() {
 
   const handlePairingRequired = useCallback((message) => {
     showAppToast(
-      'WhatsApp not paired',
+      'Connection not ready',
       message || 'No WhatsApp connection found. Pair your device first.',
       {
-        variant: 'error',
+        variant: 'warning',
         position: 'center',
-        hint: `Clearing session and refreshing in ${PAGE_RELOAD_AFTER_UNBIND_MS / 1000} seconds…`,
-        durationMs: PAGE_RELOAD_AFTER_UNBIND_MS + 500,
+        hint: 'Wait a few seconds after scanning the QR, then tap Fetch again.',
+        durationMs: 8000,
       },
     );
-    pairingPanelRef.current?.recoverStalePairing?.();
   }, [showAppToast]);
 
   const handleListFetchError = useCallback((message, kind = 'timeout') => {
@@ -132,6 +162,7 @@ export default function HomePage() {
                 onListFetchError={handleListFetchError}
                 ownerEmail={owner.ownerEmail}
                 ownerPhone={owner.ownerPhone}
+                wasenderSessionId={owner.wasenderSessionId}
                 isWhatsAppConnected={owner.status === 'connected'}
               />
               <StatusPanel

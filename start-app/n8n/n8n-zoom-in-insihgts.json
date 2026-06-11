@@ -1,884 +1,1065 @@
 {
-    "nodes": [
-      {
-        "parameters": {
-          "operation": "executeQuery",
-          "query": "INSERT INTO actionnow.monitor_attempt_logs (\n  monitor_setting_id, owner_email, owner_phone_num, monitor_name,\n  matched_slot_at, window_start, window_end,\n  relevance_score, score_threshold, passes_threshold,\n  score_reason, score_insights, message_count,\n  keywords_snapshot, content_types_snapshot, corpus_preview,\n  outcome, model_provider, model_name\n) VALUES (\n  $1::uuid, $2, $3, $4,\n  NULLIF($5, '')::timestamptz, $6::timestamptz, $7::timestamptz,\n  $8::integer, $9::integer, $10::boolean,\n  NULLIF($11, ''), $12::jsonb, $13::integer,\n  $14::text[], $15::text[], NULLIF($16, ''),\n  $17, 'openrouter', $18\n)\nRETURNING id, outcome, relevance_score, passes_threshold, monitor_setting_id;",
-          "options": {
-            "queryReplacement": "={{ [\n  $json.id,\n  $json.owner_email,\n  $json.owner_phone_num ?? '',\n  $json.monitor_name ?? '',\n  $json.matched_slot_at ?? $json.matched_slot_utc ?? $json.matched_slot_gmt8 ?? '',\n  $json.window_start,\n  $json.window_end,\n  $json.relevance_score,\n  $json.score_threshold ?? 20,\n  $json.passes_threshold,\n  $json.score_reason ?? '',\n  JSON.stringify({ relevance_score: $json.relevance_score, score_reason: $json.score_reason, passes_threshold: $json.passes_threshold, send: $json.passes_threshold ? 'YES' : 'NOT-SEND' }),\n  $json.message_count ?? 0,\n  $json.keywords ?? [],\n  $json.content_types ?? [],\n  String($json.message_corpus ?? '').slice(0, 2000),\n  $json.log_outcome ?? ($json.passes_threshold ? 'passed_score' : 'not_send'),\n  $json.model_name ?? 'google/gemini-2.5-flash-preview'\n] }}"
-          }
-        },
-        "name": "Postgres - log monitor attempt",
-        "type": "n8n-nodes-base.postgres",
-        "typeVersion": 2.6,
-        "position": [
-          3024,
-          3504
-        ],
-        "id": "b144f2c5-bb6e-4f74-8c4f-c6614eac9f67",
-        "credentials": {
-          "postgres": {
-            "id": "UMW6mMpCtmfMWdKZ",
-            "name": "Arrowmatic supabase postgres"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {},
-        "name": "No Operation - NOT-SEND logged",
-        "type": "n8n-nodes-base.noOp",
-        "typeVersion": 1,
-        "position": [
-          3536,
-          3536
-        ],
-        "id": "515755b5-41e9-4ebf-8253-f29f46f10681"
-      },
-      {
-        "parameters": {
-          "operation": "executeQuery",
-          "query": "UPDATE actionnow.monitor_attempt_logs\nSET monitor_result_id = $1::uuid, outcome = 'report_generated', updated_date = now()\nWHERE id = $2::uuid\nRETURNING id, outcome, monitor_result_id;",
-          "options": {
-            "queryReplacement": "={{ [$json.id, $('Postgres - log monitor attempt').item.json.id] }}"
-          }
-        },
-        "name": "Postgres - link attempt to result",
-        "type": "n8n-nodes-base.postgres",
-        "typeVersion": 2.6,
-        "position": [
-          4400,
-          3104
-        ],
-        "id": "049678ad-e56a-4c46-a1b8-bd6afcc7f1c0",
-        "credentials": {
-          "postgres": {
-            "id": "UMW6mMpCtmfMWdKZ",
-            "name": "Arrowmatic supabase postgres"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "rule": {
-            "interval": [
-              {
-                "field": "minutes"
-              }
-            ]
-          }
-        },
-        "name": "Schedule Trigger - check the next runs for reports2",
-        "type": "n8n-nodes-base.scheduleTrigger",
-        "typeVersion": 1.3,
-        "position": [
-          832,
-          3088
-        ],
-        "id": "21a10ae2-2f2d-4e6b-91ff-a0eb22ef02a3"
-      },
-      {
-        "parameters": {
-          "operation": "executeQuery",
-          "query": "SELECT *\nFROM actionnow.monitor_settings\nORDER BY created_date DESC\nLIMIT 1;",
-          "options": {}
-        },
-        "name": "Postgres - get monitor config1",
-        "type": "n8n-nodes-base.postgres",
-        "typeVersion": 2.6,
-        "position": [
-          1104,
-          3120
-        ],
-        "id": "a1e45135-f608-43ea-ab41-b034a5994b35",
-        "alwaysOutputData": true,
-        "credentials": {
-          "postgres": {
-            "id": "UMW6mMpCtmfMWdKZ",
-            "name": "Arrowmatic supabase postgres"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "jsCode": "const config = $input.first().json;\nconst refreshSeconds = parseInt(config.refresh_seconds, 10) || 3600;\nconst fromDateStr = config.from_date;\nif (!fromDateStr) return [{ json: { skipped: true, reason: 'monitor_settings.from_date is empty' } }];\nconst now = new Date();\nconst fromDate = new Date(fromDateStr);\nif (now < fromDate) return [];\nconst gmt8Offset = 8 * 60 * 60 * 1000;\nconst elapsedMs = now.getTime() - fromDate.getTime();\nconst intervalMs = refreshSeconds * 1000;\nconst completedIntervals = Math.floor(elapsedMs / intervalMs);\nlet nextSlotTimeMs = fromDate.getTime() + ((completedIntervals + 1) * intervalMs);\nconst timeslots = [];\nfor (let i = 0; i < 100; i++) {\n  const slotDate = new Date(nextSlotTimeMs + (i * intervalMs));\n  timeslots.push({\n    slot_index: i + 1,\n    timestamp_utc: slotDate.toISOString(),\n    timestamp_gmt8: new Date(slotDate.getTime() + gmt8Offset).toISOString().replace('Z', '+08:00'),\n    ...config,\n  });\n}\nreturn timeslots.map((slot) => ({ json: slot }));"
-        },
-        "name": "Code - get next slots1",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          1360,
-          3120
-        ],
-        "id": "884cc820-b48b-461b-8571-f8141909f12c"
-      },
-      {
-        "parameters": {
-          "jsCode": "const EXECUTE_WINDOW_MS = 15 * 60 * 1000;\nconst nowMs = Date.now();\nfor (const item of $input.all()) {\n  const slotUtcStr = item.json.timestamp_utc;\n  if (!slotUtcStr) continue;\n  const slotMs = new Date(slotUtcStr).getTime();\n  const timeDifference = slotMs - nowMs;\n  if (timeDifference >= 0 && timeDifference <= EXECUTE_WINDOW_MS) {\n    return [{\n      json: {\n        ...item.json,\n        match_found: true,\n        matched_slot_utc: slotUtcStr,\n        matched_slot_gmt8: item.json.timestamp_gmt8,\n        minutes_until_slot: (timeDifference / 60000).toFixed(2),\n      },\n    }];\n  }\n}\nreturn [{ json: { match_found: false } }];"
-        },
-        "name": "Code - check if within time to execute1",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          1392,
-          3328
-        ],
-        "id": "0ad4e49f-f437-47de-a5af-67a9f9d025db",
-        "alwaysOutputData": true
-      },
-      {
-        "parameters": {
-          "conditions": {
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "loose",
-              "version": 3
-            },
-            "conditions": [
-              {
-                "id": "slot-match",
-                "leftValue": "={{ !!$json.match_found }}",
-                "rightValue": "",
-                "operator": {
-                  "type": "boolean",
-                  "operation": "true",
-                  "singleValue": true
-                }
-              },
-              {
-                "id": "467d6ae9-8ae6-4012-86b4-2041371ec576",
-                "leftValue": "={{ $('Code - get next slots1').item.json.from_group_ids.length }}",
-                "rightValue": 0,
-                "operator": {
-                  "type": "number",
-                  "operation": "gt"
-                }
-              },
-              {
-                "id": "526ea232-738f-4ec1-9c0d-e6c63fe7c559",
-                "leftValue": "={{ $('Code - get next slots1').item.json.to_receipient_phone_ids.length }}",
-                "rightValue": 0,
-                "operator": {
-                  "type": "number",
-                  "operation": "gt"
-                }
-              }
-            ],
-            "combinator": "and"
-          },
-          "looseTypeValidation": true,
-          "options": {}
-        },
-        "name": "If - slot matched1",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.3,
-        "position": [
-          1424,
-          3552
-        ],
-        "id": "4e58cb4b-c166-4853-ac8b-3030b63ae7b3"
-      },
-      {
-        "parameters": {},
-        "name": "No Operation - skip run1",
-        "type": "n8n-nodes-base.noOp",
-        "typeVersion": 1,
-        "position": [
-          1616,
-          3696
-        ],
-        "id": "41e55f01-c205-4dd8-b50a-f6d967c3c2ba"
-      },
-      {
-        "parameters": {
-          "jsCode": "const row = $input.first().json;\nconst refreshSeconds = parseInt(row.refresh_seconds, 10) || 3600;\nconst slotEnd = new Date(row.matched_slot_utc ?? row.timestamp_utc);\nconst slotStart = new Date(slotEnd.getTime() - refreshSeconds * 1000);\nreturn [{\n  json: {\n    ...row,\n    window_start: slotStart.toISOString(),\n    window_end: slotEnd.toISOString(),\n    matched_slot_at: slotEnd.toISOString(),\n    group_ids: row.from_group_ids ?? [],\n    contact_jids: row.from_contact_jids ?? [],\n    keywords: row.what_content_keywords ?? [],\n    content_types: row.what_content_types ?? [],\n    recipients: row.to_receipient_phone_ids ?? [],\n  },\n}];"
-        },
-        "name": "Code - prepare monitor window1",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          1952,
-          3120
-        ],
-        "id": "ad67600b-0779-4460-b72a-43a7c750c0b4"
-      },
-      {
-        "parameters": {
-          "operation": "executeQuery",
-          "query": "SELECT\n  wm.message_id,\n  wm.chat_jid,\n  wm.is_group,\n  COALESCE(\n    CASE WHEN wm.whatsapp_timestamp IS NOT NULL AND wm.whatsapp_timestamp > 0\n      THEN to_timestamp(wm.whatsapp_timestamp)\n    END,\n    wm.received_at,\n    wm.created_date\n  ) AS message_at,\n  wm.message_body,\n  wm.content_type,\n  wm.sender_phone,\n  wm.has_media,\n  COALESCE(string_agg(DISTINCT wmi.content, ' | '), '') AS media_text,\n  'media_interpretation' AS source_kind\nFROM actionnow.whatsapp_media_interpretations wmi\nINNER JOIN actionnow.whatsapp_messages wm\n  ON wm.message_id = wmi.message_id\nWHERE wmi.owner_email = $1\n  AND wmi.status = 'done'\n  AND wmi.updated_date >= $2::timestamptz\n  AND wmi.updated_date <= $3::timestamptz\n  AND wm.from_me = false\n  AND (\n    (cardinality($4::text[]) > 0 AND wm.chat_jid = ANY($4::text[]))\n    OR (cardinality($5::text[]) > 0 AND wm.chat_jid = ANY($5::text[]))\n  )\nGROUP BY wm.id, wm.message_id, wm.chat_jid, wm.is_group, wm.whatsapp_timestamp,\n         wm.received_at, wm.created_date, wm.message_body, wm.content_type,\n         wm.sender_phone, wm.has_media\nORDER BY message_at DESC\nLIMIT 200;",
-          "options": {
-            "queryReplacement": "={{ [\n  $('Code - prepare monitor window1').item.json.owner_email,\n  $('Code - prepare monitor window1').item.json.window_start,\n  $('Code - prepare monitor window1').item.json.window_end,\n  $('Code - prepare monitor window1').item.json.group_ids,\n  $('Code - prepare monitor window1').item.json.contact_jids\n] }}"
-          }
-        },
-        "name": "Postgres - fetch media interpretations",
-        "type": "n8n-nodes-base.postgres",
-        "typeVersion": 2.6,
-        "position": [
-          2176,
-          3040
-        ],
-        "id": "87e08bf4-0ce2-4cda-befc-78432f50fdab",
-        "alwaysOutputData": true,
-        "credentials": {
-          "postgres": {
-            "id": "UMW6mMpCtmfMWdKZ",
-            "name": "Arrowmatic supabase postgres"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "operation": "executeQuery",
-          "query": "SELECT\n  wm.message_id,\n  wm.chat_jid,\n  wm.is_group,\n  COALESCE(\n    CASE WHEN wm.whatsapp_timestamp IS NOT NULL AND wm.whatsapp_timestamp > 0\n      THEN to_timestamp(wm.whatsapp_timestamp)\n    END,\n    wm.received_at,\n    wm.created_date\n  ) AS message_at,\n  wm.message_body,\n  wm.content_type,\n  wm.sender_phone,\n  wm.has_media,\n  '' AS media_text,\n  'text_message' AS source_kind\nFROM actionnow.whatsapp_messages wm\nWHERE wm.owner_email = $1\n  AND COALESCE(\n    CASE WHEN wm.whatsapp_timestamp IS NOT NULL AND wm.whatsapp_timestamp > 0\n      THEN to_timestamp(wm.whatsapp_timestamp)\n    END,\n    wm.received_at,\n    wm.created_date\n  ) >= $2::timestamptz\n  AND COALESCE(\n    CASE WHEN wm.whatsapp_timestamp IS NOT NULL AND wm.whatsapp_timestamp > 0\n      THEN to_timestamp(wm.whatsapp_timestamp)\n    END,\n    wm.received_at,\n    wm.created_date\n  ) <= $3::timestamptz\n  AND wm.from_me = false\n  AND (wm.has_media = false OR wm.content_type = 'text')\n  AND (\n    (cardinality($4::text[]) > 0 AND wm.chat_jid = ANY($4::text[]))\n    OR (cardinality($5::text[]) > 0 AND wm.chat_jid = ANY($5::text[]))\n  )\nORDER BY message_at DESC\nLIMIT 200;",
-          "options": {
-            "queryReplacement": "={{ [\n  $('Code - prepare monitor window1').item.json.owner_email,\n  $('Code - prepare monitor window1').item.json.window_start,\n  $('Code - prepare monitor window1').item.json.window_end,\n  $('Code - prepare monitor window1').item.json.group_ids,\n  $('Code - prepare monitor window1').item.json.contact_jids\n] }}"
-          }
-        },
-        "name": "Postgres - fetch text messages",
-        "type": "n8n-nodes-base.postgres",
-        "typeVersion": 2.6,
-        "position": [
-          2176,
-          3200
-        ],
-        "id": "f3a91c2e-8b4d-4e1a-9c7f-2d8e6a1b5c04",
-        "alwaysOutputData": true,
-        "credentials": {
-          "postgres": {
-            "id": "UMW6mMpCtmfMWdKZ",
-            "name": "Arrowmatic supabase postgres"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "mode": "append"
-        },
-        "name": "Merge - combine message queries",
-        "type": "n8n-nodes-base.merge",
-        "typeVersion": 3.1,
-        "position": [
-          2384,
-          3120
-        ],
-        "id": "c8d4e5f6-a7b8-9012-cdef-345678901234"
-      },
-      {
-        "parameters": {
-          "jsCode": "const cfg = $('Code - prepare monitor window1').first().json;\nconst rows = $input.all().map((i) => i.json).filter((r) => r.message_id);\n\nconst seen = new Set();\nconst unique = [];\nfor (const row of rows) {\n  if (seen.has(row.message_id)) continue;\n  seen.add(row.message_id);\n  unique.push({ ...row, received_at: row.message_at ?? row.received_at });\n}\n\nunique.sort((a, b) => new Date(b.received_at) - new Date(a.received_at));\n\nreturn [{\n  json: {\n    ...cfg,\n    messages: unique,\n    message_count: unique.length,\n    has_messages: unique.length > 0,\n  },\n}];"
-        },
-        "name": "Code - combine message sources",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          2592,
-          3120
-        ],
-        "id": "d9e0f1a2-b3c4-5678-def0-456789012345"
-      },
-      {
-        "parameters": {
-          "conditions": {
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "loose",
-              "version": 3
-            },
-            "conditions": [
-              {
-                "id": "has-msgs",
-                "leftValue": "={{ !!$json.has_messages }}",
-                "rightValue": "",
-                "operator": {
-                  "type": "boolean",
-                  "operation": "true",
-                  "singleValue": true
-                }
-              }
-            ],
-            "combinator": "and"
-          },
-          "looseTypeValidation": true,
-          "options": {}
-        },
-        "name": "If - has messages",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.3,
-        "position": [
-          2800,
-          3120
-        ],
-        "id": "e0f1a2b3-c4d5-6789-ef01-567890123456"
-      },
-      {
-        "parameters": {
-          "jsCode": "const data = $('Code - combine message sources').first().json;\nreturn [{\n  json: {\n    ...data,\n    relevance_score: null,\n    score_threshold: 20,\n    passes_threshold: false,\n    score_reason: 'No relevant info found in monitoring window',\n    message_corpus: '',\n    log_outcome: 'no_messages',\n    model_name: 'google/gemini-2.5-flash-preview',\n  },\n}];"
-        },
-        "name": "Code - prepare no messages log",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          3024,
-          3280
-        ],
-        "id": "f1a2b3c4-d5e6-7890-f012-678901234567"
-      },
-      {
-        "parameters": {
-          "operation": "executeQuery",
-          "query": "INSERT INTO actionnow.monitor_attempt_logs (\n  monitor_setting_id, owner_email, owner_phone_num, monitor_name,\n  matched_slot_at, window_start, window_end,\n  relevance_score, score_threshold, passes_threshold,\n  score_reason, score_insights, message_count,\n  keywords_snapshot, content_types_snapshot, corpus_preview,\n  outcome, model_provider, model_name\n) VALUES (\n  $1::uuid, $2, $3, $4,\n  NULLIF($5, '')::timestamptz, $6::timestamptz, $7::timestamptz,\n  NULL, $8::integer, false,\n  NULLIF($9, ''), $10::jsonb, 0,\n  $11::text[], $12::text[], NULL,\n  'no_messages', 'openrouter', $13\n)\nRETURNING id, outcome, relevance_score, passes_threshold, monitor_setting_id;",
-          "options": {
-            "queryReplacement": "={{ [\n  $json.id,\n  $json.owner_email,\n  $json.owner_phone_num ?? '',\n  $json.monitor_name ?? '',\n  $json.matched_slot_at ?? $json.matched_slot_utc ?? $json.matched_slot_gmt8 ?? '',\n  $json.window_start,\n  $json.window_end,\n  $json.score_threshold ?? 20,\n  $json.score_reason ?? 'No relevant info found in monitoring window',\n  JSON.stringify({ reason: $json.score_reason, message_count: 0 }),\n  $json.keywords ?? [],\n  $json.content_types ?? [],\n  $json.model_name ?? 'google/gemini-2.5-flash-preview'\n] }}"
-          }
-        },
-        "name": "Postgres - log no messages attempt",
-        "type": "n8n-nodes-base.postgres",
-        "typeVersion": 2.6,
-        "position": [
-          3024,
-          3408
-        ],
-        "id": "b3c4d5e6-f7a8-9012-3456-789012345679",
-        "credentials": {
-          "postgres": {
-            "id": "UMW6mMpCtmfMWdKZ",
-            "name": "Arrowmatic supabase postgres"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {},
-        "name": "No Operation - no messages",
-        "type": "n8n-nodes-base.noOp",
-        "typeVersion": 1,
-        "position": [
-          3248,
-          3280
-        ],
-        "id": "a2b3c4d5-e6f7-8901-2345-789012345678"
-      },
-      {
-        "parameters": {
-          "jsCode": "const data = $input.first().json;\nconst cfg = data;\nconst rows = data.messages ?? [];\nconst allowedTypes = (cfg.content_types ?? []).map((t) => String(t).toLowerCase());\nconst typeMap = { text: ['text'], audio: ['audio'], images: ['image', 'sticker'], image: ['image', 'sticker'], documents: ['document'], document: ['document'], video: ['video'] };\nconst allowed = new Set();\nfor (const t of allowedTypes) { for (const x of (typeMap[t] ?? [t])) allowed.add(x); }\nconst filtered = allowed.size ? rows.filter((r) => allowed.has(String(r.content_type ?? '').toLowerCase())) : rows;\nconst lines = filtered.map((r) => {\n  const body = [r.message_body, r.media_text].filter(Boolean).join(' | ');\n  const tag = r.source_kind === 'media_interpretation' ? 'media' : 'text';\n  return `[${r.received_at}] ${r.sender_phone ?? r.chat_jid} (${r.content_type}/${tag}): ${body || '(empty)'}`;\n});\nlet message_corpus = lines.join('\\n\\n');\nif (message_corpus.length > 12000) message_corpus = message_corpus.slice(0, 12000) + '\\n...(truncated)';\nreturn [{ json: { ...cfg, messages: filtered, message_count: filtered.length, message_corpus, model_name: 'google/gemini-2.5-flash-preview' } }];"
-        },
-        "name": "Code - build message corpus1",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          2000,
-          3552
-        ],
-        "id": "412de425-e25a-4c37-8fab-ba12d981f7c3"
-      },
-      {
-        "parameters": {
-          "model": "google/gemini-2.5-flash-preview",
-          "options": {}
-        },
-        "name": "OpenRouter Chat Model (score)1",
-        "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
-        "typeVersion": 1,
-        "position": [
-          2704,
-          3344
-        ],
-        "id": "d98a77bb-4602-41ed-9819-4bc0604a1999",
-        "credentials": {
-          "openRouterApi": {
-            "id": "HHHmAsaHSSyV3wgO",
-            "name": "OpenRouter account"
-          }
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  wm.message_id,\n  wm.chat_jid,\n  wm.is_group,\n  COALESCE(\n    CASE WHEN wm.whatsapp_timestamp IS NOT NULL AND wm.whatsapp_timestamp > 0\n      THEN to_timestamp(wm.whatsapp_timestamp)\n    END,\n    wm.received_at,\n    wm.created_date\n  ) AS message_at,\n  wm.message_body,\n  wm.content_type,\n  wm.sender_phone,\n  wm.has_media,\n  COALESCE(string_agg(DISTINCT wmi.content, ' | '), '') AS media_text,\n  'media_interpretation' AS source_kind\nFROM actionnow.whatsapp_media_interpretations wmi\nINNER JOIN actionnow.whatsapp_messages wm\n  ON wm.message_id = wmi.message_id\nWHERE wmi.status = 'done'\n  AND wmi.updated_date >= $2::timestamptz\n  AND wmi.updated_date <= $3::timestamptz\n  AND $1::text IS NOT NULL AND $1 <> '' AND (\n    wmi.owner_phone_num = $1\n    OR wmi.owner_phone_num = regexp_replace($1, '^\\+', '')\n    OR wmi.owner_phone_num = ('+' || regexp_replace($1, '\\D', '', 'g'))\n    OR regexp_replace(wmi.owner_phone_num, '\\D', '', 'g') = regexp_replace($1, '\\D', '', 'g')\n    OR wm.owner_phone_num = $1\n    OR wm.owner_phone_num = regexp_replace($1, '^\\+', '')\n    OR wm.owner_phone_num = ('+' || regexp_replace($1, '\\D', '', 'g'))\n    OR regexp_replace(wm.owner_phone_num, '\\D', '', 'g') = regexp_replace($1, '\\D', '', 'g')\n  )\n  AND wm.from_me = false\n  AND (\n    (cardinality($4::text[]) > 0 AND wm.chat_jid = ANY($4::text[]))\n    OR (cardinality($5::text[]) > 0 AND wm.chat_jid = ANY($5::text[]))\n  )\nGROUP BY wm.id, wm.message_id, wm.chat_jid, wm.is_group, wm.whatsapp_timestamp,\n         wm.received_at, wm.created_date, wm.message_body, wm.content_type,\n         wm.sender_phone, wm.has_media\nORDER BY message_at DESC\nLIMIT 200;",
+        "options": {
+          "queryReplacement": "={{ [\n  $('Code - prepare monitor window1').item.json.owner_phone_num ?? $('Code - prepare monitor window1').item.json.connection_phone,\n  $('Code - prepare monitor window1').item.json.window_start,\n  $('Code - prepare monitor window1').item.json.window_end,\n  $('Code - prepare monitor window1').item.json.group_ids,\n  $('Code - prepare monitor window1').item.json.contact_jids\n] }}"
         }
       },
-      {
-        "parameters": {
-          "promptType": "define",
-          "text": "={{ \"You score WhatsApp monitor relevance.\\n\\nMonitor: \" + ($json.monitor_name ?? 'Untitled') + \"\\nKeywords: \" + JSON.stringify($json.keywords ?? []) + \"\\nAllowed content types: \" + JSON.stringify($json.content_types ?? []) + \"\\nWindow: \" + $json.window_start + \" to \" + $json.window_end + \"\\nMessage count: \" + $json.message_count + \"\\n\\nMessages:\\n\" + $json.message_corpus + \"\\n\\nReturn ONLY valid JSON (no markdown):\\n{\\\"relevance_score\\\": <integer 0-100>, \\\"brief_reason\\\": \\\"<one sentence>\\\"}\\n\\nScoring guide: 100 = nearly all messages relate to keywords/topic; 0 = none relate.\" }}"
-        },
-        "name": "Basic LLM Chain - keyword score1",
-        "type": "@n8n/n8n-nodes-langchain.chainLlm",
-        "typeVersion": 1.6,
-        "position": [
-          2720,
-          3120
-        ],
-        "id": "38483b63-8613-41bb-80b1-51939d247777"
-      },
-      {
-        "parameters": {
-          "jsCode": "const prep = $('Code - build message corpus1').first().json;\nconst raw = $input.first().json.text ?? $input.first().json.response ?? '';\nlet relevance_score = 0;\nlet brief_reason = '';\ntry {\n  const m = String(raw).match(/\\{[\\s\\S]*\\}/);\n  const parsed = m ? JSON.parse(m[0]) : {};\n  relevance_score = Number(parsed.relevance_score ?? 0);\n  brief_reason = String(parsed.brief_reason ?? '').trim();\n} catch (e) {\n  brief_reason = 'Failed to parse LLM score JSON';\n}\nif (Number.isNaN(relevance_score)) relevance_score = 0;\nrelevance_score = Math.max(0, Math.min(100, Math.round(relevance_score)));\nconst SCORE_THRESHOLD = 20;\nconst passes_threshold = relevance_score > SCORE_THRESHOLD;\nreturn [{\n  json: {\n    ...prep,\n    relevance_score,\n    score_reason: brief_reason,\n    score_threshold: SCORE_THRESHOLD,\n    passes_threshold,\n    log_outcome: passes_threshold ? 'passed_score' : 'not_send',\n  },\n}];"
-        },
-        "name": "Code - parse keyword score1",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          2992,
-          3216
-        ],
-        "id": "0df92580-d67b-41c8-a152-230fd34d0ef0"
-      },
-      {
-        "parameters": {
-          "conditions": {
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "loose",
-              "version": 3
-            },
-            "conditions": [
-              {
-                "id": "score-pass",
-                "leftValue": "={{ !!$('Code - parse keyword score1').item.json.passes_threshold }}",
-                "rightValue": "",
-                "operator": {
-                  "type": "boolean",
-                  "operation": "true",
-                  "singleValue": true
-                }
-              }
-            ],
-            "combinator": "and"
-          },
-          "looseTypeValidation": true,
-          "options": {}
-        },
-        "name": "If - score above ",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.3,
-        "position": [
-          3328,
-          3088
-        ],
-        "id": "8747c5d5-bcf1-4311-b9ca-8ba0c2672a83"
-      },
-      {
-        "parameters": {
-          "model": "google/gemini-2.5-flash-preview",
-          "options": {}
-        },
-        "name": "OpenRouter Chat Model (report)1",
-        "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
-        "typeVersion": 1,
-        "position": [
-          3648,
-          3296
-        ],
-        "id": "d23193a9-96e7-4e6b-95bd-b77699824aa0",
-        "credentials": {
-          "openRouterApi": {
-            "id": "HHHmAsaHSSyV3wgO",
-            "name": "OpenRouter account"
-          }
+      "name": "Postgres - fetch media interpretations1",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        5680,
+        3472
+      ],
+      "id": "0d3984ee-6c65-4ddb-a0b9-33fd62847bf4",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
         }
       },
-      {
-        "parameters": {
-          "promptType": "define",
-          "text": "={{ \"You are ActionNow report writer for WhatsApp business monitoring.\\n\\nMonitor: \" + ($('Code - parse keyword score1').item.json.monitor_name ?? 'Untitled') + \"\\nKeywords: \" + JSON.stringify($('Code - parse keyword score1').item.json.keywords ?? []) + \"\\nRelevance score: \" + $('Code - parse keyword score1').item.json.relevance_score + \"/100 (\" + ($('Code - parse keyword score1').item.json.score_reason ?? '') + \")\\nWindow: \" + $('Code - parse keyword score1').item.json.window_start + \" to \" + $('Code - parse keyword score1').item.json.window_end + \"\\n\\nMessages:\\n\" + $('Code - parse keyword score1').item.json.message_corpus + \"\\n\\nWrite a markdown report with sections:\\n## Summary\\n## Matched messages (quote sender + time + relevant text)\\n## Alerts / action items\\n\\nBe specific. Only include messages that match keywords or monitor topic.\" }}"
-        },
-        "name": "Basic LLM Chain - summary report1",
-        "type": "@n8n/n8n-nodes-langchain.chainLlm",
-        "typeVersion": 1.6,
-        "position": [
-          3488,
-          3040
-        ],
-        "id": "7c6587d8-759f-443f-a2fa-9b33d063926f"
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  wm.message_id,\n  wm.chat_jid,\n  wm.is_group,\n  COALESCE(\n    CASE WHEN wm.whatsapp_timestamp IS NOT NULL AND wm.whatsapp_timestamp > 0\n      THEN to_timestamp(wm.whatsapp_timestamp)\n    END,\n    wm.received_at,\n    wm.created_date\n  ) AS message_at,\n  wm.message_body,\n  wm.content_type,\n  wm.sender_phone,\n  wm.has_media,\n  '' AS media_text,\n  'text_message' AS source_kind\nFROM actionnow.whatsapp_messages wm\nWHERE $1::text IS NOT NULL AND $1 <> '' AND (\n  wm.owner_phone_num = $1\n  OR wm.owner_phone_num = regexp_replace($1, '^\\+', '')\n  OR wm.owner_phone_num = ('+' || regexp_replace($1, '\\D', '', 'g'))\n  OR regexp_replace(wm.owner_phone_num, '\\D', '', 'g') = regexp_replace($1, '\\D', '', 'g')\n)\n  AND COALESCE(\n    CASE WHEN wm.whatsapp_timestamp IS NOT NULL AND wm.whatsapp_timestamp > 0\n      THEN to_timestamp(wm.whatsapp_timestamp)\n    END,\n    wm.received_at,\n    wm.created_date\n  ) >= $2::timestamptz\n  AND COALESCE(\n    CASE WHEN wm.whatsapp_timestamp IS NOT NULL AND wm.whatsapp_timestamp > 0\n      THEN to_timestamp(wm.whatsapp_timestamp)\n    END,\n    wm.received_at,\n    wm.created_date\n  ) <= $3::timestamptz\n  AND wm.from_me = false\n  AND (wm.has_media = false OR wm.content_type = 'text')\n  AND (\n    (cardinality($4::text[]) > 0 AND wm.chat_jid = ANY($4::text[]))\n    OR (cardinality($5::text[]) > 0 AND wm.chat_jid = ANY($5::text[]))\n  )\nORDER BY message_at DESC\nLIMIT 200;",
+        "options": {
+          "queryReplacement": "={{ [\n  $('Code - prepare monitor window1').item.json.owner_phone_num ?? $('Code - prepare monitor window1').item.json.connection_phone,\n  $('Code - prepare monitor window1').item.json.window_start,\n  $('Code - prepare monitor window1').item.json.window_end,\n  $('Code - prepare monitor window1').item.json.group_ids,\n  $('Code - prepare monitor window1').item.json.contact_jids\n] }}"
+        }
       },
-      {
-        "parameters": {
-          "jsCode": "const prep = $('Code - parse keyword score1').first().json;\nconst report = String($input.first().json.text ?? $input.first().json.response ?? '').trim();\nif (!report) return [{ json: { skipped: true, reason: 'Report LLM returned empty text' } }];\nreturn [{ json: { ...prep, report_markdown: report } }];"
-        },
-        "name": "Code - parse report1",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          3856,
-          3136
-        ],
-        "id": "c5c8c04e-0430-45e2-83fb-b6c523bf45e4"
+      "name": "Postgres - fetch text messages1",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        5664,
+        3728
+      ],
+      "id": "00cada58-201d-440e-bd15-a930922a7f5b",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
       },
-      {
-        "parameters": {
-          "operation": "executeQuery",
-          "query": "INSERT INTO actionnow.monitor_results (\n  monitor_setting_id, owner_email, owner_phone_num, actual_results\n) VALUES ($1::uuid, $2, $3, $4)\nRETURNING id, created_date;",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "name": "Merge - combine message queries1",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        5888,
+        3552
+      ],
+      "id": "9b10bc1e-6964-4521-bd79-0815998c9e80"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Code - prepare monitor window1').first().json;\nconst rows = $input.all().map((i) => i.json).filter((r) => r.message_id);\n\nconst seen = new Set();\nconst unique = [];\nfor (const row of rows) {\n  if (seen.has(row.message_id)) continue;\n  seen.add(row.message_id);\n  unique.push({ ...row, received_at: row.message_at ?? row.received_at });\n}\n\nunique.sort((a, b) => new Date(b.received_at) - new Date(a.received_at));\n\nreturn [{\n  json: {\n    ...cfg,\n    messages: unique,\n    message_count: unique.length,\n    has_messages: unique.length > 0,\n  },\n}];"
+      },
+      "name": "Code - combine message sources1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6128,
+        3424
+      ],
+      "id": "e6e9b442-ef24-4d98-aa1a-2d8e8873ee4b"
+    },
+    {
+      "parameters": {
+        "conditions": {
           "options": {
-            "queryReplacement": "={{ [$json.id, $json.owner_email, $json.owner_phone_num ?? '', $json.report_markdown] }}"
-          }
-        },
-        "name": "Postgres - save monitor result1",
-        "type": "n8n-nodes-base.postgres",
-        "typeVersion": 2.6,
-        "position": [
-          4192,
-          3104
-        ],
-        "id": "f2c6c7bf-5de3-43fb-b100-4762b49705b1",
-        "credentials": {
-          "postgres": {
-            "id": "UMW6mMpCtmfMWdKZ",
-            "name": "Arrowmatic supabase postgres"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "jsCode": "const prep = $('Code - parse report1').first().json;\nconst saved = $('Postgres - save monitor result1').first().json;\nconst recipients = prep.recipients ?? [];\nif (!recipients.length) return [{ json: { skipped: true, reason: 'No to_receipient_phone_ids in config' } }];\nfunction normalizeTo(value) {\n  const v = String(value).trim();\n  if (!v) return null;\n  if (v.includes('@')) return v;\n  const digits = v.replace(/\\D/g, '');\n  return digits ? `${digits}@s.whatsapp.net` : null;\n}\nconst header = `📋 *${prep.monitor_name ?? 'ActionNow Report'}*\\nScore: ${prep.relevance_score}/100\\n\\n`;\nconst text = header + String(prep.report_markdown ?? '').slice(0, 3500);\nreturn recipients.map((r) => ({ json: { to: normalizeTo(r), text, monitor_result_id: saved.id, monitor_setting_id: prep.id } })).filter((x) => x.json.to);"
-        },
-        "name": "Code - prepare WhatsApp send payloads1",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          4608,
-          3104
-        ],
-        "id": "d5735b25-a90e-4b25-ae6e-e258dc80123a"
-      },
-      {
-        "parameters": {
-          "method": "POST",
-          "url": "https://www.wasenderapi.com/api/send-message",
-          "authentication": "genericCredentialType",
-          "genericAuthType": "httpBearerAuth",
-          "sendBody": true,
-          "specifyBody": "json",
-          "jsonBody": "={{ JSON.stringify({ to: $json.to, text: $json.text }) }}",
-          "options": {
-            "timeout": 20000
-          }
-        },
-        "name": "HTTP - Wasender send report1",
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.3,
-        "position": [
-          4816,
-          3104
-        ],
-        "id": "598adae2-43ba-4129-bf80-bddcf47a312a",
-        "credentials": {
-          "httpBearerAuth": {
-            "id": "PwZsZSqKyJv3rOI0",
-            "name": "wasender - benson2- actionnow - Bearer Auth account"
-          }
-        },
-        "onError": "continueRegularOutput"
-      }
-    ],
-    "connections": {
-      "Postgres - log monitor attempt": {
-        "main": [
-          [
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
             {
-              "node": "If - score above ",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Postgres - link attempt to result": {
-        "main": [
-          [
-            {
-              "node": "Code - prepare WhatsApp send payloads1",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Schedule Trigger - check the next runs for reports2": {
-        "main": [
-          [
-            {
-              "node": "Postgres - get monitor config1",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Postgres - get monitor config1": {
-        "main": [
-          [
-            {
-              "node": "Code - get next slots1",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Code - get next slots1": {
-        "main": [
-          [
-            {
-              "node": "Code - check if within time to execute1",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Code - check if within time to execute1": {
-        "main": [
-          [
-            {
-              "node": "If - slot matched1",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "If - slot matched1": {
-        "main": [
-          [
-            {
-              "node": "Code - prepare monitor window1",
-              "type": "main",
-              "index": 0
+              "id": "has-msgs",
+              "leftValue": "={{ !!$json.has_messages }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
             }
           ],
-          [
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "name": "If - has messages1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        6288,
+        3440
+      ],
+      "id": "8954a8f9-5629-4832-8469-89daebec8976"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Code - combine message sources1').first().json;\nreturn [{\n  json: {\n    ...data,\n    relevance_score: null,\n    score_threshold: 20,\n    passes_threshold: false,\n    score_reason: 'No relevant info found in monitoring window',\n    message_corpus: '',\n    log_outcome: 'no_messages',\n    model_name: 'google/gemini-2.5-flash-preview',\n  },\n}];"
+      },
+      "name": "Code - prepare no messages log1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6480,
+        3776
+      ],
+      "id": "d70ed274-2e9f-408a-8525-137985a9f6c9"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO actionnow.monitor_attempt_logs (\n  monitor_setting_id, owner_email, owner_phone_num, monitor_name,\n  matched_slot_at, window_start, window_end,\n  relevance_score, score_threshold, passes_threshold,\n  score_reason, score_insights, message_count,\n  keywords_snapshot, content_types_snapshot, corpus_preview,\n  outcome, model_provider, model_name\n) VALUES (\n  $1::uuid, $2, $3, $4,\n  NULLIF($5, '')::timestamptz, $6::timestamptz, $7::timestamptz,\n  NULL, $8::integer, false,\n  NULLIF($9, ''), $10::jsonb, 0,\n  $11::text[], $12::text[], NULL,\n  'no_messages', 'openrouter', $13\n)\nRETURNING id, outcome, relevance_score, passes_threshold, monitor_setting_id;",
+        "options": {
+          "queryReplacement": "={{ [\n  $json.id,\n  'hello@actionnow.my',\n  $json.owner_phone_num ?? $json.connection_phone ?? '',\n  $json.monitor_name ?? '',\n  $json.matched_slot_at ?? $json.matched_slot_utc ?? $json.matched_slot_gmt8 ?? '',\n  $json.window_start,\n  $json.window_end,\n  $json.score_threshold ?? 20,\n  $json.score_reason ?? 'No relevant info found in monitoring window',\n  JSON.stringify({ reason: $json.score_reason, message_count: 0 }),\n  $json.keywords ?? [],\n  $json.content_types ?? [],\n  $json.model_name ?? 'google/gemini-2.5-flash-preview'\n] }}"
+        }
+      },
+      "name": "Postgres - log no messages attempt1",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        6592,
+        3968
+      ],
+      "id": "4f8d9a9c-6953-4b46-8bbb-96c93626b0dc",
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "name": "No Operation - no messages1",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        6832,
+        4064
+      ],
+      "id": "972fb9b8-3569-4e2f-88d5-30391e369f4f"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO actionnow.monitor_attempt_logs (\n  monitor_setting_id, owner_email, owner_phone_num, monitor_name,\n  matched_slot_at, window_start, window_end,\n  relevance_score, score_threshold, passes_threshold,\n  score_reason, score_insights, message_count,\n  keywords_snapshot, content_types_snapshot, corpus_preview,\n  outcome, model_provider, model_name\n) VALUES (\n  $1::uuid, $2, $3, $4,\n  NULLIF($5, '')::timestamptz, $6::timestamptz, $7::timestamptz,\n  $8::integer, $9::integer, $10::boolean,\n  NULLIF($11, ''), $12::jsonb, $13::integer,\n  $14::text[], $15::text[], NULLIF($16, ''),\n  $17, 'openrouter', $18\n)\nRETURNING id, outcome, relevance_score, passes_threshold, monitor_setting_id;",
+        "options": {
+          "queryReplacement": "={{ [\n  $json.id,\n  'hello@actionnow.my',\n  $json.owner_phone_num ?? $json.connection_phone ?? '',\n  $json.monitor_name ?? '',\n  $json.matched_slot_at ?? $json.matched_slot_utc ?? $json.matched_slot_gmt8 ?? '',\n  $json.window_start,\n  $json.window_end,\n  $json.relevance_score,\n  $json.score_threshold ?? 20,\n  $json.passes_threshold,\n  $json.score_reason ?? '',\n  JSON.stringify({ relevance_score: $json.relevance_score, score_reason: $json.score_reason, passes_threshold: $json.passes_threshold, send: $json.passes_threshold ? 'YES' : 'NOT-SEND' }),\n  $json.message_count ?? 0,\n  $json.keywords ?? [],\n  $json.content_types ?? [],\n  String($json.message_corpus ?? '').slice(0, 2000),\n  $json.log_outcome ?? ($json.passes_threshold ? 'passed_score' : 'not_send'),\n  $json.model_name ?? 'google/gemini-2.5-flash-preview'\n] }}"
+        }
+      },
+      "name": "Postgres - log monitor attempt",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        6768,
+        3712
+      ],
+      "id": "08b3c768-2fcf-4e6d-96d3-2d38fb286350",
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "name": "No Operation - NOT-SEND logged",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        7072,
+        3936
+      ],
+      "id": "201025f8-caaa-4f74-a9a7-7d57c016810a"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE actionnow.monitor_attempt_logs\nSET monitor_result_id = $1::uuid, outcome = 'report_generated', updated_date = now()\nWHERE id = $2::uuid\nRETURNING id, outcome, monitor_result_id;",
+        "options": {
+          "queryReplacement": "={{ [$json.id, $('Postgres - log monitor attempt').item.json.id] }}"
+        }
+      },
+      "name": "Postgres - link attempt to result",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        7904,
+        3536
+      ],
+      "id": "22411ce7-3bda-4348-9912-87b6b7967624",
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
             {
-              "node": "No Operation - skip run1",
-              "type": "main",
-              "index": 0
+              "field": "minutes",
+              "minutesInterval": 3
             }
           ]
-        ]
+        }
       },
-      "Code - prepare monitor window1": {
-        "main": [
-          [
+      "name": "Schedule Trigger - check the next runs for reports",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        4336,
+        3520
+      ],
+      "id": "cb10ee56-4852-4818-8ae9-676f0b38eb21"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  ms.*,\n  uwc.api_key,\n  uwc.phone_number AS connection_phone,\n  uwc.status AS connection_status,\n  uwc.wasender_session_id\nFROM actionnow.monitor_settings ms\nINNER JOIN actionnow.user_whatsapp_connections uwc\n  ON regexp_replace(uwc.phone_number, '\\D', '', 'g') = regexp_replace(COALESCE(ms.owner_phone_num, ''), '\\D', '', 'g')\nWHERE ms.from_date IS NOT NULL\n  AND cardinality(COALESCE(ms.from_group_ids, '{}'::text[])) > 0\n  AND cardinality(COALESCE(ms.to_receipient_phone_ids, '{}'::text[])) > 0\n  AND uwc.status = 'connected'\n  AND uwc.api_key IS NOT NULL\nORDER BY ms.created_date DESC;",
+        "options": {}
+      },
+      "name": "Postgres - get monitor config1",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4608,
+        3552
+      ],
+      "id": "502901eb-83af-43fa-87a4-435755e4e15a",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const allSlots = [];\n\nfor (const item of $input.all()) {\n  const config = item.json;\n  if (!config?.id || !config.from_date) continue;\n\n  const refreshSeconds = parseInt(config.refresh_seconds, 10) || 3600;\n  const fromDate = new Date(config.from_date);\n  if (Number.isNaN(fromDate.getTime())) continue;\n\n  const now = new Date();\n  if (now < fromDate) continue;\n\n  const gmt8Offset = 8 * 60 * 60 * 1000;\n  const elapsedMs = now.getTime() - fromDate.getTime();\n  const intervalMs = refreshSeconds * 1000;\n  const completedIntervals = Math.floor(elapsedMs / intervalMs);\n  let nextSlotTimeMs = fromDate.getTime() + ((completedIntervals + 1) * intervalMs);\n\n  for (let i = 0; i < 100; i++) {\n    const slotDate = new Date(nextSlotTimeMs + (i * intervalMs));\n    allSlots.push({\n      json: {\n        slot_index: i + 1,\n        timestamp_utc: slotDate.toISOString(),\n        timestamp_gmt8: new Date(slotDate.getTime() + gmt8Offset).toISOString().replace('Z', '+08:00'),\n        ...config,\n        keywords: config.what_content_keywords ?? [],\n        content_types: config.what_content_types ?? [],\n        group_ids: config.from_group_ids ?? [],\n        contact_jids: config.from_contact_jids ?? [],\n        recipients: config.to_receipient_phone_ids ?? [],\n        score_threshold: 20,\n        model_name: 'google/gemini-2.5-flash-preview',\n      },\n    });\n  }\n}\n\nif (!allSlots.length) {\n  return [{ json: { skipped: true, reason: 'No eligible monitor_settings with connected WhatsApp pairing' } }];\n}\n\nreturn allSlots;"
+      },
+      "name": "Code - get next slots1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4864,
+        3552
+      ],
+      "id": "6a3a2fd4-3cb5-4186-b8cb-cde67733d042"
+    },
+    {
+      "parameters": {
+        "jsCode": "const EXECUTE_WINDOW_MS = 15 * 60 * 1000;\nconst nowMs = Date.now();\nfor (const item of $input.all()) {\n  const slotUtcStr = item.json.timestamp_utc;\n  if (!slotUtcStr) continue;\n  const slotMs = new Date(slotUtcStr).getTime();\n  const timeDifference = slotMs - nowMs;\n  if (timeDifference >= 0 && timeDifference <= EXECUTE_WINDOW_MS) {\n    return [{\n      json: {\n        ...item.json,\n        match_found: true,\n        matched_slot_utc: slotUtcStr,\n        matched_slot_gmt8: item.json.timestamp_gmt8,\n        minutes_until_slot: (timeDifference / 60000).toFixed(2),\n      },\n    }];\n  }\n}\nreturn [{ json: { match_found: false } }];"
+      },
+      "name": "Code - check if within time to execute1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4896,
+        3760
+      ],
+      "id": "3c577a66-8dc0-4133-b453-0d6d6d05a6a9",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
             {
-              "node": "Postgres - fetch media interpretations",
-              "type": "main",
-              "index": 0
+              "id": "slot-match",
+              "leftValue": "={{ !!$json.match_found }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
             },
             {
-              "node": "Postgres - fetch text messages",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Postgres - fetch media interpretations": {
-        "main": [
-          [
+              "id": "467d6ae9-8ae6-4012-86b4-2041371ec576",
+              "leftValue": "={{ $json.from_group_ids?.length ?? 0 }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            },
             {
-              "node": "Merge - combine message queries",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Postgres - fetch text messages": {
-        "main": [
-          [
-            {
-              "node": "Merge - combine message queries",
-              "type": "main",
-              "index": 1
-            }
-          ]
-        ]
-      },
-      "Merge - combine message queries": {
-        "main": [
-          [
-            {
-              "node": "Code - combine message sources",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Code - combine message sources": {
-        "main": [
-          [
-            {
-              "node": "If - has messages",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "If - has messages": {
-        "main": [
-          [
-            {
-              "node": "Code - build message corpus1",
-              "type": "main",
-              "index": 0
+              "id": "526ea232-738f-4ec1-9c0d-e6c63fe7c559",
+              "leftValue": "={{ $json.to_receipient_phone_ids?.length ?? 0 }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
             }
           ],
-          [
-            {
-              "node": "Code - prepare no messages log",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
       },
-      "Code - prepare no messages log": {
-        "main": [
-          [
-            {
-              "node": "Postgres - log no messages attempt",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
+      "name": "If - slot matched1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4928,
+        3984
+      ],
+      "id": "df8b1a19-19be-466b-b043-309866417207"
+    },
+    {
+      "parameters": {},
+      "name": "No Operation - skip run1",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        5120,
+        4128
+      ],
+      "id": "e00f5344-e886-4913-aa10-d7b301b4a946"
+    },
+    {
+      "parameters": {
+        "jsCode": "const row = $input.first().json;\nconst refreshSeconds = parseInt(row.refresh_seconds, 10) || 3600;\nconst slotEnd = new Date(row.matched_slot_utc ?? row.timestamp_utc);\nconst slotStart = new Date(slotEnd.getTime() - refreshSeconds * 1000);\n\nconst keywords = row.what_content_keywords ?? row.keywords ?? [];\nconst contentTypes = row.what_content_types ?? row.content_types ?? [];\nconst groupIds = row.from_group_ids ?? row.group_ids ?? [];\nconst contactJids = row.from_contact_jids ?? row.contact_jids ?? [];\nconst recipients = row.to_receipient_phone_ids ?? row.recipients ?? [];\n\nreturn [{\n  json: {\n    ...row,\n    owner_email: 'hello@actionnow.my',\n    window_start: slotStart.toISOString(),\n    window_end: slotEnd.toISOString(),\n    matched_slot_at: slotEnd.toISOString(),\n    group_ids: groupIds,\n    contact_jids: contactJids,\n    keywords,\n    content_types: contentTypes,\n    recipients,\n    api_key: row.api_key ?? null,\n    connection_phone: row.connection_phone ?? row.owner_phone_num ?? null,\n    score_threshold: row.score_threshold ?? 20,\n    model_name: row.model_name ?? 'google/gemini-2.5-flash-preview',\n  },\n}];"
       },
-      "Postgres - log no messages attempt": {
-        "main": [
-          [
-            {
-              "node": "No Operation - no messages",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
+      "name": "Code - prepare monitor window1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5456,
+        3552
+      ],
+      "id": "950e232b-54aa-422e-9bc7-39a455ca81a4"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst cfg = data;\nconst rows = data.messages ?? [];\n\nfunction formatGmt8(value) {\n  if (!value) return 'unknown time';\n  const d = new Date(value);\n  if (Number.isNaN(d.getTime())) return String(value);\n  return d.toLocaleString('en-MY', {\n    timeZone: 'Asia/Kuala_Lumpur',\n    weekday: 'short',\n    day: 'numeric',\n    month: 'short',\n    hour: 'numeric',\n    minute: '2-digit',\n    hour12: true,\n  }) + ' (GMT+8)';\n}\n\nconst allowedTypes = (cfg.content_types ?? []).map((t) => String(t).toLowerCase());\nconst typeMap = {\n  text: ['text'],\n  audio: ['audio'],\n  images: ['image', 'sticker'],\n  image: ['image', 'sticker'],\n  documents: ['document'],\n  document: ['document'],\n  video: ['video'],\n};\nconst allowed = new Set();\nfor (const t of allowedTypes) {\n  for (const x of (typeMap[t] ?? [t])) allowed.add(x);\n}\nconst filtered = allowed.size\n  ? rows.filter((r) => allowed.has(String(r.content_type ?? '').toLowerCase()))\n  : rows;\n\nconst lines = filtered.map((r) => {\n  const body = [r.message_body, r.media_text].filter(Boolean).join(' | ');\n  const tag = r.source_kind === 'media_interpretation' ? 'media' : 'text';\n  const when = formatGmt8(r.received_at ?? r.message_at);\n  const who = r.sender_phone ?? r.chat_jid ?? 'unknown sender';\n  return `• ${when} | ${who} | (${r.content_type}/${tag}) ${body || '(empty)'}`;\n});\n\nlet message_corpus = lines.join('\\n') || '(no messages in this window)';\nif (message_corpus.length > 12000) {\n  message_corpus = message_corpus.slice(0, 12000) + '\\n...(truncated)';\n}\n\nconst kw = (cfg.keywords ?? []).join(', ') || 'none specified';\nconst types = (cfg.content_types ?? []).join(', ') || 'all';\nconst groups = (cfg.group_ids ?? []).join(', ') || 'none';\nconst contacts = (cfg.contact_jids ?? []).join(', ') || 'none';\nconst recipients = (cfg.recipients ?? []).join(', ') || 'none';\nconst owner = cfg.owner_email ?? 'unknown';\nconst phone = cfg.connection_phone ?? cfg.owner_phone_num ?? 'unknown';\nconst monitorName = cfg.monitor_name ?? 'Untitled';\nconst windowLabel = `${formatGmt8(cfg.window_start)} → ${formatGmt8(cfg.window_end)}`;\n\nconst WA_RULES = [\n  'WHATSAPP OUTPUT RULES (strict):',\n  '- Write for WhatsApp plain text only — NOT markdown.',\n  '- Use *single asterisks* for bold titles and labels. Never use ## headers or **double asterisks**.',\n  '- Every timestamp must be friendly GMT+8, e.g. \"Sun, 8 Jun 8:52 AM (GMT+8)\". Never use ISO like 2026-06-08T00:52:28.000Z.',\n  '- Keep lines short. Use • for bullets. One alert per bullet.',\n  '- Do NOT repeat the monitor title or window — those are added in the message header.',\n  '- Skip empty sections entirely.',\n].join('\\n');\n\nconst score_prompt = [\n  'You score WhatsApp monitor relevance for ActionNow.',\n  '',\n  `Owner: ${owner} (paired WhatsApp: ${phone})`,\n  `Monitor name: ${monitorName}`,\n  `Watch keywords: ${kw}`,\n  `Allowed content types: ${types}`,\n  `Monitored group JIDs: ${groups}`,\n  `Monitored contact JIDs: ${contacts}`,\n  `Window (GMT+8): ${windowLabel}`,\n  `Message count: ${filtered.length}`,\n  '',\n  'Messages:',\n  message_corpus,\n  '',\n  'Return ONLY valid JSON (no markdown):',\n  '{\"relevance_score\": <integer 0-100>, \"brief_reason\": \"<one sentence>\"}',\n  '',\n  'Scoring: 100 = nearly all messages relate to keywords/topic; 0 = none relate.',\n].join('\\n');\n\nconst report_prompt = [\n  'You write ActionNow WhatsApp monitoring alerts.',\n  '',\n  WA_RULES,\n  '',\n  `Monitor: ${monitorName}`,\n  `Keywords: ${kw}`,\n  `Content types: ${types}`,\n  `Window (GMT+8): ${windowLabel}`,\n  '',\n  'Source messages:',\n  message_corpus,\n  '',\n  'Output EXACTLY this structure (omit a section if nothing to show):',\n  '',\n  '*📌 SUMMARY*',\n  '<2-3 short sentences, plain language>',\n  '',\n  '*🚨 ALERTS*',\n  '• *<short alert label>* — \"<key quote>\" — *From:* +60… — *When:* Sun, 8 Jun 8:52 AM (GMT+8)',\n  '',\n  '*💬 MESSAGES*',\n  '• *From:* +60… — *When:* Sun, 8 Jun 8:42 AM (GMT+8) — (<type>) \"<quote or summary>\"',\n  '',\n  'Be specific. Only include messages matching keywords or the monitor topic.',\n].join('\\n');\n\nreturn [{\n  json: {\n    ...cfg,\n    messages: filtered,\n    message_count: filtered.length,\n    message_corpus,\n    score_prompt,\n    report_prompt,\n    window_label_gmt8: windowLabel,\n    model_name: cfg.model_name ?? 'google/gemini-2.5-flash-preview',\n  },\n}];"
       },
-      "Code - build message corpus1": {
-        "main": [
-          [
-            {
-              "node": "Basic LLM Chain - keyword score1",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
+      "name": "Code - build message corpus1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6400,
+        4128
+      ],
+      "id": "94adab1d-0461-4310-87e6-2f10b55634ca"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.5-flash",
+        "options": {}
       },
-      "OpenRouter Chat Model (score)1": {
-        "ai_languageModel": [
-          [
-            {
-              "node": "Basic LLM Chain - keyword score1",
-              "type": "ai_languageModel",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Basic LLM Chain - keyword score1": {
-        "main": [
-          [
-            {
-              "node": "Code - parse keyword score1",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Code - parse keyword score1": {
-        "main": [
-          [
-            {
-              "node": "Postgres - log monitor attempt",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "If - score above ": {
-        "main": [
-          [
-            {
-              "node": "Basic LLM Chain - summary report1",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          [
-            {
-              "node": "No Operation - NOT-SEND logged",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "OpenRouter Chat Model (report)1": {
-        "ai_languageModel": [
-          [
-            {
-              "node": "Basic LLM Chain - summary report1",
-              "type": "ai_languageModel",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Basic LLM Chain - summary report1": {
-        "main": [
-          [
-            {
-              "node": "Code - parse report1",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Code - parse report1": {
-        "main": [
-          [
-            {
-              "node": "Postgres - save monitor result1",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Postgres - save monitor result1": {
-        "main": [
-          [
-            {
-              "node": "Postgres - link attempt to result",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Code - prepare WhatsApp send payloads1": {
-        "main": [
-          [
-            {
-              "node": "HTTP - Wasender send report1",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
+      "name": "OpenRouter Chat Model (score)1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        6544,
+        3584
+      ],
+      "id": "3a7d264a-7f93-4934-b881-6ee25dad5af8",
+      "credentials": {
+        "openRouterApi": {
+          "id": "HHHmAsaHSSyV3wgO",
+          "name": "OpenRouter account"
+        }
       }
     },
-    "pinData": {},
-    "meta": {
-      "templateCredsSetupCompleted": true,
-      "instanceId": "f5c9600193afd1d3ab92a54a0de2f82d56566faf5c6d6e2302f937327546ecf0"
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.score_prompt }}"
+      },
+      "name": "Basic LLM Chain - keyword score1",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        6496,
+        3392
+      ],
+      "id": "c6598949-208e-4cf0-b69b-2c1d25347d21"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prep = $('Code - build message corpus1').first().json;\nconst raw = $input.first().json.text ?? $input.first().json.response ?? '';\nlet relevance_score = 0;\nlet brief_reason = '';\ntry {\n  const m = String(raw).match(/\\{[\\s\\S]*\\}/);\n  const parsed = m ? JSON.parse(m[0]) : {};\n  relevance_score = Number(parsed.relevance_score ?? 0);\n  brief_reason = String(parsed.brief_reason ?? '').trim();\n} catch (e) {\n  brief_reason = 'Failed to parse LLM score JSON';\n}\nif (Number.isNaN(relevance_score)) relevance_score = 0;\nrelevance_score = Math.max(0, Math.min(100, Math.round(relevance_score)));\nconst SCORE_THRESHOLD = prep.score_threshold ?? 20;\nconst passes_threshold = relevance_score > SCORE_THRESHOLD;\nreturn [{\n  json: {\n    ...prep,\n    relevance_score,\n    score_reason: brief_reason,\n    score_threshold: SCORE_THRESHOLD,\n    passes_threshold,\n    log_outcome: passes_threshold ? 'passed_score' : 'not_send',\n    report_prompt: [\n      prep.report_prompt ?? '',\n      '',\n      `Relevance score: ${relevance_score}/100 (${brief_reason})`,\n      `Only include content that passed the score threshold (> ${SCORE_THRESHOLD}).`,\n      'Reminder: WhatsApp format only — *bold* with single asterisks, friendly GMT+8 times, no ## headers, no ISO timestamps.',\n    ].join('\\n'),\n  },\n}];"
+      },
+      "name": "Code - parse keyword score1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6736,
+        3552
+      ],
+      "id": "d5f07d89-459d-45c5-b3d4-eebfb061df86"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "score-pass",
+              "leftValue": "={{ !!$('Code - parse keyword score1').item.json.passes_threshold }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "name": "If - score above ",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        6832,
+        3520
+      ],
+      "id": "cb0f3e8c-98c2-4d59-8857-31a5806b371a"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.5-flash",
+        "options": {}
+      },
+      "name": "OpenRouter Chat Model (report)1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        7152,
+        3728
+      ],
+      "id": "f9d368ff-2c99-40f3-aea9-d2fcf67d9092",
+      "credentials": {
+        "openRouterApi": {
+          "id": "HHHmAsaHSSyV3wgO",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Code - parse keyword score1').item.json.report_prompt }}"
+      },
+      "name": "Basic LLM Chain - summary report1",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        6992,
+        3472
+      ],
+      "id": "bd386cae-535d-4a0c-ab1c-31b8a406393c"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prep = $('Code - parse keyword score1').first().json;\nconst report = String($input.first().json.text ?? $input.first().json.response ?? '').trim();\nif (!report) return [{ json: { skipped: true, reason: 'Report LLM returned empty text' } }];\n\nfunction formatGmt8(value) {\n  if (!value) return 'unknown time';\n  const d = new Date(value);\n  if (Number.isNaN(d.getTime())) return String(value);\n  return d.toLocaleString('en-MY', {\n    timeZone: 'Asia/Kuala_Lumpur',\n    weekday: 'short',\n    day: 'numeric',\n    month: 'short',\n    hour: 'numeric',\n    minute: '2-digit',\n    hour12: true,\n  }) + ' (GMT+8)';\n}\n\nfunction toWhatsAppText(text) {\n  return String(text)\n    .replace(/\\d{4}-\\d{2}-\\d{2}T[\\d:.]+Z?/g, (m) => formatGmt8(m))\n    .replace(/^#{1,6}\\s*(.+)$/gm, '*$1*')\n    .replace(/\\*\\*(.+?)\\*\\*/g, '*$1*')\n    .replace(/^ActionNow Report:.+$/gim, '')\n    .replace(/^Here's your summary.+$/gim, '')\n    .replace(/^Here is your summary.+$/gim, '')\n    .replace(/\\n{3,}/g, '\\n\\n')\n    .trim();\n}\n\nconst report_whatsapp = toWhatsAppText(report);\nreturn [{ json: { ...prep, report_markdown: report, report_whatsapp } }];"
+      },
+      "name": "Code - parse report1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7360,
+        3568
+      ],
+      "id": "da645e5b-1dc6-4f1b-92e3-a7c9f7dda655"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO actionnow.monitor_results (\n  monitor_setting_id, owner_email, owner_phone_num, actual_results\n) VALUES ($1::uuid, $2, $3, $4)\nRETURNING id, created_date;",
+        "options": {
+          "queryReplacement": "={{ [$json.id, 'hello@actionnow.my', $json.owner_phone_num ?? $json.connection_phone ?? '', $json.report_markdown] }}"
+        }
+      },
+      "name": "Postgres - save monitor result1",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        7696,
+        3536
+      ],
+      "id": "32d6a6bc-572f-4c01-b62c-2b88be1af9fe",
+      "credentials": {
+        "postgres": {
+          "id": "UMW6mMpCtmfMWdKZ",
+          "name": "Arrowmatic supabase postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prep = $('Code - parse report1').first().json;\nconst saved = $('Postgres - save monitor result1').first().json;\nconst recipients = prep.recipients ?? [];\nconst api_key = prep.api_key ?? null;\n\nfunction formatGmt8(value) {\n  if (!value) return 'unknown time';\n  const d = new Date(value);\n  if (Number.isNaN(d.getTime())) return String(value);\n  return d.toLocaleString('en-MY', {\n    timeZone: 'Asia/Kuala_Lumpur',\n    weekday: 'short',\n    day: 'numeric',\n    month: 'short',\n    hour: 'numeric',\n    minute: '2-digit',\n    hour12: true,\n  }) + ' (GMT+8)';\n}\n\nif (!api_key) {\n  return [{ json: { skipped: true, reason: 'No paired WhatsApp api_key for owner — connect device first', owner_email: prep.owner_email } }];\n}\nif (!recipients.length) {\n  return [{ json: { skipped: true, reason: 'No to_receipient_phone_ids in monitor config' } }];\n}\n\nfunction normalizeTo(value) {\n  const v = String(value).trim();\n  if (!v) return null;\n  if (v.includes('@')) return v;\n  const digits = v.replace(/\\D/g, '');\n  return digits ? `${digits}@s.whatsapp.net` : null;\n}\n\nconst windowLabel = prep.window_label_gmt8\n  ?? `${formatGmt8(prep.window_start)} → ${formatGmt8(prep.window_end)}`;\n\nconst header = [\n  `*📋 ${prep.monitor_name ?? 'ActionNow Report'}*`,\n  `*Score:* ${prep.relevance_score}/100`,\n  `*Window:* ${windowLabel}`,\n  '',\n].join('\\n');\n\nconst body = String(prep.report_whatsapp ?? prep.report_markdown ?? '').trim();\nconst text = (header + body).slice(0, 4096);\n\nreturn recipients\n  .map((r) => ({\n    json: {\n      to: normalizeTo(r),\n      text,\n      api_key,\n      owner_email: prep.owner_email,\n      monitor_result_id: saved.id,\n      monitor_setting_id: prep.id,\n    },\n  }))\n  .filter((x) => x.json.to);"
+      },
+      "name": "Code - prepare WhatsApp send payloads1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8256,
+        3536
+      ],
+      "id": "3f084601-2dd6-4ee1-985d-d37db456ab66",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.wasenderapi.com/api/send-message",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.api_key }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ to: $json.to, text: $json.text }) }}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "name": "HTTP - Wasender send report1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        8624,
+        3520
+      ],
+      "id": "71cd7b89-ac22-40f3-a4a0-248cc74fa673",
+      "disabled": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## Reporting notification",
+        "height": 352,
+        "width": 624
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        4240,
+        2896
+      ],
+      "typeVersion": 1,
+      "id": "f110ddb0-003a-466b-a8b9-0cf931403bb1",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        8416,
+        3552
+      ],
+      "id": "0bcbd936-53b6-4d85-8a21-df7c7555ba66",
+      "name": "Wait",
+      "webhookId": "ad80364e-0c99-4be1-917e-511101c1933b",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Loop - send one recipient",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        8416,
+        4032
+      ],
+      "id": "b3164a8a-4b12-479d-9850-20dd88a1fb3e"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prep = $('Code - parse report1').first().json;\nconst saved = $('Postgres - save monitor result1').first().json;\nconst recipients = prep.recipients ?? [];\nconst api_key = prep.api_key ?? null;\n\nfunction formatGmt8(value) {\n  if (!value) return 'unknown time';\n  const d = new Date(value);\n  if (Number.isNaN(d.getTime())) return String(value);\n  return d.toLocaleString('en-MY', {\n    timeZone: 'Asia/Kuala_Lumpur',\n    weekday: 'short',\n    day: 'numeric',\n    month: 'short',\n    hour: 'numeric',\n    minute: '2-digit',\n    hour12: true,\n  }) + ' (GMT+8)';\n}\n\nif (!api_key) {\n  return [{ json: { skipped: true, reason: 'No paired WhatsApp api_key for owner — connect device first', owner_email: prep.owner_email } }];\n}\nif (!recipients.length) {\n  return [{ json: { skipped: true, reason: 'No to_receipient_phone_ids in monitor config' } }];\n}\n\nfunction normalizeTo(value) {\n  const v = String(value).trim();\n  if (!v) return null;\n  if (v.includes('@')) return v;\n  const digits = v.replace(/\\D/g, '');\n  return digits ? `${digits}@s.whatsapp.net` : null;\n}\n\nconst windowLabel = prep.window_label_gmt8\n  ?? `${formatGmt8(prep.window_start)} → ${formatGmt8(prep.window_end)}`;\n\nconst header = [\n  `*📋 ${prep.monitor_name ?? 'ActionNow Report'}*`,\n  `*Score:* ${prep.relevance_score}/100`,\n  `*Window:* ${windowLabel}`,\n  '',\n].join('\\n');\n\nconst body = String(prep.report_whatsapp ?? prep.report_markdown ?? '').trim();\nconst text = (header + body).slice(0, 4096);\n\nreturn recipients\n  .map((r) => ({\n    json: {\n      to: normalizeTo(r),\n      text,\n      api_key,\n      owner_email: prep.owner_email,\n      monitor_result_id: saved.id,\n      monitor_setting_id: prep.id,\n    },\n  }))\n  .filter((x) => x.json.to);"
+      },
+      "name": "Code - prepare WhatsApp send payloads2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8176,
+        3872
+      ],
+      "id": "939da5bc-5329-443f-8c0b-8dae0823cfdb"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        8768,
+        4080
+      ],
+      "id": "c417bc4c-f830-481d-86b5-48f6daad93cf",
+      "name": "Wait1",
+      "webhookId": "ad80364e-0c99-4be1-917e-511101c1933b"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.wasenderapi.com/api/send-message",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.api_key }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ to: $json.to, text: $json.text }) }}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "name": "HTTP - Wasender send report2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        9040,
+        4096
+      ],
+      "id": "91fff845-f15d-43d1-b557-9ba2b46f0e08",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        8976,
+        3872
+      ],
+      "id": "1a02a65c-3971-481b-be5e-fcd3488a5ecc",
+      "name": "No Operation, do nothing"
     }
+  ],
+  "connections": {
+    "Postgres - fetch media interpretations1": {
+      "main": [
+        [
+          {
+            "node": "Merge - combine message queries1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - fetch text messages1": {
+      "main": [
+        [
+          {
+            "node": "Merge - combine message queries1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge - combine message queries1": {
+      "main": [
+        [
+          {
+            "node": "Code - combine message sources1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - combine message sources1": {
+      "main": [
+        [
+          {
+            "node": "If - has messages1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - has messages1": {
+      "main": [
+        [
+          {
+            "node": "Code - build message corpus1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - prepare no messages log1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - prepare no messages log1": {
+      "main": [
+        [
+          {
+            "node": "Postgres - log no messages attempt1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - log no messages attempt1": {
+      "main": [
+        [
+          {
+            "node": "No Operation - no messages1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - log monitor attempt": {
+      "main": [
+        [
+          {
+            "node": "If - score above ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - link attempt to result": {
+      "main": [
+        [
+          {
+            "node": "Code - prepare WhatsApp send payloads2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger - check the next runs for reports": {
+      "main": [
+        [
+          {
+            "node": "Postgres - get monitor config1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - get monitor config1": {
+      "main": [
+        [
+          {
+            "node": "Code - get next slots1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - get next slots1": {
+      "main": [
+        [
+          {
+            "node": "Code - check if within time to execute1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - check if within time to execute1": {
+      "main": [
+        [
+          {
+            "node": "If - slot matched1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - slot matched1": {
+      "main": [
+        [
+          {
+            "node": "Code - prepare monitor window1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation - skip run1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - prepare monitor window1": {
+      "main": [
+        [
+          {
+            "node": "Postgres - fetch media interpretations1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Postgres - fetch text messages1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - build message corpus1": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain - keyword score1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model (score)1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain - keyword score1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain - keyword score1": {
+      "main": [
+        [
+          {
+            "node": "Code - parse keyword score1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - parse keyword score1": {
+      "main": [
+        [
+          {
+            "node": "Postgres - log monitor attempt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - score above ": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain - summary report1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation - NOT-SEND logged",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model (report)1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain - summary report1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain - summary report1": {
+      "main": [
+        [
+          {
+            "node": "Code - parse report1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - parse report1": {
+      "main": [
+        [
+          {
+            "node": "Postgres - save monitor result1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - save monitor result1": {
+      "main": [
+        [
+          {
+            "node": "Postgres - link attempt to result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - prepare WhatsApp send payloads1": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Wasender send report1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop - send one recipient": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - prepare WhatsApp send payloads2": {
+      "main": [
+        [
+          {
+            "node": "Loop - send one recipient",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Wasender send report2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Wasender send report2": {
+      "main": [
+        [
+          {
+            "node": "Loop - send one recipient",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f5c9600193afd1d3ab92a54a0de2f82d56566faf5c6d6e2302f937327546ecf0"
   }
+}

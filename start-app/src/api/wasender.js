@@ -2,6 +2,8 @@
  * n8n Wasender pairing proxy — mirrors start-app/n8n/n8n-whatsender-api.json
  */
 
+import { resolveOwnerEmail } from '../lib/main';
+
 const API_BASE =
   import.meta.env.VITE_N8N_WEBHOOK_BASE ?? 'https://arrowmatics.app.n8n.cloud/webhook';
 
@@ -105,7 +107,7 @@ export function normalizePhoneNumber(value) {
 
 export async function createAndPair({ ownerEmail, phoneNumber, name }) {
   return postJson(ENDPOINTS.createAndPair, {
-    owner_email: ownerEmail,
+    owner_email: resolveOwnerEmail(ownerEmail),
     phone_number: normalizePhoneNumber(phoneNumber),
     name,
     account_protection: true,
@@ -119,7 +121,7 @@ export async function createAndPair({ ownerEmail, phoneNumber, name }) {
 
 export async function pollStatus({ ownerEmail, phoneNumber, whatsappSession } = {}) {
   return postJson(ENDPOINTS.pollStatus, {
-    owner_email: ownerEmail ?? undefined,
+    owner_email: resolveOwnerEmail(ownerEmail),
     phone_number: phoneNumber ? normalizePhoneNumber(phoneNumber) : undefined,
     whatsappSession: whatsappSession ?? undefined,
   });
@@ -127,15 +129,22 @@ export async function pollStatus({ ownerEmail, phoneNumber, whatsappSession } = 
 
 export async function unbindConnection({ ownerEmail, phoneNumber, whatsappSession } = {}) {
   return postJson(ENDPOINTS.unbind, {
-    owner_email: ownerEmail ?? undefined,
+    owner_email: resolveOwnerEmail(ownerEmail),
     phone_number: phoneNumber ? normalizePhoneNumber(phoneNumber) : undefined,
     whatsappSession: whatsappSession ?? undefined,
   });
 }
 
-export async function getConnection({ ownerEmail, phoneNumber } = {}) {
+export async function getConnection({ ownerEmail, phoneNumber, whatsappSession } = {}) {
   return postJson(ENDPOINTS.getConnection, {
-    owner_email: ownerEmail,
+    owner_email: resolveOwnerEmail(ownerEmail),
     phone_number: phoneNumber ? normalizePhoneNumber(phoneNumber) : undefined,
+    whatsappSession: whatsappSession ?? undefined,
+    wasender_session_id: whatsappSession ?? undefined,
   });
+}
+
+/** Sync DB row from Wasender API (api_key, status) — call after pairing connects. */
+export async function syncConnection({ ownerEmail, phoneNumber, whatsappSession } = {}) {
+  return getConnection({ ownerEmail, phoneNumber, whatsappSession });
 }

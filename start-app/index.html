@@ -1,6 +1,21 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script>
+      (function () {
+        var redirect = sessionStorage.getItem('spa-redirect');
+        if (!redirect) return;
+        sessionStorage.removeItem('spa-redirect');
+        try {
+          var target = new URL(redirect);
+          if (target.origin === location.origin) {
+            history.replaceState(null, '', target.pathname + target.search + target.hash);
+          }
+        } catch (e) {
+          /* ignore */
+        }
+      })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ActionNow - WhatsApp Manager Agent</title>

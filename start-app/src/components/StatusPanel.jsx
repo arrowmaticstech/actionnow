@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Activity, FileText, CheckCircle, Bell, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import { fetchLatestReports, REPORT_POLL_MS } from '../api/start';
+import { DEFAULT_OWNER_EMAIL } from '../lib/main';
 import { markdownToHtml } from '../utils/markdown';
 import {
   formatInterval,
@@ -46,11 +47,18 @@ export default function StatusPanel({
   const [lastReportFetch, setLastReportFetch] = useState(null);
 
   const loadReports = useCallback(async (isInitial = false) => {
+    if (!isWhatsAppConnected || !ownerPhone?.trim()) {
+      setReports([]);
+      setReportError(null);
+      if (isInitial) setReportLoading(false);
+      return;
+    }
+
     if (isInitial) setReportLoading(true);
     try {
       const items = await fetchLatestReports({
-        ownerEmail: ownerEmail || undefined,
-        ownerPhone: ownerPhone || undefined,
+        ownerEmail: DEFAULT_OWNER_EMAIL,
+        ownerPhone,
       });
       setReports(items);
       setReportError(null);
@@ -61,13 +69,14 @@ export default function StatusPanel({
     } finally {
       if (isInitial) setReportLoading(false);
     }
-  }, [ownerEmail, ownerPhone]);
+  }, [ownerEmail, ownerPhone, isWhatsAppConnected]);
 
   useEffect(() => {
     loadReports(true);
+    if (!isWhatsAppConnected) return undefined;
     const timer = setInterval(() => loadReports(false), REPORT_POLL_MS);
     return () => clearInterval(timer);
-  }, [loadReports]);
+  }, [loadReports, isWhatsAppConnected]);
 
   const latestReport = reports[0] ?? null;
 
