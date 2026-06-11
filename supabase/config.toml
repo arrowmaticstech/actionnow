@@ -1,0 +1,9 @@
+# Supabase local config — https://supabase.com/docs/guides/cli/config
+project_id = "actionnow"
+
+[api]
+schemas = ["public", "actionnow"]
+extra_search_path = ["public", "actionnow"]
+
+[functions.full-reports]
+verify_jwt = false

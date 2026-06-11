@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Activity, FileText, CheckCircle, Bell, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import { fetchLatestReports, REPORT_POLL_MS } from '../api/start';
 import { markdownToHtml } from '../utils/markdown';
@@ -24,7 +25,12 @@ function formatReportTime(iso) {
   });
 }
 
-export default function StatusPanel({ config, ownerEmail = '', ownerPhone = '' }) {
+export default function StatusPanel({
+  config,
+  ownerEmail = '',
+  ownerPhone = '',
+  isWhatsAppConnected = false,
+}) {
   const groupCount = config.groups.length;
   const keywordCount = config.keywords.length;
   const recipientCount = config.bossNumbers
@@ -147,6 +153,15 @@ export default function StatusPanel({ config, ownerEmail = '', ownerPhone = '' }
             <FileText className="w-5 h-5 text-wa-green" />
             Latest Report
           </h3>
+          <div className="flex items-center gap-3">
+          {isWhatsAppConnected && (
+            <Link
+              to="/full-reports"
+              className="text-xs font-medium text-wa-dark hover:text-wa-green transition-colors"
+            >
+              Full activity →
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => loadReports(true)}
@@ -161,6 +176,7 @@ export default function StatusPanel({ config, ownerEmail = '', ownerPhone = '' }
             )}
             Refresh
           </button>
+          </div>
         </div>
 
         <div className="bg-wa-gray rounded-xl p-4 space-y-3">

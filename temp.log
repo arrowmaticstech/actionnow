@@ -1,0 +1,301 @@
+{
+    "reports": [],
+    "count": 0,
+    "_debug": {
+        "route": "/reports",
+        "request": {
+            "owner_email": "arrowmaticstech@gmail.com",
+            "owner_phone_num": "+60122112522",
+            "phone_digits": "60122112522",
+            "phone_variants": [
+                "+60122112522",
+                "60122112522"
+            ]
+        },
+        "connections": [
+            {
+                "id": 47,
+                "owner_email": "arrowmaticstech@gmail.com",
+                "phone_number": "+60122112522",
+                "status": "connected",
+                "updated_at": "2026-06-11T02:28:08.143739+00:00"
+            }
+        ],
+        "distinct_owner_phone_num_in_db": {
+            "reports": [
+                "+60102264984"
+            ],
+            "messages": [
+                "+60102264984"
+            ],
+            "attempts": [
+                "+60102264984"
+            ]
+        },
+        "sample_rows": {
+            "reports": [
+                {
+                    "id": "e67a6d44-c7d5-4597-bbe6-b731dcf4f79c",
+                    "owner_email": "arrowmaticstech@gmail.com",
+                    "owner_phone_num": "+60102264984",
+                    "created_date": "2026-06-08T07:50:31.52127+00:00"
+                }
+            ],
+            "messages": [
+                {
+                    "id": "f180eb4a-2c90-46be-825d-9361b20ab7fd",
+                    "message_id": "3EB0979922C11FD742A922",
+                    "owner_phone_num": "+60102264984",
+                    "received_at": "2026-06-08T07:47:05.716698+00:00"
+                }
+            ],
+            "attempts": [
+                {
+                    "id": "10ac8d35-e72b-46ac-9c98-0ea74cd5d7a6",
+                    "owner_phone_num": "+60102264984",
+                    "outcome": "report_generated",
+                    "created_date": "2026-06-08T07:50:29.713027+00:00"
+                }
+            ]
+        },
+        "counts": {
+            "reports_email_only": 1,
+            "reports_strict_phone": 0,
+            "reports_flexible_phone": 0,
+            "messages_flexible_phone": 0,
+            "attempts_flexible_phone": 0
+        },
+        "hint": "Rows exist for this email but owner_phone_num in DB does not match request phone — flexible filter should fix this"
+    }
+}
+
+{
+    "attempts": [],
+    "count": 0,
+    "_debug": {
+        "route": "/thinking",
+        "request": {
+            "owner_email": "arrowmaticstech@gmail.com",
+            "owner_phone_num": "+60122112522",
+            "phone_digits": "60122112522",
+            "phone_variants": [
+                "+60122112522",
+                "60122112522"
+            ]
+        },
+        "connections": [
+            {
+                "id": 47,
+                "owner_email": "arrowmaticstech@gmail.com",
+                "phone_number": "+60122112522",
+                "status": "connected",
+                "updated_at": "2026-06-11T02:28:08.143739+00:00"
+            }
+        ],
+        "distinct_owner_phone_num_in_db": {
+            "reports": [
+                "+60102264984"
+            ],
+            "messages": [
+                "+60102264984"
+            ],
+            "attempts": [
+                "+60102264984"
+            ]
+        },
+        "sample_rows": {
+            "reports": [
+                {
+                    "id": "e67a6d44-c7d5-4597-bbe6-b731dcf4f79c",
+                    "owner_email": "arrowmaticstech@gmail.com",
+                    "owner_phone_num": "+60102264984",
+                    "created_date": "2026-06-08T07:50:31.52127+00:00"
+                }
+            ],
+            "messages": [
+                {
+                    "id": "f180eb4a-2c90-46be-825d-9361b20ab7fd",
+                    "message_id": "3EB0979922C11FD742A922",
+                    "owner_phone_num": "+60102264984",
+                    "received_at": "2026-06-08T07:47:05.716698+00:00"
+                }
+            ],
+            "attempts": [
+                {
+                    "id": "10ac8d35-e72b-46ac-9c98-0ea74cd5d7a6",
+                    "owner_phone_num": "+60102264984",
+                    "outcome": "report_generated",
+                    "created_date": "2026-06-08T07:50:29.713027+00:00"
+                }
+            ]
+        },
+        "counts": {
+            "reports_email_only": 1,
+            "reports_strict_phone": 0,
+            "reports_flexible_phone": 0,
+            "messages_flexible_phone": 0,
+            "attempts_flexible_phone": 0
+        },
+        "hint": "Rows exist for this email but owner_phone_num in DB does not match request phone — flexible filter should fix this"
+    }
+}
+
+{
+    "messages": [],
+    "next_cursor": null,
+    "count": 0,
+    "_debug": {
+        "route": "/messages",
+        "request": {
+            "owner_email": "arrowmaticstech@gmail.com",
+            "owner_phone_num": "+60122112522",
+            "phone_digits": "60122112522",
+            "phone_variants": [
+                "+60122112522",
+                "60122112522"
+            ]
+        },
+        "connections": [
+            {
+                "id": 47,
+                "owner_email": "arrowmaticstech@gmail.com",
+                "phone_number": "+60122112522",
+                "status": "connected",
+                "updated_at": "2026-06-11T02:28:08.143739+00:00"
+            }
+        ],
+        "distinct_owner_phone_num_in_db": {
+            "reports": [
+                "+60102264984"
+            ],
+            "messages": [
+                "+60102264984"
+            ],
+            "attempts": [
+                "+60102264984"
+            ]
+        },
+        "sample_rows": {
+            "reports": [
+                {
+                    "id": "e67a6d44-c7d5-4597-bbe6-b731dcf4f79c",
+                    "owner_email": "arrowmaticstech@gmail.com",
+                    "owner_phone_num": "+60102264984",
+                    "created_date": "2026-06-08T07:50:31.52127+00:00"
+                }
+            ],
+            "messages": [
+                {
+                    "id": "f180eb4a-2c90-46be-825d-9361b20ab7fd",
+                    "message_id": "3EB0979922C11FD742A922",
+                    "owner_phone_num": "+60102264984",
+                    "received_at": "2026-06-08T07:47:05.716698+00:00"
+                }
+            ],
+            "attempts": [
+                {
+                    "id": "10ac8d35-e72b-46ac-9c98-0ea74cd5d7a6",
+                    "owner_phone_num": "+60102264984",
+                    "outcome": "report_generated",
+                    "created_date": "2026-06-08T07:50:29.713027+00:00"
+                }
+            ]
+        },
+        "counts": {
+            "reports_email_only": 1,
+            "reports_strict_phone": 0,
+            "reports_flexible_phone": 0,
+            "messages_flexible_phone": 0,
+            "attempts_flexible_phone": 0
+        },
+        "hint": "Rows exist for this email but owner_phone_num in DB does not match request phone — flexible filter should fix this"
+    }
+}
+
+{
+    "reports": [],
+    "count": 0,
+    "_debug": {
+        "route": "/reports",
+        "request": {
+            "owner_email": "arrowmaticstech@gmail.com",
+            "owner_phone_num": "+60122112522",
+            "phone_digits": "60122112522",
+            "phone_variants": [
+                "+60122112522",
+                "60122112522"
+            ]
+        },
+        "connections": [
+            {
+                "id": 47,
+                "owner_email": "arrowmaticstech@gmail.com",
+                "phone_number": "+60122112522",
+                "status": "connected",
+                "updated_at": "2026-06-11T02:28:08.143739+00:00"
+            }
+        ],
+        "distinct_owner_phone_num_in_db": {
+            "reports": [
+                "+60102264984"
+            ],
+            "messages": [
+                "+60102264984"
+            ],
+            "attempts": [
+                "+60102264984"
+            ]
+        },
+        "sample_rows": {
+            "reports": [
+                {
+                    "id": "e67a6d44-c7d5-4597-bbe6-b731dcf4f79c",
+                    "owner_email": "arrowmaticstech@gmail.com",
+                    "owner_phone_num": "+60102264984",
+                    "created_date": "2026-06-08T07:50:31.52127+00:00"
+                }
+            ],
+            "messages": [
+                {
+                    "id": "f180eb4a-2c90-46be-825d-9361b20ab7fd",
+                    "message_id": "3EB0979922C11FD742A922",
+                    "owner_phone_num": "+60102264984",
+                    "received_at": "2026-06-08T07:47:05.716698+00:00"
+                }
+            ],
+            "attempts": [
+                {
+                    "id": "10ac8d35-e72b-46ac-9c98-0ea74cd5d7a6",
+                    "owner_phone_num": "+60102264984",
+                    "outcome": "report_generated",
+                    "created_date": "2026-06-08T07:50:29.713027+00:00"
+                }
+            ]
+        },
+        "counts": {
+            "reports_email_only": 1,
+            "reports_strict_phone": 0,
+            "reports_flexible_phone": 0,
+            "messages_flexible_phone": 0,
+            "attempts_flexible_phone": 0
+        },
+        "hint": "Rows exist for this email but owner_phone_num in DB does not match request phone — flexible filter should fix this"
+    }
+}
+
+scope":"routeThinking result","owner_email":"arrowmaticstech@gmail.com","owner_phone_num":"+60122112522","phone_digits":"60122112522","phone_variants":["+60122112522","60122112522"],"count":0}
+{"scope":"routeThinking result","owner_email":"arrowmaticstech@gmail.com","owner_phone_num":"+60122112522","phone_digits":"60122112522","phone_variants":["+60122112522","60122112522"],"count":0}
+{"scope":"routeReports result","owner_email":"arrowmaticstech@gmail.com","owner_phone_num":"+60122112522","phone_digits":"60122112522","phone_variants":["+60122112522","60122112522"],"count":0}
+{"scope":"routeThinking","owner_email":"arrowmaticstech@gmail.com","owner_phone_num":"+60122112522","phone_digits":"60122112522","phone_variants":["+60122112522","60122112522"],"limit":40,"outcome":null}
+{"scope":"assertConnectedOwner","owner_email":"arrowmaticstech@gmail.com","owner_phone_num":"+60122112522","phone_digits":"60122112522","phone_variants":["+60122112522","60122112522"],"connection_phone_in_db":"+60122112522","matched_variant":"+60122112522"}
+{"scope":"routeReports","owner_email":"arrowmaticstech@gmail.com","owner_phone_num":"+60122112522","phone_digits":"60122112522","phone_variants":["+60122112522","60122112522"],"limit":40,"includePreview":true}
+{"scope":"assertConnectedOwner","owner_email":"arrowmaticstech@gmail.com","owner_phone_num":"+60122112522","phone_digits":"60122112522","phone_variants":["+60122112522","60122112522"],"connection_phone_in_db":"+60122112522","matched_variant":"+60122112522"}
+{"scope":"routeReports result","owner_email":"arrowmaticstech@gmail.com","owner_phone_num":"+60122112522","phone_digits":"60122112522","phone_variants":["+60122112522","60122112522"],"count":0}
+{"scope":"assertConnectedOwner","owner_email":"arrowmaticstech@gmail.com","owner_phone_num":"+60122112522","phone_digits":"60122112522","phone_variants":["+60122112522","60122112522"],"connection_phone_in_db":"+60122112522","matched_variant":"+60122112522"}
+{"scope":"routeReports","owner_email":"arrowmaticstech@gmail.com","owner_phone_num":"+60122112522","phone_digits":"60122112522","phone_variants":["+60122112522","60122112522"],"limit":40,"includePreview":true}
+booted (time: 23ms)
+booted (time: 28ms)
+booted (time: 25ms)
+{"scope":"routeMessages result","owner_email":"arrowmaticstech@gmail.com","owner_phone_num":"+60122112522","phone_digits":"60122112522","phone_variants":["+60122112522","60122112522"],"count":0}
+{"scope":"routeThinking result","owner_email":"arrowmaticstech@gmail.com","owner_phone_num":"+60122112522","phone_digits":"60122112522","phone_variants":["+60122112522","60122112522"],"count":0}
+{"scope":"assertConnectedOwner","owner_email":"arrowmaticstech@gmail.com","

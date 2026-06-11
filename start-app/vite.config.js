@@ -14,6 +14,16 @@ export default defineConfig({
       '@assets': path.resolve(__dirname, '../assets'),
     },
   },
+  server: {
+    proxy: {
+      '/supabase-functions': {
+        target: 'https://edqhawzttjqhpfflzprb.supabase.co',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/supabase-functions/, '/functions/v1'),
+        secure: true,
+      },
+    },
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
