@@ -312,7 +312,8 @@
         "rule": {
           "interval": [
             {
-              "field": "minutes"
+              "field": "minutes",
+              "minutesInterval": 30
             }
           ]
         }
@@ -342,7 +343,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// 1. Get the current time in GMT+8\nconst now = new Date();\nconst gmt8Offset = 8 * 60 * 60 * 1000; // 8 hours in milliseconds\nconst nowGmt8Ms = now.getTime() + gmt8Offset;\nconst nowGmt8Str = new Date(nowGmt8Ms).toISOString().replace('Z', '+08:00');\n\nconsole.log(\"=== STARTING TIMESLOT CHECK ===\");\nconsole.log(\"Current GMT+8 Time String:\", nowGmt8Str);\nconsole.log(\"Current GMT+8 Time (MS):\", nowGmt8Ms);\n\n// 2. Define your window configuration (5 minutes in milliseconds)\nconst FIVE_MINUTES_MS = 5 * 60 * 1000;\nconst totalItems = $input.all().length;\nconsole.log(`Total timeslots received to check: ${totalItems}`);\n\nlet checkedCount = 0;\n\n// 3. Loop through all incoming timeslot items to find a match\nfor (const item of $input.all()) {\n  checkedCount++;\n  const slotGmt8Str = item.json.timestamp_gmt8; \n  \n  if (!slotGmt8Str) {\n    console.log(`[Slot ${checkedCount}/${totalItems}] Skipped: Missing timestamp_gmt8 property.`);\n    continue;\n  }\n\n  // Convert the slot string into an absolute millisecond timestamp\n  const slotMs = new Date(slotGmt8Str).getTime();\n  const timeDifference = slotMs - nowGmt8Ms;\n  const diffInMinutes = (timeDifference / 1000 / 60).toFixed(2);\n\n  // LOG EVERY SLOT ENCOUNTERED FOR VISIBILITY\n  console.log(`[Slot ${checkedCount}/${totalItems}] Checking: ${slotGmt8Str} | Diff: ${diffInMinutes} mins`);\n\n  // 4. Check if the current time is within 5 minutes BEFORE the target slot time\n  if (timeDifference >= 0 && timeDifference <= FIVE_MINUTES_MS) {\n    console.log(`🎯 MATCH FOUND at slot ${checkedCount}! Executing Postgres trigger node.`);\n    \n    return [{\n      json: {\n        match_found: true,\n        matched_slot_gmt8: slotGmt8Str,\n        current_time_gmt8: nowGmt8Str,\n        minutes_remaining: diffInMinutes\n      }\n    }];\n  }\n}\n\nconsole.log(\"❌ No timeslots fell within the 5-minute window.\");\nconsole.log(\"=== END OF TIMESLOT CHECK ===\");\n\n// 5. TRICK FOR UI DEBUGGING: \n// Change \"true\" to \"false\" below when you are ready to go live!\nconst debugModeInUi = true; \n\nif (debugModeInUi) {\n  return [{\n    json: {\n      match_found: false,\n      message: \"No timeslots matched. Showing this instead of empty screen because debugModeInUi is active.\",\n      current_time_checked: nowGmt8Str,\n      total_slots_evaluated: totalItems\n    }\n  }];\n}\n\nreturn []; // Clean exit when debugModeInUi is false"
+        "jsCode": "// 1. Get the current time in GMT+8\nconst now = new Date();\nconst gmt8Offset = 8 * 60 * 60 * 1000; // 8 hours in milliseconds\nconst nowGmt8Ms = now.getTime() + gmt8Offset;\nconst nowGmt8Str = new Date(nowGmt8Ms).toISOString().replace('Z', '+08:00');\n\nconsole.log(\"=== STARTING TIMESLOT CHECK ===\");\nconsole.log(\"Current GMT+8 Time String:\", nowGmt8Str);\nconsole.log(\"Current GMT+8 Time (MS):\", nowGmt8Ms);\n\n// 2. Define your window configuration (5 minutes in milliseconds)\nconst FIVE_MINUTES_MS = 30 * 60 * 1000;\nconst totalItems = $input.all().length;\nconsole.log(`Total timeslots received to check: ${totalItems}`);\n\nlet checkedCount = 0;\n\n// 3. Loop through all incoming timeslot items to find a match\nfor (const item of $input.all()) {\n  checkedCount++;\n  const slotGmt8Str = item.json.timestamp_gmt8; \n  \n  if (!slotGmt8Str) {\n    console.log(`[Slot ${checkedCount}/${totalItems}] Skipped: Missing timestamp_gmt8 property.`);\n    continue;\n  }\n\n  // Convert the slot string into an absolute millisecond timestamp\n  const slotMs = new Date(slotGmt8Str).getTime();\n  const timeDifference = slotMs - nowGmt8Ms;\n  const diffInMinutes = (timeDifference / 1000 / 60).toFixed(2);\n\n  // LOG EVERY SLOT ENCOUNTERED FOR VISIBILITY\n  console.log(`[Slot ${checkedCount}/${totalItems}] Checking: ${slotGmt8Str} | Diff: ${diffInMinutes} mins`);\n\n  // 4. Check if the current time is within 5 minutes BEFORE the target slot time\n  if (timeDifference >= 0 && timeDifference <= FIVE_MINUTES_MS) {\n    console.log(`🎯 MATCH FOUND at slot ${checkedCount}! Executing Postgres trigger node.`);\n    \n    return [{\n      json: {\n        match_found: true,\n        matched_slot_gmt8: slotGmt8Str,\n        current_time_gmt8: nowGmt8Str,\n        minutes_remaining: diffInMinutes\n      }\n    }];\n  }\n}\n\nconsole.log(\"❌ No timeslots fell within the 5-minute window.\");\nconsole.log(\"=== END OF TIMESLOT CHECK ===\");\n\n// 5. TRICK FOR UI DEBUGGING: \n// Change \"true\" to \"false\" below when you are ready to go live!\nconst debugModeInUi = true; \n\nif (debugModeInUi) {\n  return [{\n    json: {\n      match_found: false,\n      message: \"No timeslots matched. Showing this instead of empty screen because debugModeInUi is active.\",\n      current_time_checked: nowGmt8Str,\n      total_slots_evaluated: totalItems\n    }\n  }];\n}\n\nreturn []; // Clean exit when debugModeInUi is false"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -1628,7 +1629,8 @@
         "rule": {
           "interval": [
             {
-              "field": "minutes"
+              "field": "minutes",
+              "minutesInterval": 30
             }
           ]
         }
@@ -1683,7 +1685,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const FIVE_MINUTES_MS = 15 * 60 * 1000;\nconst gmt8Offset = 8 * 60 * 60 * 1000;\nconst nowGmt8Ms = Date.now() + gmt8Offset;\nfor (const item of $input.all()) {\n  const slotGmt8Str = item.json.timestamp_gmt8;\n  if (!slotGmt8Str) continue;\n  const slotMs = new Date(slotGmt8Str).getTime();\n  const timeDifference = slotMs - nowGmt8Ms;\n  if (timeDifference >= 0 && timeDifference <= FIVE_MINUTES_MS) {\n    return [{ json: { ...item.json, match_found: true, matched_slot_gmt8: slotGmt8Str, minutes_until_slot: (timeDifference / 60000).toFixed(2) } }];\n  }\n}\nreturn [{ json: { match_found: false } }];"
+        "jsCode": "const FIVE_MINUTES_MS = 30 * 60 * 1000;\nconst gmt8Offset = 8 * 60 * 60 * 1000;\nconst nowGmt8Ms = Date.now() + gmt8Offset;\nfor (const item of $input.all()) {\n  const slotGmt8Str = item.json.timestamp_gmt8;\n  if (!slotGmt8Str) continue;\n  const slotMs = new Date(slotGmt8Str).getTime();\n  const timeDifference = slotMs - nowGmt8Ms;\n  if (timeDifference >= 0 && timeDifference <= FIVE_MINUTES_MS) {\n    return [{ json: { ...item.json, match_found: true, matched_slot_gmt8: slotGmt8Str, minutes_until_slot: (timeDifference / 60000).toFixed(2) } }];\n  }\n}\nreturn [{ json: { match_found: false } }];"
       },
       "name": "Code - check if within time to execute1",
       "type": "n8n-nodes-base.code",
@@ -2516,7 +2518,8 @@
         "rule": {
           "interval": [
             {
-              "field": "minutes"
+              "field": "minutes",
+              "minutesInterval": 30
             }
           ]
         }
@@ -2568,7 +2571,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const EXECUTE_WINDOW_MS = 15 * 60 * 1000;\nconst nowMs = Date.now();\nfor (const item of $input.all()) {\n  const slotUtcStr = item.json.timestamp_utc;\n  if (!slotUtcStr) continue;\n  const slotMs = new Date(slotUtcStr).getTime();\n  const timeDifference = slotMs - nowMs;\n  if (timeDifference >= 0 && timeDifference <= EXECUTE_WINDOW_MS) {\n    return [{\n      json: {\n        ...item.json,\n        match_found: true,\n        matched_slot_utc: slotUtcStr,\n        matched_slot_gmt8: item.json.timestamp_gmt8,\n        minutes_until_slot: (timeDifference / 60000).toFixed(2),\n      },\n    }];\n  }\n}\nreturn [{ json: { match_found: false } }];"
+        "jsCode": "const EXECUTE_WINDOW_MS = 30 * 60 * 1000;\nconst nowMs = Date.now();\nfor (const item of $input.all()) {\n  const slotUtcStr = item.json.timestamp_utc;\n  if (!slotUtcStr) continue;\n  const slotMs = new Date(slotUtcStr).getTime();\n  const timeDifference = slotMs - nowMs;\n  if (timeDifference >= 0 && timeDifference <= EXECUTE_WINDOW_MS) {\n    return [{\n      json: {\n        ...item.json,\n        match_found: true,\n        matched_slot_utc: slotUtcStr,\n        matched_slot_gmt8: item.json.timestamp_gmt8,\n        minutes_until_slot: (timeDifference / 60000).toFixed(2),\n      },\n    }];\n  }\n}\nreturn [{ json: { match_found: false } }];"
       },
       "name": "Code - check if within time to execute",
       "type": "n8n-nodes-base.code",

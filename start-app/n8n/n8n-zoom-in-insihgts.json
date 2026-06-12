@@ -222,7 +222,7 @@
           "interval": [
             {
               "field": "minutes",
-              "minutesInterval": 3
+              "minutesInterval": 30
             }
           ]
         }
@@ -274,7 +274,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const EXECUTE_WINDOW_MS = 15 * 60 * 1000;\nconst nowMs = Date.now();\nfor (const item of $input.all()) {\n  const slotUtcStr = item.json.timestamp_utc;\n  if (!slotUtcStr) continue;\n  const slotMs = new Date(slotUtcStr).getTime();\n  const timeDifference = slotMs - nowMs;\n  if (timeDifference >= 0 && timeDifference <= EXECUTE_WINDOW_MS) {\n    return [{\n      json: {\n        ...item.json,\n        match_found: true,\n        matched_slot_utc: slotUtcStr,\n        matched_slot_gmt8: item.json.timestamp_gmt8,\n        minutes_until_slot: (timeDifference / 60000).toFixed(2),\n      },\n    }];\n  }\n}\nreturn [{ json: { match_found: false } }];"
+        "jsCode": "const EXECUTE_WINDOW_MS = 30 * 60 * 1000;\nconst nowMs = Date.now();\nfor (const item of $input.all()) {\n  const slotUtcStr = item.json.timestamp_utc;\n  if (!slotUtcStr) continue;\n  const slotMs = new Date(slotUtcStr).getTime();\n  const timeDifference = slotMs - nowMs;\n  if (timeDifference >= 0 && timeDifference <= EXECUTE_WINDOW_MS) {\n    return [{\n      json: {\n        ...item.json,\n        match_found: true,\n        matched_slot_utc: slotUtcStr,\n        matched_slot_gmt8: item.json.timestamp_gmt8,\n        minutes_until_slot: (timeDifference / 60000).toFixed(2),\n      },\n    }];\n  }\n}\nreturn [{ json: { match_found: false } }];"
       },
       "name": "Code - check if within time to execute1",
       "type": "n8n-nodes-base.code",

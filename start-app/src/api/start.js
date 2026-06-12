@@ -16,7 +16,7 @@ const DEL_CONFIG_URL = `${API_BASE}/action-now-del-config/v2`;
 const GET_REPORT_URL = `${API_BASE}/action-now-get-report/v2`;
 const LID_TO_PHONE_URL = `${API_BASE}/get-whatsapp-pin-from-lid/v2`;
 
-export const REPORT_POLL_MS = 60_000;
+export const REPORT_POLL_MS = 30 * 60 * 1000;
 
 export const LIST_PAGE_LIMIT = 35;
 
