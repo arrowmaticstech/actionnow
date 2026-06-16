@@ -17,7 +17,7 @@ const ENDPOINTS = {
 };
 
 export const QR_TTL_SECONDS = 30;
-export const STATUS_POLL_MS = 5000;
+export const STATUS_POLL_MS = 15000; // every 15 seconds
 
 export const DEFAULT_WEBHOOK_URL = `${API_BASE.replace(/\/$/, '')}/actionnow-receive-whatsapp`;
 

@@ -453,7 +453,7 @@ const WhatsAppPairingPanel = forwardRef(function WhatsAppPairingPanel({ onOwnerC
           </div>
         </div>
 
-        {canUnbind && (
+        {  (
           <button
             id="whatsapp-unbind-btn"
             type="button"
