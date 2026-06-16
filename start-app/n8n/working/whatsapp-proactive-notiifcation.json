@@ -4436,7 +4436,7 @@
           "page": "1",
           "limit": "10"
         },
-        "webhookUrl": "https://arrowmatics.app.n8n.cloud/webhook/get-whatsapp-contact-list",
+        "webhookUrl": "https://n8n.srv1756144.hstgr.cloud/webhook/get-whatsapp-contact-list",
         "executionMode": "production"
       }
     ],
@@ -4484,7 +4484,7 @@
           "page": "1",
           "limit": "10"
         },
-        "webhookUrl": "https://arrowmatics.app.n8n.cloud/webhook/get-whatsapp-group-list",
+        "webhookUrl": "https://n8n.srv1756144.hstgr.cloud/webhook/get-whatsapp-group-list",
         "executionMode": "production"
       }
     ],
@@ -4556,7 +4556,7 @@
           "to_date": null,
           "refresh_seconds": 900
         },
-        "webhookUrl": "https://arrowmatics.app.n8n.cloud/webhook/action-now-save-config",
+        "webhookUrl": "https://n8n.srv1756144.hstgr.cloud/webhook/action-now-save-config",
         "executionMode": "production"
       }
     ],
@@ -4604,7 +4604,7 @@
           "page": "1",
           "limit": "10"
         },
-        "webhookUrl": "https://arrowmatics.app.n8n.cloud/webhook/get-whatsapp-contact-list",
+        "webhookUrl": "https://n8n.srv1756144.hstgr.cloud/webhook/get-whatsapp-contact-list",
         "executionMode": "production"
       }
     ],
@@ -4676,7 +4676,7 @@
           },
           "timestamp": 1780719439529
         },
-        "webhookUrl": "https://arrowmatics.app.n8n.cloud/webhook/actionnow-receive-whatsapp",
+        "webhookUrl": "https://n8n.srv1756144.hstgr.cloud/webhook/actionnow-receive-whatsapp",
         "executionMode": "production"
       }
     ],
@@ -4750,7 +4750,7 @@
           },
           "timestamp": 1780756662913
         },
-        "webhookUrl": "https://arrowmatics.app.n8n.cloud/webhook/actionnow-receive-whatsapp",
+        "webhookUrl": "https://n8n.srv1756144.hstgr.cloud/webhook/actionnow-receive-whatsapp",
         "executionMode": "production"
       }
     ],
@@ -4818,7 +4818,7 @@
           "to_date": null,
           "refresh_seconds": 1800
         },
-        "webhookUrl": "https://arrowmatics.app.n8n.cloud/webhook/action-now-save-config",
+        "webhookUrl": "https://n8n.srv1756144.hstgr.cloud/webhook/action-now-save-config",
         "executionMode": "production"
       }
     ],
@@ -4862,7 +4862,7 @@
           "owner_email": "hello@actionnow.my",
           "owner_phone_num": "+601139415700"
         },
-        "webhookUrl": "https://arrowmatics.app.n8n.cloud/webhook/action-now-get-report",
+        "webhookUrl": "https://n8n.srv1756144.hstgr.cloud/webhook/action-now-get-report",
         "executionMode": "production"
       }
     ]

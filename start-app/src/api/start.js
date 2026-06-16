@@ -7,8 +7,8 @@ import { syncConnection, normalizePhoneNumber } from './wasender';
 import { getBossNumberValue, getGroupValue } from '../utils/format';
 import { DEFAULT_OWNER_EMAIL, DEFAULT_OWNER_PHONE, resolveOwnerEmail } from '../lib/main';
 
-const API_BASE = 'https://arrowmatics.app.n8n.cloud/webhook';
-const API_TEST_BASE = 'https://arrowmatics.app.n8n.cloud/webhook-test';
+const API_BASE = 'https://n8n.srv1756144.hstgr.cloud/webhook';
+const API_TEST_BASE = 'https://n8n.srv1756144.hstgr.cloud/webhook-test';
 const GROUP_LIST_WEBHOOK = `${API_BASE}/get-whatsapp-group-list/v2`;
 const CONTACT_LIST_WEBHOOK = `${API_BASE}/get-whatsapp-contact-list/v2`;
 const SAVE_CONFIG_URL = `${API_BASE}/action-now-save-config/v2`;

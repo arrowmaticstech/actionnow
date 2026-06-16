@@ -1804,7 +1804,7 @@
           },
           "timestamp": 1780909113232
         },
-        "webhookUrl": "https://arrowmatics.app.n8n.cloud/webhook/actionnow-receive-whatsapp",
+        "webhookUrl": "https://n8n.srv1756144.hstgr.cloud/webhook/actionnow-receive-whatsapp",
         "executionMode": "production"
       }
     ]

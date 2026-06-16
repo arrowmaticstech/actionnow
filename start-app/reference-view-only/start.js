@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchGroupsBtn.disabled = true;
 
             try {
-                const response = await fetch('https://arrowmatics.app.n8n.cloud/webhook/get-whatsapp-group-list', {
+                const response = await fetch('https://n8n.srv1756144.hstgr.cloud/webhook/get-whatsapp-group-list', {
                     method: 'POST',
                     body: new URLSearchParams({ phonenumber: phoneNumber })
                 });

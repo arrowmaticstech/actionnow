@@ -5,7 +5,7 @@
 import { resolveOwnerEmail } from '../lib/main';
 
 const API_BASE =
-  import.meta.env.VITE_N8N_WEBHOOK_BASE ?? 'https://arrowmatics.app.n8n.cloud/webhook';
+  import.meta.env.VITE_N8N_WEBHOOK_BASE ?? 'https://n8n.srv1756144.hstgr.cloud/webhook';
 
 const ENDPOINTS = {
   listSessions: `${API_BASE}/wasender/whatsapp-sessions/list`,
