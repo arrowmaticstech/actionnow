@@ -5,6 +5,11 @@
 import { fetchLatestReport } from './fullReports';
 import { syncConnection, normalizePhoneNumber } from './wasender';
 import { getBossNumberValue, getGroupValue } from '../utils/format';
+import {
+  normalizeInsightsSuboptions,
+  normalizePreferredMethod,
+  PREFERRED_METHODS,
+} from '../lib/monitoringMethods';
 import { DEFAULT_OWNER_EMAIL, DEFAULT_OWNER_PHONE, resolveOwnerEmail } from '../lib/main';
 
 const API_BASE = 'https://n8n.srv1756144.hstgr.cloud/webhook';
@@ -279,13 +284,6 @@ export async function fetchWhatsAppContacts(phoneNumber, page = 1, owner = {}) {
 
   return fetchListWithSyncRetry(doFetch, ownerCtx);
 }
-
-function contentTypesToArray(contentTypes) {
-  return Object.entries(contentTypes)
-    .filter(([, checked]) => checked)
-    .map(([type]) => type);
-}
-
 /** Postgres text[] — never send null/undefined (n8n rejects non-arrays). */
 export function ensureStringArray(value) {
   if (Array.isArray(value)) {
@@ -328,15 +326,43 @@ function fromIsoToDatetimeLocal(value) {
 
 const CONTENT_TYPE_KEYS = ['text', 'audio', 'image', 'document'];
 
+const CONTENT_TYPE_ALIASES = {
+  text: ['text'],
+  audio: ['audio'],
+  image: ['image', 'images', 'sticker'],
+  document: ['document', 'documents'],
+};
+
+/** DB / n8n may use plural aliases; UI always uses singular keys. */
+export function contentTypesFromDb(selectedTypes, baseContentTypes = {}) {
+  const normalized = ensureStringArray(selectedTypes).map((t) => String(t).toLowerCase());
+  const set = new Set(normalized);
+  const hasAny = set.size > 0;
+
+  const contentTypes = {};
+  for (const key of CONTENT_TYPE_KEYS) {
+    const aliases = CONTENT_TYPE_ALIASES[key];
+    contentTypes[key] = hasAny
+      ? aliases.some((alias) => set.has(alias))
+      : (baseContentTypes[key] ?? false);
+  }
+  return contentTypes;
+}
+
+/** Checked UI keys → canonical values for monitor_settings.what_content_types */
+export function contentTypesToArray(contentTypes) {
+  const out = [];
+  for (const key of CONTENT_TYPE_KEYS) {
+    if (contentTypes?.[key]) out.push(key);
+  }
+  return out;
+}
+
 /** Maps monitor_settings DB row → UI config shape (inverse of buildConfigPayload). */
 export function mapDbConfigToUi(row, baseConfig = {}) {
   if (!row || typeof row !== 'object') return null;
 
-  const selectedTypes = ensureStringArray(row.what_content_types);
-  const contentTypes = {};
-  for (const type of CONTENT_TYPE_KEYS) {
-    contentTypes[type] = selectedTypes.length ? selectedTypes.includes(type) : (baseConfig.contentTypes?.[type] ?? false);
-  }
+  const contentTypes = contentTypesFromDb(row.what_content_types, baseConfig.contentTypes);
 
   const refreshSeconds = Number(row.refresh_seconds);
   const intervalMinutes = Number.isFinite(refreshSeconds) && refreshSeconds > 0
@@ -365,6 +391,15 @@ export function mapDbConfigToUi(row, baseConfig = {}) {
     startTime: fromIsoToDatetimeLocal(row.from_date) || baseConfig.startTime,
     endTime: fromIsoToDatetimeLocal(row.to_date) || baseConfig.endTime || '',
     interval: String(intervalMinutes),
+    preferredMethod: normalizePreferredMethod(row.preferred_method ?? baseConfig.preferredMethod),
+    insightsSuboptions: normalizeInsightsSuboptions(
+      row.insights_suboptions ?? row.suboptions ?? baseConfig.insightsSuboptions,
+    ).length
+      ? normalizeInsightsSuboptions(row.insights_suboptions ?? row.suboptions)
+      : (baseConfig.insightsSuboptions ?? []),
+    promptInstructionsTemplate: String(
+      row.prompt_instructions_template ?? baseConfig.promptInstructionsTemplate ?? '',
+    ).trim(),
   };
 }
 
@@ -409,7 +444,9 @@ export async function resolveRecipientPhoneIds(recipients, owner = {}) {
   );
 }
 
-/** Maps UI config → actionnow.monitor_settings columns for n8n/Supabase. */
+/** Maps UI config → actionnow.monitor_settings columns for n8n/Supabase.
+ *  All method-specific fields are sent on every save so values coexist in DB
+ *  (switching preferred_method only changes which field the monitor reads). */
 export function buildConfigPayload(config, resolvedRecipients, owner = {}) {
   const supervisionLabel = config.supervisionLabel?.trim() || 'Untitled supervision';
   const recipients = resolvedRecipients ?? config.bossNumbers
@@ -432,6 +469,9 @@ export function buildConfigPayload(config, resolvedRecipients, owner = {}) {
     from_date: toIsoDate(config.startTime),
     to_date: toIsoDate(config.endTime),
     refresh_seconds: Number(config.interval) * 60,
+    preferred_method: normalizePreferredMethod(config.preferredMethod),
+    insights_suboptions: normalizeInsightsSuboptions(config.insightsSuboptions),
+    prompt_instructions_template: String(config.promptInstructionsTemplate ?? '').trim() || null,
   };
 }
 
@@ -452,6 +492,19 @@ export function validateConfigForSave(config) {
   }
   if (!recipients.length) {
     throw new Error('Please add at least one target number to report to before saving.');
+  }
+
+  const method = normalizePreferredMethod(config.preferredMethod);
+  if (method === PREFERRED_METHODS.KEYWORD && !ensureStringArray(config.keywords).length) {
+    throw new Error('Please add at least one keyword when using By Keywords monitoring.');
+  }
+  if (method === PREFERRED_METHODS.INSTRUCTIONS
+    && !String(config.promptInstructionsTemplate ?? '').trim()) {
+    throw new Error('Please enter monitoring instructions for Open Instruction (LLM).');
+  }
+  if (method === PREFERRED_METHODS.COMMON_INSIGHTS
+    && !normalizeInsightsSuboptions(config.insightsSuboptions).length) {
+    throw new Error('Please select at least one Common Summary Insight category.');
   }
 }
 

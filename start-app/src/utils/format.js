@@ -92,9 +92,10 @@ export function formatBossNumber(bossNumbers) {
 }
 
 export function formatContentTypes(contentTypes) {
-  const selected = Object.entries(contentTypes)
+  const labels = { text: 'Text', audio: 'Audio', image: 'Images', document: 'Documents' };
+  const selected = Object.entries(contentTypes ?? {})
     .filter(([, checked]) => checked)
-    .map(([type]) => type);
+    .map(([type]) => labels[type] ?? type);
   if (selected.length === 0) return 'None';
   return selected.join(', ');
 }

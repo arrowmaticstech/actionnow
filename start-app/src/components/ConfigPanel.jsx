@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  MapPin, Phone, Download, X, Users, PlusCircle, Plus, Send,
-  Search, Tag, FileText, Clock, Calendar, Repeat, Save, Loader2, Filter,
+  MapPin, Phone, Download, X, Users, PlusCircle, Plus, Send, Search,
+  FileText, Clock, Calendar, Repeat, Save, Loader2, Filter,
 } from 'lucide-react';
+import { DEFAULT_OWNER_EMAIL, pickRandomGroupName, SAVE_FLASH_MS } from '../lib/main';
 import { fetchWhatsAppGroups, fetchWhatsAppContacts, saveConfiguration } from '../api/start';
-import { DEFAULT_OWNER_EMAIL } from '../lib/main';
-import { pickRandomGroupName, SAVE_FLASH_MS, SUGGESTED_KEYWORDS } from '../lib/main';
+import MonitoringMethodSection from './MonitoringMethodSection';
 import ListPagination from './ListPagination';
 import {
   getBossNumberValue,
@@ -687,75 +687,17 @@ export default function ConfigPanel({
           </div>
         </div>
 
-        <div className="space-y-4">
-          <h3 className="main-form-header text-base font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-            <Search className="w-4 h-4 text-wa-green" /> What to look for?
-          </h3>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-              <Tag className="w-4 h-4 text-gray-400" /> Content Info (Keywords)
-            </label>
-            <div className="flex flex-wrap gap-2 mb-3" id="keywordTags">
-              {config.keywords.map((keyword, i) => (
-                <span
-                  key={i}
-                  className="inline-flex items-center gap-1 bg-wa-light text-wa-dark text-xs font-medium px-3 py-1.5 rounded-full animate-fade-in"
-                >
-                  {keyword}
-                  <button
-                    onClick={() => handleRemoveKeyword(keyword)}
-                    className="hover:text-red-500 transition-colors remove-keyword"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Add keyword..."
-                value={keywordInput}
-                onChange={(e) => setKeywordInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddKeyword()}
-                id="keywordInput"
-                className="flex-1 bg-wa-gray border-0 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-wa-green focus:outline-none"
-              />
-              <button
-                onClick={handleAddKeyword}
-                id="addKeywordBtn"
-                className="px-4 py-2.5 bg-wa-green text-white text-sm font-semibold rounded-lg hover:bg-wa-green/90 transition-colors active:scale-95"
-              >
-                Add
-              </button>
-            </div>
-            <div className="mt-3">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Suggested keywords
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {SUGGESTED_KEYWORDS.map((keyword) => {
-                  const isAdded = config.keywords.includes(keyword);
-                  return (
-                    <button
-                      key={keyword}
-                      type="button"
-                      onClick={() => handleAddSuggestedKeyword(keyword)}
-                      disabled={isAdded}
-                      className={`text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
-                        isAdded
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          : 'bg-wa-gray text-gray-600 hover:bg-wa-light hover:text-wa-dark'
-                      }`}
-                    >
-                      + {keyword}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+        <MonitoringMethodSection
+          config={config}
+          setConfig={setConfig}
+          keywordInput={keywordInput}
+          setKeywordInput={setKeywordInput}
+          onAddKeyword={handleAddKeyword}
+          onAddSuggestedKeyword={handleAddSuggestedKeyword}
+          onRemoveKeyword={handleRemoveKeyword}
+        />
 
+        <div className="space-y-4">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
               <FileText className="w-4 h-4 text-gray-400" /> Content Types
@@ -764,13 +706,13 @@ export default function ConfigPanel({
               {[
                 { key: 'text', label: 'Text' },
                 { key: 'audio', label: 'Audio' },
-                { key: 'images', label: 'Images' },
-                { key: 'documents', label: 'Documents' },
+                { key: 'image', label: 'Images' },
+                { key: 'document', label: 'Documents' },
               ].map(({ key, label }) => (
                 <label key={key} className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={config.contentTypes[key]}
+                    checked={!!config.contentTypes?.[key]}
                     onChange={() => toggleContentType(key)}
                     className="w-4 h-4 rounded border-gray-300 text-wa-green focus:ring-wa-green"
                   />
@@ -823,7 +765,7 @@ export default function ConfigPanel({
                 id="intervalSelect"
                 className="w-full bg-wa-gray border-0 rounded-lg px-4 py-3 text-sm text-gray-700 focus:ring-2 focus:ring-wa-green focus:outline-none cursor-pointer"
               >
-                <option value="5">Every 5 minutes</option>
+                <option value="5" disabled>Every 5 minutes — consult us</option>
                 <option value="15">Every 15 minutes</option>
                 <option value="30">Every 30 minutes</option>
                 <option value="60">Every 1 hour</option>

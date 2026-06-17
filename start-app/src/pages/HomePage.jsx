@@ -9,6 +9,11 @@ import useMouseRipple from '../hooks/useMouseRipple';
 import { fetchMonitorConfig } from '../api/fullReports';
 import { mapDbConfigToUi } from '../api/start';
 import { DEFAULT_OWNER_EMAIL, TOAST_VISIBLE_MS } from '../lib/main';
+import {
+  DEFAULT_COMMON_SUBOPTIONS,
+  DEFAULT_INSTRUCTIONS_PROMPT,
+  PREFERRED_METHODS,
+} from '../lib/monitoringMethods';
 import { getDatetimeLocalNow } from '../utils/format';
 
 const INITIAL_CONFIG = {
@@ -17,6 +22,9 @@ const INITIAL_CONFIG = {
   fromContacts: [],
   bossNumbers: [{ value: '', verified: false }],
   keywords: ['deadline', 'urgent', 'Q4 report', '@boss'],
+  preferredMethod: PREFERRED_METHODS.KEYWORD,
+  insightsSuboptions: [...DEFAULT_COMMON_SUBOPTIONS],
+  promptInstructionsTemplate: DEFAULT_INSTRUCTIONS_PROMPT,
   contentTypes: {
     text: true,
     audio: true,

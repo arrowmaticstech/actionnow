@@ -96,6 +96,9 @@ create table actionnow.monitor_settings (
   refresh_seconds integer not null default 900,
   created_date timestamp with time zone not null default now(),
   from_contact_jids text[] not null default '{}'::text[],
+  preferred_method text not null default 'keyword',
+  insights_suboptions text[] not null default '{}'::text[],
+  prompt_instructions_template text null,
   constraint monitor_settings_pkey primary key (id),
   constraint monitor_settings_date_range_check check (
     (
