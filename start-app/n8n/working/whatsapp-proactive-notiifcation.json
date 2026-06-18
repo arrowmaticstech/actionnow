@@ -8,10 +8,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        3104,
-        3456
+        5776,
+        7344
       ],
-      "id": "038551bc-5595-45f4-b7bd-9f5e999f1aac",
+      "id": "20cf83e4-a6d4-45be-9a5f-8c24128e0b68",
       "name": "Respond to Webhook1"
     },
     {
@@ -22,10 +22,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        3104,
-        3808
+        5776,
+        7696
       ],
-      "id": "81082026-6674-4b90-a9d6-62e776bf8e69",
+      "id": "5d784d6f-6ddf-4dee-b40f-874ac2568c63",
       "name": "Respond to Webhook"
     },
     {
@@ -45,13 +45,13 @@
           }
         }
       },
-      "id": "73bf2557-66ab-4c61-8f37-3a97a3f54349",
+      "id": "633e6fba-c60a-42be-8c58-81c93ff96912",
       "name": "Webhook - Get possible contacts",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        2480,
-        3712
+        5152,
+        7600
       ],
       "webhookId": "get-whatsapp-group-list"
     },
@@ -72,13 +72,13 @@
           }
         }
       },
-      "id": "29f332ad-4ff2-4dd2-a7f0-574d55c2b85a",
+      "id": "878e13cd-694f-47d6-b325-dbfc4fc68ac6",
       "name": "Webhook - Get whatsapp group list",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        2480,
-        3360
+        5152,
+        7248
       ],
       "webhookId": "get-whatsapp-group-list"
     },
@@ -94,10 +94,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        2768,
-        3776
+        5440,
+        7664
       ],
-      "id": "756cdff7-9784-4ce5-869e-097dc647f76f",
+      "id": "ffb39858-62ef-4323-a1e6-2c5eab95f2d1",
       "name": "wasender get whatsapp contact",
       "retryOnFail": false,
       "executeOnce": true,
@@ -121,10 +121,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        2768,
-        3424
+        5440,
+        7312
       ],
-      "id": "9f200a01-bcdb-45d3-8ba8-43b8a3300681",
+      "id": "c947107c-292e-4fc3-bad9-aee6ac2d1d20",
       "name": "wasender  get grouplist",
       "retryOnFail": false,
       "executeOnce": true,
@@ -144,10 +144,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        2880,
-        4400
+        5552,
+        8288
       ],
-      "id": "77fdb333-83a1-4a39-a34a-2b65cbc55e8d",
+      "id": "d54bc961-7735-4872-8a0f-3d515906c6ed",
       "name": "Respond to Webhook2"
     },
     {
@@ -167,13 +167,13 @@
           }
         }
       },
-      "id": "54f08fca-ae87-4b57-8539-be243eef0741",
+      "id": "c7ed45ac-571c-4f3b-9f91-5f07ccd5491f",
       "name": "Webhook - Save configuration",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        2448,
-        4384
+        5120,
+        8272
       ],
       "webhookId": "get-whatsapp-group-list"
     },
@@ -185,10 +185,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        2992,
-        4112
+        5664,
+        8000
       ],
-      "id": "cc90d097-0300-4c25-828f-049b8bb0f419",
+      "id": "0dfd5e8e-ffd2-4201-8738-a3d05a6ce8f6",
       "name": "Respond to Webhook3"
     },
     {
@@ -208,13 +208,13 @@
           }
         }
       },
-      "id": "fb818c99-2b06-4595-8289-7e67844133a3",
+      "id": "b247e785-4e2e-443f-aeeb-d087cdef139e",
       "name": "Webhook - Get phone from lid",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        2432,
-        4080
+        5104,
+        7968
       ],
       "webhookId": "get-whatsapp-group-list"
     },
@@ -230,10 +230,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        2672,
-        4096
+        5344,
+        7984
       ],
-      "id": "d8c65d2d-f9dc-4f2a-b1d4-bf4a42d176db",
+      "id": "eab91a4b-ceb8-451f-b89e-8c789b660433",
       "name": "wasender get whatsapp lid",
       "retryOnFail": false,
       "executeOnce": true,
@@ -450,10 +450,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2656,
-        4384
+        5328,
+        8272
       ],
-      "id": "c6ee120a-f905-471a-8ee5-8ccc807247cd",
+      "id": "6ad6f9b7-be1e-4894-9e9a-097d2b7a641a",
       "name": "Insert rows in a table",
       "alwaysOutputData": true,
       "credentials": {
@@ -472,10 +472,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        3728,
-        4400
+        6400,
+        8288
       ],
-      "id": "848c7e6c-c4bc-4aff-8fb8-e7cbac6da967",
+      "id": "c1d1018b-025b-4512-a981-a810e784d639",
       "name": "Respond to Webhook5"
     },
     {
@@ -511,10 +511,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        3504,
-        4384
+        6176,
+        8272
       ],
-      "id": "bfc1d5d4-add7-4544-badb-ca51b3542abf",
+      "id": "60d3b2c7-71bf-4198-a2b7-434912b6d146",
       "name": "del rows in a table1",
       "alwaysOutputData": true,
       "credentials": {
@@ -542,13 +542,13 @@
           }
         }
       },
-      "id": "6d1c8a37-77dd-405f-9eb8-f64765b162ba",
+      "id": "b81a20b8-da47-4480-9309-e3120d10de6f",
       "name": "Webhook - del configuration1",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        3296,
-        4384
+        5968,
+        8272
       ],
       "webhookId": "get-whatsapp-group-list"
     },
@@ -560,10 +560,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        2816,
-        4736
+        5488,
+        8624
       ],
-      "id": "212430f5-1428-4b23-9cb2-75c6a1f990d7",
+      "id": "7e6aea6e-220a-4555-af8a-8570793f657c",
       "name": "Respond to Webhook6"
     },
     {
@@ -586,10 +586,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2592,
-        4720
+        5264,
+        8608
       ],
-      "id": "1db68af1-f4a5-435b-a1fc-cca1c812590f",
+      "id": "d9e11bef-4bc3-4164-a51f-06a93e724887",
       "name": "Select rows from a table",
       "alwaysOutputData": true,
       "credentials": {
@@ -617,13 +617,13 @@
           }
         }
       },
-      "id": "e719ab27-d191-4828-9e44-4ba9931749bf",
+      "id": "1b84b259-845f-4f9d-b982-46c5f6989821",
       "name": "Webhook - get report configuration1",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        2384,
-        4720
+        5056,
+        8608
       ],
       "webhookId": "get-whatsapp-group-list"
     },
@@ -639,10 +639,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2192,
-        5680
+        4864,
+        9568
       ],
-      "id": "7f28bd1c-fbc8-4fdd-a7e5-9113337ff714",
+      "id": "d45da5f8-821c-4359-9a35-0f8fc09e44fa",
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -664,10 +664,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2176,
-        5936
+        4848,
+        9824
       ],
-      "id": "4a295a80-ec13-4f34-8198-d94025d76384",
+      "id": "31df14a9-bed1-4839-b67f-68e07fdca8eb",
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -683,10 +683,10 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.1,
       "position": [
-        2400,
-        5760
+        5072,
+        9648
       ],
-      "id": "30024983-ce61-4ccc-b1e8-39897c797b39"
+      "id": "15fb038f-48a4-4483-9a92-eda00d7e3250"
     },
     {
       "parameters": {
@@ -696,10 +696,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2640,
-        5632
+        5312,
+        9520
       ],
-      "id": "0238f496-7453-4262-baf4-91ba924b5876"
+      "id": "169a40f9-0279-44d8-8fca-542916c11a5f"
     },
     {
       "parameters": {
@@ -731,10 +731,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2800,
-        5648
+        5472,
+        9536
       ],
-      "id": "cacce7a0-fe98-4aca-b245-8c9ebe58d335"
+      "id": "e3d9ea96-7ce6-473a-ba01-e6918210a1a7"
     },
     {
       "parameters": {
@@ -744,10 +744,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2896,
-        5968
+        5568,
+        9856
       ],
-      "id": "4c876a03-1fb7-4f60-9bf0-803b9fff6c6f"
+      "id": "0c354865-e94c-4ae5-b862-efeaea1c17e5"
     },
     {
       "parameters": {
@@ -761,10 +761,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        3104,
-        6176
+        5776,
+        10064
       ],
-      "id": "e195f7a0-cb88-4ac3-8878-021f6522ae70",
+      "id": "05961eb3-8516-44e2-9ccb-3e8eb1701d6c",
       "credentials": {
         "postgres": {
           "id": "Ec1YEJ1N6mAm5CyY",
@@ -779,10 +779,10 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        3344,
-        6272
+        6016,
+        10160
       ],
-      "id": "4ac13b7d-3ad6-4ff5-aec6-d89010171267"
+      "id": "3d8b72c8-6fb9-4829-8669-3d3eae16dc89"
     },
     {
       "parameters": {
@@ -796,10 +796,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        3280,
-        5920
+        5952,
+        9808
       ],
-      "id": "12a2a054-9e17-45e9-a128-c05e5139f5ee",
+      "id": "378e3390-7528-4443-906d-dfccbf44817c",
       "credentials": {
         "postgres": {
           "id": "Ec1YEJ1N6mAm5CyY",
@@ -814,10 +814,10 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        3584,
-        6144
+        6256,
+        10032
       ],
-      "id": "90696490-5841-4ba6-90da-10631a58446e"
+      "id": "d758cb74-4cbb-4b7e-9cad-4e1f8d965402"
     },
     {
       "parameters": {
@@ -831,10 +831,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        4416,
-        5744
+        7088,
+        9632
       ],
-      "id": "c6d1c1ff-888d-40cd-b196-6d31b1aea749",
+      "id": "5d2197d7-62e8-4b50-b7ba-11a49fae4ed0",
       "credentials": {
         "postgres": {
           "id": "Ec1YEJ1N6mAm5CyY",
@@ -849,7 +849,7 @@
           "interval": [
             {
               "field": "minutes",
-              "minutesInterval": 15
+              "minutesInterval": 5
             }
           ]
         }
@@ -858,10 +858,10 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
       "position": [
-        848,
-        5728
+        3520,
+        9616
       ],
-      "id": "71d443aa-f33a-41ea-9ac4-8f455dd8c8f8"
+      "id": "bae32170-9125-4e41-b0a1-2bd8b8180097"
     },
     {
       "parameters": {
@@ -873,10 +873,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1120,
-        5760
+        3792,
+        9648
       ],
-      "id": "66f93358-8b86-4bee-abab-9a9d14ae1afd",
+      "id": "98d566ea-39b4-4c6a-b841-15e1ba80c6f7",
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -888,29 +888,29 @@
     },
     {
       "parameters": {
-        "jsCode": "const dueSlots = [];\n\nfor (const item of $input.all()) {\n  const config = item.json;\n  if (!config?.id || !config.from_date) continue;\n\n  const refreshSeconds = parseInt(config.refresh_seconds, 10) || 3600;\n  const fromDate = new Date(config.from_date);\n  if (Number.isNaN(fromDate.getTime())) continue;\n\n  const now = new Date();\n  if (now < fromDate) continue;\n\n  const intervalMs = refreshSeconds * 1000;\n  const elapsedMs = now.getTime() - fromDate.getTime();\n  const completedIntervals = Math.floor(elapsedMs / intervalMs);\n  if (completedIntervals < 1) continue;\n\n  // Window [slotStart, slotEnd] for the interval that just finished.\n  const slotEndMs = fromDate.getTime() + (completedIntervals * intervalMs);\n  const slotStartMs = slotEndMs - intervalMs;\n  const msSinceSlotEnd = now.getTime() - slotEndMs;\n\n  // Only run AFTER the full interval (e.g. 1h) has elapsed; grace catches the schedule tick.\n  const GRACE_MS = Math.min(Math.max(intervalMs / 4, 5 * 60 * 1000), 20 * 60 * 1000);\n  if (msSinceSlotEnd < 0 || msSinceSlotEnd > GRACE_MS) continue;\n\n  const gmt8Offset = 8 * 60 * 60 * 1000;\n  const slotEnd = new Date(slotEndMs);\n\n  dueSlots.push({\n    json: {\n      ...config,\n      slot_index: completedIntervals,\n      refresh_seconds: refreshSeconds,\n      timestamp_utc: slotEnd.toISOString(),\n      timestamp_gmt8: new Date(slotEnd.getTime() + gmt8Offset).toISOString().replace('Z', '+08:00'),\n      matched_slot_utc: slotEnd.toISOString(),\n      matched_slot_at: slotEnd.toISOString(),\n      window_start: new Date(slotStartMs).toISOString(),\n      window_end: slotEnd.toISOString(),\n      match_found: true,\n      keywords: config.what_content_keywords ?? [],\n      content_types: config.what_content_types ?? [],\n      group_ids: config.from_group_ids ?? [],\n      contact_jids: config.from_contact_jids ?? [],\n      recipients: config.to_receipient_phone_ids ?? [],\n      preferred_method: config.preferred_method ?? 'keyword',\n      insights_suboptions: config.insights_suboptions ?? config.suboptions ?? [],\n      prompt_instructions_template: config.prompt_instructions_template ?? null,\n      score_threshold: 20,\n      model_name: 'google/gemini-2.5-flash-preview',\n      ms_since_slot_end: Math.round(msSinceSlotEnd / 1000),\n      grace_seconds: Math.round(GRACE_MS / 1000),\n    },\n  });\n}\n\nif (!dueSlots.length) {\n  return [{ json: { match_found: false, reason: 'No monitor interval due (wait until interval ends)' } }];\n}\n\nreturn dueSlots;"
+        "jsCode": "const dueSlots = [];\n\n// Heartbeat model: schedule tick every 5 min is only a wake-up.\n// refresh_seconds defines report WINDOWS; we pick up any completed window\n// that is not yet in monitor_attempt_logs (dedupe downstream).\nconst HEARTBEAT_MINUTES = 5;\nconst MAX_LOOKBACK_SLOTS = 48;\n\nfor (const item of $input.all()) {\n  const config = item.json;\n  if (!config?.id || !config.from_date) continue;\n\n  const refreshSeconds = parseInt(config.refresh_seconds, 10) || 3600;\n  const fromDate = new Date(config.from_date);\n  if (Number.isNaN(fromDate.getTime())) continue;\n\n  const now = new Date();\n  if (now < fromDate) continue;\n\n  const intervalMs = refreshSeconds * 1000;\n  const elapsedMs = now.getTime() - fromDate.getTime();\n  const completedIntervals = Math.floor(elapsedMs / intervalMs);\n  if (completedIntervals < 1) continue;\n\n  // Catch up missed ticks: keep recent slots eligible for several heartbeats.\n  const CATCHUP_MS = Math.max(intervalMs * 2, 30 * 60 * 1000);\n  const lookbackStart = Math.max(1, completedIntervals - MAX_LOOKBACK_SLOTS + 1);\n  const gmt8Offset = 8 * 60 * 60 * 1000;\n\n  for (let slotIndex = lookbackStart; slotIndex <= completedIntervals; slotIndex++) {\n    const slotEndMs = fromDate.getTime() + (slotIndex * intervalMs);\n    if (slotEndMs > now.getTime()) continue;\n\n    const slotStartMs = slotEndMs - intervalMs;\n    const msSinceSlotEnd = now.getTime() - slotEndMs;\n    const isLatestCompleted = slotIndex === completedIntervals;\n\n    // Always check the latest finished window; also retry recent windows inside catch-up.\n    if (!isLatestCompleted && msSinceSlotEnd > CATCHUP_MS) continue;\n\n    const slotEnd = new Date(slotEndMs);\n\n    dueSlots.push({\n      json: {\n        ...config,\n        slot_index: slotIndex,\n        refresh_seconds: refreshSeconds,\n        timestamp_utc: slotEnd.toISOString(),\n        timestamp_gmt8: new Date(slotEnd.getTime() + gmt8Offset).toISOString().replace('Z', '+08:00'),\n        matched_slot_utc: slotEnd.toISOString(),\n        matched_slot_at: slotEnd.toISOString(),\n        window_start: new Date(slotStartMs).toISOString(),\n        window_end: slotEnd.toISOString(),\n        match_found: true,\n        keywords: config.what_content_keywords ?? [],\n        content_types: config.what_content_types ?? [],\n        group_ids: config.from_group_ids ?? [],\n        contact_jids: config.from_contact_jids ?? [],\n        recipients: config.to_receipient_phone_ids ?? [],\n        preferred_method: config.preferred_method ?? 'keyword',\n        insights_suboptions: config.insights_suboptions ?? config.suboptions ?? [],\n        prompt_instructions_template: config.prompt_instructions_template ?? null,\n        score_threshold: 20,\n        model_name: 'google/gemini-2.5-flash-preview',\n        ms_since_slot_end: Math.round(msSinceSlotEnd / 1000),\n        catchup_seconds: Math.round(CATCHUP_MS / 1000),\n        heartbeat_minutes: HEARTBEAT_MINUTES,\n        scheduler_model: 'heartbeat',\n      },\n    });\n  }\n}\n\nif (!dueSlots.length) {\n  return [{ json: { match_found: false, reason: 'No completed monitor window in catch-up range' } }];\n}\n\nreturn dueSlots;"
       },
       "name": "Code - get next slots2",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1376,
-        5760
+        4048,
+        9648
       ],
-      "id": "13193383-9794-40c6-80c7-a07035605688"
+      "id": "5a3a0e54-e5ea-4497-94d4-d74ee53f9ab3"
     },
     {
       "parameters": {
-        "jsCode": "const due = $input.all().filter((i) => i.json.match_found);\nif (!due.length) {\n  return [{ json: { match_found: false, reason: 'No due slot in this tick' } }];\n}\nreturn due;"
+        "jsCode": "const due = $input.all().filter((i) => i.json.match_found);\nif (!due.length) {\n  return [{ json: { match_found: false, reason: 'No due slot in this heartbeat' } }];\n}\nreturn due;"
       },
       "name": "Code - check if within time to execute2",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1408,
-        5968
+        4080,
+        9856
       ],
-      "id": "0df6afb6-fa85-418b-a4af-7611a929d7ab",
+      "id": "5942f144-146c-4e5c-859c-c6f1437d9e34",
       "alwaysOutputData": true
     },
     {
@@ -961,10 +961,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1440,
-        6192
+        4112,
+        10080
       ],
-      "id": "429e91eb-1523-4dde-97d6-6649c25430e9"
+      "id": "a94c5709-cb1e-4e0b-bebc-599353eec360"
     },
     {
       "parameters": {},
@@ -972,10 +972,10 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1632,
-        6336
+        4304,
+        10224
       ],
-      "id": "b68e842c-c21d-4ed2-9b3f-f175fbfae241"
+      "id": "f2e674ec-4cd1-43d2-9f65-bd80d2133311"
     },
     {
       "parameters": {
@@ -985,23 +985,23 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1968,
-        5760
+        4640,
+        9648
       ],
-      "id": "415915dd-5955-48e6-87a8-62f9ea629c05"
+      "id": "93a7b5b4-a23d-4e70-8e1a-1f2dbc6ea2a4"
     },
     {
       "parameters": {
-        "jsCode": "const INSIGHT_LABELS = {\n  'competitor-intelligence': 'Competitor Intelligence — competitor mentions, product updates, service rollouts.',\n  'project-status-bottlenecks': 'Project Status & Bottlenecks — progress, delays, milestones, blockers.',\n  'financial-risk-opportunity': 'Financial Risk & Opportunity — cost overruns, investment risks, budget impact.',\n  'compliance-safety-risk': 'Compliance & Safety — safety protocols, regulatory references, violations.',\n};\nfunction normalizeMethod(value) {\n  const m = String(value ?? 'keyword').trim().toLowerCase();\n  if (m === 'instructions') return 'instructions';\n  if (m === 'common-insights') return 'common-insights';\n  return 'keyword';\n}\nfunction buildMonitoringCriteria(cfg) {\n  const method = normalizeMethod(cfg.preferred_method ?? cfg.preferredMethod);\n  const keywords = [].concat(cfg.keywords ?? cfg.what_content_keywords ?? []).map((k) => String(k).trim()).filter(Boolean);\n  const insights = [].concat(cfg.insights_suboptions ?? cfg.suboptions ?? []).map((k) => String(k).trim()).filter(Boolean);\n  const instructions = String(cfg.prompt_instructions_template ?? '').trim();\n  if (method === 'instructions' && instructions) {\n    return {\n      method,\n      criteriaLabel: 'Monitoring instructions',\n      criteriaText: instructions,\n      scoreGuidance: 'Score 0–100 by how well the messages match the owner monitoring instructions (100 = strong match).',\n      reportFocus: 'Include only content that matches the owner monitoring instructions.',\n    };\n  }\n  if (method === 'common-insights' && insights.length) {\n    const lines = insights.map((id) => INSIGHT_LABELS[id] ?? id);\n    return {\n      method,\n      criteriaLabel: 'Common summary insights',\n      criteriaText: lines.map((l) => '- ' + l).join('\\n'),\n      scoreGuidance: 'Score 0–100 by relevance to ANY selected insight category below (100 = highly relevant).',\n      reportFocus: 'Group findings by the selected insight categories where possible.',\n    };\n  }\n  const kw = keywords.join(', ') || 'none specified';\n  return {\n    method: 'keyword',\n    criteriaLabel: 'Watch keywords',\n    criteriaText: kw,\n    scoreGuidance: 'Scoring: 100 = nearly all messages relate to keywords/topic; 0 = none relate.',\n    reportFocus: 'Only include messages matching keywords or the monitor topic.',\n  };\n}\nfunction criteriaSnapshotForLog(cfg) {\n  const c = buildMonitoringCriteria(cfg);\n  if (c.method === 'keyword') {\n    return [].concat(cfg.keywords ?? cfg.what_content_keywords ?? []).map((k) => String(k).trim()).filter(Boolean);\n  }\n  if (c.method === 'common-insights') {\n    return [].concat(cfg.insights_suboptions ?? cfg.suboptions ?? []).map((k) => String(k).trim()).filter(Boolean);\n  }\n  const instr = String(cfg.prompt_instructions_template ?? '').trim();\n  return instr ? [instr.slice(0, 200)] : [];\n}\nfunction buildMediaMonitorPrompt(monitor, ownerEmail, monitorName, contentTypes, caption, mediaKind) {\n  const criteria = buildMonitoringCriteria(monitor);\n  const header = 'You are an expert alert manager for \"' + monitorName + '\" (owner: ' + ownerEmail + ').\\n'\n    + 'Monitoring mode: ' + criteria.method + '.\\n'\n    + criteria.criteriaLabel + ':\\n' + criteria.criteriaText + '\\n'\n    + 'Content types of interest: ' + contentTypes + '.\\n'\n    + 'WhatsApp caption/context: ' + (caption || 'n/a') + '\\n';\n  if (mediaKind === 'image') {\n    return header + '\\nAnalyze this WhatsApp image. Be vividly specific. Return plain text with sections:\\nSCENE: what is shown\\nTEXT: visible text (OCR)\\nALERTS: issues matching the monitoring criteria above';\n  }\n  return header + '\\nReturn plain text with sections:\\nSUMMARY: main points\\nKEY TEXT: names, dates, amounts\\nALERTS: items matching the monitoring criteria above';\n}\n\nconst data = $input.first().json;\nconst cfg = data;\nconst rows = data.messages ?? [];\n\nfunction formatGmt8(value) {\n  if (!value) return 'unknown time';\n  const d = new Date(value);\n  if (Number.isNaN(d.getTime())) return String(value);\n  return d.toLocaleString('en-MY', {\n    timeZone: 'Asia/Kuala_Lumpur',\n    weekday: 'short',\n    day: 'numeric',\n    month: 'short',\n    hour: 'numeric',\n    minute: '2-digit',\n    hour12: true,\n  }) + ' (GMT+8)';\n}\n\nconst allowedTypes = (cfg.content_types ?? []).map((t) => String(t).toLowerCase());\nconst typeMap = {\n  text: ['text'],\n  audio: ['audio'],\n  images: ['image', 'sticker'],\n  image: ['image', 'sticker'],\n  documents: ['document'],\n  document: ['document'],\n  video: ['video'],\n};\nconst allowed = new Set();\nfor (const t of allowedTypes) {\n  for (const x of (typeMap[t] ?? [t])) allowed.add(x);\n}\nconst filtered = allowed.size\n  ? rows.filter((r) => allowed.has(String(r.content_type ?? '').toLowerCase()))\n  : rows;\n\nconst lines = filtered.map((r) => {\n  const body = [r.message_body, r.media_text].filter(Boolean).join(' | ');\n  const tag = r.source_kind === 'media_interpretation' ? 'media' : 'text';\n  const when = formatGmt8(r.received_at ?? r.message_at);\n  const who = r.sender_phone ?? r.chat_jid ?? 'unknown sender';\n  return `• ${when} | ${who} | (${r.content_type}/${tag}) ${body || '(empty)'}`;\n});\n\nlet message_corpus = lines.join('\\n') || '(no messages in this window)';\nif (message_corpus.length > 12000) {\n  message_corpus = message_corpus.slice(0, 12000) + '\\n...(truncated)';\n}\n\nconst criteria = buildMonitoringCriteria(cfg);\nconst types = (cfg.content_types ?? []).join(', ') || 'all';\nconst groups = (cfg.group_ids ?? []).join(', ') || 'none';\nconst contacts = (cfg.contact_jids ?? []).join(', ') || 'none';\nconst owner = cfg.owner_email ?? 'unknown';\nconst phone = cfg.connection_phone ?? cfg.owner_phone_num ?? 'unknown';\nconst monitorName = cfg.monitor_name ?? 'Untitled';\nconst windowLabel = `${formatGmt8(cfg.window_start)} → ${formatGmt8(cfg.window_end)}`;\n\nconst WA_RULES = [\n  'WHATSAPP OUTPUT RULES (strict):',\n  '- Write for WhatsApp plain text only — NOT markdown.',\n  '- Use *single asterisks* for bold titles and labels. Never use ## headers or **double asterisks**.',\n  '- Every timestamp must be friendly GMT+8, e.g. \"Sun, 8 Jun 8:52 AM (GMT+8)\". Never use ISO like 2026-06-08T00:52:28.000Z.',\n  '- Keep lines short. Use • for bullets. One alert per bullet.',\n  '- Do NOT repeat the monitor title or window — those are added in the message header.',\n  '- Skip empty sections entirely.',\n].join('\\n');\n\nconst score_prompt = [\n  'You score WhatsApp monitor relevance for ActionNow.',\n  '',\n  `Owner: ${owner} (paired WhatsApp: ${phone})`,\n  `Monitor name: ${monitorName}`,\n  `Monitoring mode: ${criteria.method}`,\n  `${criteria.criteriaLabel}:`,\n  criteria.criteriaText,\n  `Allowed content types: ${types}`,\n  `Monitored group JIDs: ${groups}`,\n  `Monitored contact JIDs: ${contacts}`,\n  `Window (GMT+8): ${windowLabel}`,\n  `Message count: ${filtered.length}`,\n  '',\n  'Messages:',\n  message_corpus,\n  '',\n  'Return ONLY valid JSON (no markdown):',\n  '{\"relevance_score\": <integer 0-100>, \"brief_reason\": \"<one sentence>\"}',\n  '',\n  criteria.scoreGuidance,\n].join('\\n');\n\nconst report_prompt = [\n  'You write ActionNow WhatsApp monitoring alerts.',\n  '',\n  WA_RULES,\n  '',\n  `Monitor: ${monitorName}`,\n  `Monitoring mode: ${criteria.method}`,\n  `${criteria.criteriaLabel}:`,\n  criteria.criteriaText,\n  `Content types: ${types}`,\n  `Window (GMT+8): ${windowLabel}`,\n  '',\n  'Source messages:',\n  message_corpus,\n  '',\n  'Output EXACTLY this structure (omit a section if nothing to show):',\n  '',\n  '*📌 SUMMARY*',\n  '<2-3 short sentences, plain language>',\n  '',\n  '*🚨 ALERTS*',\n  '• *<short alert label>* — \"<key quote>\" — *From:* +60… — *When:* Sun, 8 Jun 8:52 AM (GMT+8)',\n  '',\n  '*💬 MESSAGES*',\n  '• *From:* +60… — *When:* Sun, 8 Jun 8:42 AM (GMT+8) — (<type>) \"<quote or summary>\"',\n  '',\n  'Be specific. ' + criteria.reportFocus,\n].join('\\n');\n\nreturn [{\n  json: {\n    ...cfg,\n    preferred_method: criteria.method,\n    monitoring_criteria_label: criteria.criteriaLabel,\n    messages: filtered,\n    message_count: filtered.length,\n    message_corpus,\n    score_prompt,\n    report_prompt,\n    keywords: criteriaSnapshotForLog(cfg),\n    keywords_snapshot: criteriaSnapshotForLog(cfg),\n    window_label_gmt8: windowLabel,\n    model_name: cfg.model_name ?? 'google/gemini-2.5-flash-preview',\n  },\n}];"
+        "jsCode": "const INSIGHT_LABELS = {\n  'competitor-intelligence': 'Competitor Intelligence — competitor mentions, product updates, service rollouts.',\n  'project-status-bottlenecks': 'Project Status & Bottlenecks — progress, delays, milestones, blockers.',\n  'financial-risk-opportunity': 'Financial Risk & Opportunity — cost overruns, investment risks, budget impact.',\n  'compliance-safety-risk': 'Compliance & Safety — safety protocols, regulatory references, violations.',\n};\nfunction normalizeMethod(value) {\n  const m = String(value ?? 'keyword').trim().toLowerCase();\n  if (m === 'instructions') return 'instructions';\n  if (m === 'common-insights') return 'common-insights';\n  return 'keyword';\n}\nfunction buildMonitoringCriteria(cfg) {\n  const method = normalizeMethod(cfg.preferred_method ?? cfg.preferredMethod);\n  const keywords = [].concat(cfg.keywords ?? cfg.what_content_keywords ?? []).map((k) => String(k).trim()).filter(Boolean);\n  const insights = [].concat(cfg.insights_suboptions ?? cfg.suboptions ?? []).map((k) => String(k).trim()).filter(Boolean);\n  const instructions = String(cfg.prompt_instructions_template ?? '').trim();\n  if (method === 'instructions' && instructions) {\n    return {\n      method,\n      criteriaLabel: 'Monitoring instructions',\n      criteriaText: instructions,\n      scoreGuidance: 'Score 0–100 by how well the messages match the owner monitoring instructions (100 = strong match).',\n      reportFocus: 'Include only content that matches the owner monitoring instructions.',\n    };\n  }\n  if (method === 'common-insights' && insights.length) {\n    const lines = insights.map((id) => INSIGHT_LABELS[id] ?? id);\n    return {\n      method,\n      criteriaLabel: 'Common summary insights',\n      criteriaText: lines.map((l) => '- ' + l).join('\\n'),\n      scoreGuidance: 'Score 0–100 by relevance to ANY selected insight category below (100 = highly relevant).',\n      reportFocus: 'Group findings by the selected insight categories where possible.',\n    };\n  }\n  const kw = keywords.join(', ') || 'none specified';\n  return {\n    method: 'keyword',\n    criteriaLabel: 'Watch keywords',\n    criteriaText: kw,\n    scoreGuidance: 'Scoring: 100 = nearly all messages relate to keywords/topic; 0 = none relate.',\n    reportFocus: 'Only include messages matching keywords or the monitor topic.',\n  };\n}\nfunction criteriaSnapshotForLog(cfg) {\n  const c = buildMonitoringCriteria(cfg);\n  if (c.method === 'keyword') {\n    return [].concat(cfg.keywords ?? cfg.what_content_keywords ?? []).map((k) => String(k).trim()).filter(Boolean);\n  }\n  if (c.method === 'common-insights') {\n    return [].concat(cfg.insights_suboptions ?? cfg.suboptions ?? []).map((k) => String(k).trim()).filter(Boolean);\n  }\n  const instr = String(cfg.prompt_instructions_template ?? '').trim();\n  return instr ? [instr.slice(0, 200)] : [];\n}\nfunction buildMediaMonitorPrompt(monitor, ownerEmail, monitorName, contentTypes, caption, mediaKind) {\n  const criteria = buildMonitoringCriteria(monitor);\n  const header = 'You are an expert alert manager for \"' + monitorName + '\" (owner: ' + ownerEmail + ').\\n'\n    + 'Monitoring mode: ' + criteria.method + '.\\n'\n    + criteria.criteriaLabel + ':\\n' + criteria.criteriaText + '\\n'\n    + 'Content types of interest: ' + contentTypes + '.\\n'\n    + 'WhatsApp caption/context: ' + (caption || 'n/a') + '\\n';\n  if (mediaKind === 'image') {\n    return header + '\\nAnalyze this WhatsApp image. Be vividly specific. Return plain text with sections:\\nSCENE: what is shown\\nTEXT: visible text (OCR)\\nALERTS: issues matching the monitoring criteria above';\n  }\n  return header + '\\nReturn plain text with sections:\\nSUMMARY: main points\\nKEY TEXT: names, dates, amounts\\nALERTS: items matching the monitoring criteria above';\n}\n\nasync function fetchGroupMetadataMap(helpers, apiKey, jids) {\n  const map = new Map();\n  if (!apiKey) return map;\n  for (const jid of jids) {\n    const id = String(jid ?? '').trim();\n    if (!id.endsWith('@g.us')) continue;\n    try {\n      const res = await helpers.httpRequest({\n        method: 'GET',\n        url: 'https://www.wasenderapi.com/api/groups/' + encodeURIComponent(id) + '/metadata',\n        headers: {\n          Authorization: 'Bearer ' + apiKey,\n          Accept: 'application/json',\n        },\n        json: true,\n        timeout: 15000,\n      });\n      const data = res?.data ?? res;\n      map.set(id, {\n        subject: String(data?.subject ?? '').trim() || id,\n        desc: String(data?.desc ?? '').trim() || null,\n      });\n    } catch (_err) {\n      map.set(id, { subject: id, desc: null });\n    }\n  }\n  return map;\n}\n\nfunction extractSourceStamp(text) {\n  const m = String(text ?? '').match(/^\\[SOURCE:[^\\]]+\\]/);\n  return m ? m[0] : null;\n}\n\nfunction parseSourceStamp(stamp) {\n  const m = String(stamp ?? '').match(/^\\[SOURCE:\\s*([^|]+)\\s*\\|\\s*([^\\]]+)\\]/);\n  if (!m) return { label: null, jid: null };\n  return { label: m[1].trim(), jid: m[2].trim() };\n}\n\nfunction stripSourceStamp(text) {\n  return String(text ?? '')\n    .replace(/^\\[SOURCE:[^\\]]+\\]\\n?/, '')\n    .replace(/^Desc: [^\\n]+\\n?/, '')\n    .trim();\n}\n\nfunction formatGroupSource(row, groupMetaMap) {\n  const jid = String(row.chat_jid ?? '').trim();\n  const isGroup = row.is_group || jid.endsWith('@g.us');\n  if (!isGroup) return 'DM';\n\n  const stamped = extractSourceStamp(row.message_body ?? '');\n  if (stamped) {\n    const { label, jid: stampJid } = parseSourceStamp(stamped);\n    if (label && label !== 'DM' && label !== stampJid) return label;\n  }\n\n  const meta = groupMetaMap.get(jid);\n  if (meta?.subject && meta.subject !== jid) {\n    if (meta.desc) {\n      const shortDesc = meta.desc.length > 80 ? meta.desc.slice(0, 77) + '...' : meta.desc;\n      return meta.subject + ' — ' + shortDesc;\n    }\n    return meta.subject;\n  }\n\n  return jid || 'unknown group';\n}\n\nconst data = $input.first().json;\nconst cfg = data;\nconst rows = data.messages ?? [];\n\nfunction formatGmt8(value) {\n  if (!value) return 'unknown time';\n  const d = new Date(value);\n  if (Number.isNaN(d.getTime())) return String(value);\n  return d.toLocaleString('en-MY', {\n    timeZone: 'Asia/Kuala_Lumpur',\n    weekday: 'short',\n    day: 'numeric',\n    month: 'short',\n    hour: 'numeric',\n    minute: '2-digit',\n    hour12: true,\n  }) + ' (GMT+8)';\n}\n\nconst allowedTypes = (cfg.content_types ?? []).map((t) => String(t).toLowerCase());\nconst typeMap = {\n  text: ['text'],\n  audio: ['audio'],\n  images: ['image', 'sticker'],\n  image: ['image', 'sticker'],\n  documents: ['document'],\n  document: ['document'],\n  video: ['video'],\n};\nconst allowed = new Set();\nfor (const t of allowedTypes) {\n  for (const x of (typeMap[t] ?? [t])) allowed.add(x);\n}\nconst filtered = allowed.size\n  ? rows.filter((r) => allowed.has(String(r.content_type ?? '').toLowerCase()))\n  : rows;\n\nconst uniqueGroupJids = [...new Set(\n  filtered\n    .map((r) => String(r.chat_jid ?? '').trim())\n    .filter((jid) => jid.endsWith('@g.us')),\n)];\n\nconst groupMetaMap = await fetchGroupMetadataMap(this.helpers, cfg.api_key, uniqueGroupJids);\n\nconst lines = filtered.map((r) => {\n  const rawBody = [r.message_body, r.media_text].filter(Boolean).join(' | ');\n  const body = stripSourceStamp(rawBody) || '(empty)';\n  const tag = r.source_kind === 'media_interpretation' ? 'media' : 'text';\n  const when = formatGmt8(r.received_at ?? r.message_at);\n  const group = formatGroupSource(r, groupMetaMap);\n  const who = r.sender_phone ?? 'unknown sender';\n  const jid = String(r.chat_jid ?? '').trim();\n  const groupJid = (r.is_group || jid.endsWith('@g.us')) ? (jid || 'n/a') : 'DM';\n  return `• ${when} | *Group:* ${group} (${groupJid}) | *From:* ${who} | (${r.content_type}/${tag}) ${body}`;\n});\n\nlet message_corpus = lines.join('\\n') || '(no messages in this window)';\nif (message_corpus.length > 12000) {\n  message_corpus = message_corpus.slice(0, 12000) + '\\n...(truncated)';\n}\n\nconst criteria = buildMonitoringCriteria(cfg);\nconst types = (cfg.content_types ?? []).join(', ') || 'all';\nconst groups = (cfg.group_ids ?? []).join(', ') || 'none';\nconst contacts = (cfg.contact_jids ?? []).join(', ') || 'none';\nconst owner = cfg.owner_email ?? 'unknown';\nconst phone = cfg.connection_phone ?? cfg.owner_phone_num ?? 'unknown';\nconst monitorName = cfg.monitor_name ?? 'Untitled';\nconst windowLabel = `${formatGmt8(cfg.window_start)} → ${formatGmt8(cfg.window_end)}`;\n\nconst WA_RULES = [\n  'WHATSAPP OUTPUT RULES (strict):',\n  '- Write for WhatsApp plain text only — NOT markdown.',\n  '- Use *single asterisks* for bold titles and labels. Never use ## headers or **double asterisks**.',\n  '- Every timestamp must be friendly GMT+8, e.g. \"Sun, 8 Jun 8:52 AM (GMT+8)\". Never use ISO like 2026-06-08T00:52:28.000Z.',\n  '- Keep lines short. Use • for bullets. One alert per bullet.',\n  '- Every message and alert MUST include *Group:* (WhatsApp group name/subject, or DM).',\n  '- Do NOT repeat the monitor title or window — those are added in the message header.',\n  '- Skip empty sections entirely.',\n].join('\\n');\n\nconst score_prompt = [\n  'You score WhatsApp monitor relevance for ActionNow.',\n  '',\n  `Owner: ${owner} (paired WhatsApp: ${phone})`,\n  `Monitor name: ${monitorName}`,\n  `Monitoring mode: ${criteria.method}`,\n  `${criteria.criteriaLabel}:`,\n  criteria.criteriaText,\n  `Allowed content types: ${types}`,\n  `Monitored group JIDs: ${groups}`,\n  `Monitored contact JIDs: ${contacts}`,\n  `Window (GMT+8): ${windowLabel}`,\n  `Message count: ${filtered.length}`,\n  '',\n  'Messages (each line has *Group:* and *From:* — preserve group source in scoring):',\n  message_corpus,\n  '',\n  'Return ONLY valid JSON (no markdown):',\n  '{\"relevance_score\": <integer 0-100>, \"brief_reason\": \"<one sentence>\"}',\n  '',\n  criteria.scoreGuidance,\n].join('\\n');\n\nconst report_prompt = [\n  'You write ActionNow WhatsApp monitoring alerts.',\n  '',\n  WA_RULES,\n  '',\n  `Monitor: ${monitorName}`,\n  `Monitoring mode: ${criteria.method}`,\n  `${criteria.criteriaLabel}:`,\n  criteria.criteriaText,\n  `Content types: ${types}`,\n  `Window (GMT+8): ${windowLabel}`,\n  '',\n  'Source messages:',\n  message_corpus,\n  '',\n  'Output EXACTLY this structure (omit a section if nothing to show):',\n  '',\n  '*📌 SUMMARY*',\n  '<2-3 short sentences, plain language>',\n  '',\n  '*🚨 ALERTS*',\n  '• *<short alert label>* — \"<key quote>\" — *Group:* <group name> — *From:* +60… — *When:* Sun, 8 Jun 8:52 AM (GMT+8)',\n  '',\n  '*💬 MESSAGES*',\n  '• *Group:* <group name> — *From:* +60… — *When:* Sun, 8 Jun 8:42 AM (GMT+8) — (<type>) \"<quote or summary>\"',\n  '',\n  'Be specific. ' + criteria.reportFocus,\n].join('\\n');\n\nreturn [{\n  json: {\n    ...cfg,\n    preferred_method: criteria.method,\n    monitoring_criteria_label: criteria.criteriaLabel,\n    messages: filtered,\n    message_count: filtered.length,\n    message_corpus,\n    score_prompt,\n    report_prompt,\n    keywords: criteriaSnapshotForLog(cfg),\n    keywords_snapshot: criteriaSnapshotForLog(cfg),\n    window_label_gmt8: windowLabel,\n    model_name: cfg.model_name ?? 'google/gemini-2.5-flash-preview',\n  },\n}];"
       },
       "name": "Code - build message corpus2",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2912,
-        6336
+        5584,
+        10224
       ],
-      "id": "085b7ddc-9ecc-4780-89c7-20454a919dfb"
+      "id": "01c3d30a-db6f-412c-941c-9aca5ec628a5"
     },
     {
       "parameters": {
@@ -1012,10 +1012,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
-        3056,
-        5792
+        5728,
+        9680
       ],
-      "id": "c7d408c2-9882-4e72-af06-cd0f607b7a39",
+      "id": "f086e980-6f7a-4d3d-ae3e-992b1e5ee877",
       "credentials": {
         "openRouterApi": {
           "id": "nAlpBNfBlWL7VyhH",
@@ -1032,23 +1032,23 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.6,
       "position": [
-        3008,
-        5600
+        5680,
+        9488
       ],
-      "id": "be4578c1-c3c7-43e5-a21a-65365cceac48"
+      "id": "417ad684-d887-4698-832e-95ff363ffd12"
     },
     {
       "parameters": {
-        "jsCode": "const prep = $('Code - build message corpus2').first().json;\nconst raw = $input.first().json.text ?? $input.first().json.response ?? '';\nlet relevance_score = 0;\nlet brief_reason = '';\ntry {\n  const m = String(raw).match(/\\{[\\s\\S]*\\}/);\n  const parsed = m ? JSON.parse(m[0]) : {};\n  relevance_score = Number(parsed.relevance_score ?? 0);\n  brief_reason = String(parsed.brief_reason ?? '').trim();\n} catch (e) {\n  brief_reason = 'Failed to parse LLM score JSON';\n}\nif (Number.isNaN(relevance_score)) relevance_score = 0;\nrelevance_score = Math.max(0, Math.min(100, Math.round(relevance_score)));\nconst SCORE_THRESHOLD = prep.score_threshold ?? 20;\nconst passes_threshold = relevance_score > SCORE_THRESHOLD;\nreturn [{\n  json: {\n    ...prep,\n    relevance_score,\n    score_reason: brief_reason,\n    score_threshold: SCORE_THRESHOLD,\n    passes_threshold,\n    log_outcome: passes_threshold ? 'passed_score' : 'not_send',\n    report_prompt: [\n      prep.report_prompt ?? '',\n      '',\n      `Relevance score: ${relevance_score}/100 (${brief_reason})`,\n      `Only include content that passed the score threshold (> ${SCORE_THRESHOLD}).`,\n      'Reminder: WhatsApp format only — *bold* with single asterisks, friendly GMT+8 times, no ## headers, no ISO timestamps.',\n    ].join('\\n'),\n  },\n}];"
+        "jsCode": "const prep = $('Code - build message corpus2').first().json;\nconst raw = $input.first().json.text ?? $input.first().json.response ?? '';\nlet relevance_score = 0;\nlet brief_reason = '';\ntry {\n  const m = String(raw).match(/\\{[\\s\\S]*\\}/);\n  const parsed = m ? JSON.parse(m[0]) : {};\n  relevance_score = Number(parsed.relevance_score ?? 0);\n  brief_reason = String(parsed.brief_reason ?? '').trim();\n} catch (e) {\n  brief_reason = 'Failed to parse LLM score JSON';\n}\nif (Number.isNaN(relevance_score)) relevance_score = 0;\nrelevance_score = Math.max(0, Math.min(100, Math.round(relevance_score)));\nconst SCORE_THRESHOLD = prep.score_threshold ?? 20;\nconst passes_threshold = relevance_score > SCORE_THRESHOLD;\nreturn [{\n  json: {\n    ...prep,\n    relevance_score,\n    score_reason: brief_reason,\n    score_threshold: SCORE_THRESHOLD,\n    passes_threshold,\n    log_outcome: passes_threshold ? 'passed_score' : 'not_send',\n    report_prompt: [\n      prep.report_prompt ?? '',\n      '',\n      `Relevance score: ${relevance_score}/100 (${brief_reason})`,\n      `Only include content that passed the score threshold (> ${SCORE_THRESHOLD}).`,\n      'Reminder: WhatsApp format only — *bold* with single asterisks, friendly GMT+8 times, no ## headers, no ISO timestamps. Every alert and message bullet must include *Group:* (WhatsApp group name). Every alert and message bullet must include *Group:* (WhatsApp group name).',\n    ].join('\\n'),\n  },\n}];"
       },
       "name": "Code - parse keyword score2",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3248,
-        5760
+        5920,
+        9648
       ],
-      "id": "47b51b78-4096-4812-bad8-c23a7b183b0a"
+      "id": "0eecb796-462e-4a53-aee6-3d108c6ce0f8"
     },
     {
       "parameters": {
@@ -1080,10 +1080,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        3344,
-        5728
+        6016,
+        9616
       ],
-      "id": "ffc137cd-a8ed-4973-8394-3f909d42070b"
+      "id": "bac2c215-6ea9-4c0f-825d-189eeb332162"
     },
     {
       "parameters": {
@@ -1094,10 +1094,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
-        3664,
-        5936
+        6336,
+        9824
       ],
-      "id": "6f17e592-31f5-4e8f-b49e-3a6d88a3db96",
+      "id": "f6633129-882d-4e5e-b102-5cd1b2a0d029",
       "credentials": {
         "openRouterApi": {
           "id": "nAlpBNfBlWL7VyhH",
@@ -1114,10 +1114,10 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.6,
       "position": [
-        3504,
-        5680
+        6176,
+        9568
       ],
-      "id": "43d1f361-da42-47ca-91d2-031f5ada5f06"
+      "id": "72353d80-96f9-46f6-a98d-917eaa8b0a0e"
     },
     {
       "parameters": {
@@ -1127,10 +1127,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3872,
-        5776
+        6544,
+        9664
       ],
-      "id": "73a8a5e6-a369-417c-82b3-c4b46be34225"
+      "id": "6f7964ad-ca5d-49dc-8209-56a30a3b1739"
     },
     {
       "parameters": {
@@ -1144,10 +1144,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        4208,
-        5744
+        6880,
+        9632
       ],
-      "id": "7391a20f-f3cf-4ed1-8d3b-f3155041cc49",
+      "id": "d84acd6b-c3be-41c8-8ee6-ca31986d2501",
       "credentials": {
         "postgres": {
           "id": "Ec1YEJ1N6mAm5CyY",
@@ -1164,10 +1164,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4768,
-        5744
+        7440,
+        9632
       ],
-      "id": "caeda7e9-07ab-46ca-9042-54bc2575dd38",
+      "id": "f56ba3b1-b726-4571-8d8f-dee291427372",
       "disabled": true
     },
     {
@@ -1198,10 +1198,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        5136,
-        5728
+        7808,
+        9616
       ],
-      "id": "9539ee52-1061-453e-a075-d333aa9b6a70",
+      "id": "0fcee109-1640-4fe7-a10a-a0dd828e0a62",
       "disabled": true,
       "onError": "continueRegularOutput"
     },
@@ -1213,11 +1213,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        752,
-        5104
+        3424,
+        8992
       ],
       "typeVersion": 1,
-      "id": "75cea7f3-e406-4ed3-8532-253ef9230c4d",
+      "id": "85e3ad6c-efc1-4bd1-a8ba-07238d125737",
       "name": "Sticky Note8"
     },
     {
@@ -1225,10 +1225,10 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        4928,
-        5760
+        7600,
+        9648
       ],
-      "id": "b167cd9b-ac31-422b-a5ce-b210736f364a",
+      "id": "e5cbc927-f162-46a5-b86c-43637de27302",
       "name": "Wait2",
       "webhookId": "ad80364e-0c99-4be1-917e-511101c1933b",
       "disabled": true
@@ -1241,10 +1241,10 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        4928,
-        6240
+        7600,
+        10128
       ],
-      "id": "d1546aea-0fcd-453c-93ac-450ba171529f"
+      "id": "18593770-dad8-4c02-8a9f-4c772ad319f1"
     },
     {
       "parameters": {
@@ -1254,10 +1254,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4688,
-        6080
+        7360,
+        9968
       ],
-      "id": "e9256684-bdf5-4dae-9b30-ba10b001739c"
+      "id": "80430ba8-8348-4e1f-9d04-ed31dc2d4002"
     },
     {
       "parameters": {
@@ -1266,10 +1266,10 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        5280,
-        6288
+        7952,
+        10176
       ],
-      "id": "bb89f47c-f16a-4b05-952c-fcee6adcf818",
+      "id": "969b26b0-54e8-43b4-8e23-2df1a96ea8e6",
       "name": "Wait3",
       "webhookId": "ad80364e-0c99-4be1-917e-511101c1933b"
     },
@@ -1301,10 +1301,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        5552,
-        6304
+        8224,
+        10192
       ],
-      "id": "3953d38a-6da5-4b30-bd2e-b5570db820cb",
+      "id": "4cee40ef-5052-4465-801c-a49ac4da4025",
       "onError": "continueRegularOutput"
     },
     {
@@ -1312,10 +1312,10 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        5488,
-        6080
+        8160,
+        9968
       ],
-      "id": "c491b009-32e8-49ca-9ccb-ed436f7765c5",
+      "id": "2f3a95cd-38e9-4910-b027-4d8365f02a51",
       "name": "No Operation, do nothing1"
     },
     {
@@ -1330,10 +1330,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1580,
-        6192
+        4256,
+        10080
       ],
-      "id": "a1b2c3d4-slot-dedupe-pg-0001",
+      "id": "42600a57-7d16-42b7-bd47-dc9b41466ef6",
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -1351,10 +1351,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1720,
-        6192
+        4400,
+        10080
       ],
-      "id": "a1b2c3d4-slot-dedupe-code-0002"
+      "id": "193e5918-18ee-4d2b-8704-e6545a0c7995"
     },
     {
       "parameters": {
@@ -1386,10 +1386,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1860,
-        6192
+        4544,
+        10080
       ],
-      "id": "a1b2c3d4-slot-dedupe-if-0003"
+      "id": "3e511afe-a8f8-46d5-a23c-27a8063cdd3e"
     },
     {
       "parameters": {},
@@ -1397,10 +1397,10 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1860,
-        6368
+        4544,
+        10256
       ],
-      "id": "a1b2c3d4-slot-dedupe-skip-0004"
+      "id": "539353f4-2c86-47e6-acd2-f464d88842c7"
     }
   ],
   "connections": {
