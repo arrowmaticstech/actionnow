@@ -112,7 +112,7 @@ export async function createAndPair({ ownerEmail, phoneNumber, name }) {
     name,
     account_protection: true,
     log_messages: true,
-    read_incoming_messages: true,
+    read_incoming_messages: false,
     webhook_url: DEFAULT_WEBHOOK_URL,
     webhook_enabled: true,
     webhook_events: DEFAULT_WEBHOOK_EVENTS,
