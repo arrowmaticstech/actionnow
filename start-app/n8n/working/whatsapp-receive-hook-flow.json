@@ -24,26 +24,26 @@
         },
         "options": {}
       },
-      "id": "eb0f6d98-c30d-468f-bb08-391c6b8654cf",
+      "id": "fb56d8b6-f9ae-482d-8973-96af19e454da",
       "name": "If - is audio2",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -2736,
-        5376
+        -6448,
+        9552
       ]
     },
     {
       "parameters": {
         "jsCode": "const storage = $('Code - prepare storage & decrypt2').first().json;\nconst item = $input.first();\n\nif (!item.binary?.data) {\n  return [{ json: { skipped: true, reason: 'No audio binary — download may have failed or message is not audio' } }];\n}\n\nconst buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst base64 = buffer.toString('base64');\n\nconst mime = (storage.mime_type ?? '').toLowerCase();\nconst formatMap = [\n  ['ogg', 'ogg'],\n  ['opus', 'ogg'],\n  ['mpeg', 'mp3'],\n  ['mp3', 'mp3'],\n  ['m4a', 'm4a'],\n  ['mp4', 'm4a'],\n  ['wav', 'wav'],\n  ['webm', 'webm'],\n  ['aac', 'aac'],\n  ['flac', 'flac'],\n];\n\nlet format = 'ogg';\nfor (const [needle, fmt] of formatMap) {\n  if (mime.includes(needle)) {\n    format = fmt;\n    break;\n  }\n}\n\nreturn [{\n  json: {\n    message_id: storage.message_id,\n    owner_email: storage.owner_email,\n    owner_phone_num: storage.owner_phone_num,\n    media_kind: storage.media_kind,\n    chirp_body: {\n       model: 'google/chirp-3',\n       // model:'microsoft/mai-transcribe-1.5',\n       // \"language\": \"my-MM\",\n  // \"language\": \"my\",\n    \"temperature\": 0.2,\n         // \"model\": \"openai/whisper-large-v3-turbo\",  \n      // \"model\": \"openai/whisper-large-v3\",\n      input_audio: {\n        data: base64,\n        format,\n      },\n    },\n  },\n}];"
       },
-      "id": "c9865729-31f3-4820-8fbd-70840662b703",
+      "id": "32446be4-1ffa-46ba-a192-bb25d1b3d91f",
       "name": "Code - prepare Chirp 3 base65",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2496,
-        5392
+        -6208,
+        9568
       ]
     },
     {
@@ -59,13 +59,13 @@
           "timeout": 180000
         }
       },
-      "id": "fcf14630-4bb1-4aa9-a131-403c72ba0f39",
+      "id": "11cd3b45-4f16-4ca4-ae7c-8be58b1665b2",
       "name": "OpenRouter - Chirp 3 transcript2",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -2256,
-        5392
+        -5968,
+        9568
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -78,15 +78,15 @@
     },
     {
       "parameters": {
-        "jsCode": "const prep = $('Code - prepare Chirp 3 base65').first().json;\nconst parsed = $('Code - parse message & media type3').first().json;\nconst res = $input.first().json;\n\nfunction resolveSourceStamp(parsed) {\n  const existing = String(parsed?.source_stamp ?? '').trim();\n  if (existing) return existing;\n  const jid = String(parsed?.source_chat_jid ?? parsed?.chat_jid ?? '').trim() || 'unknown';\n  if (!parsed?.is_group) return `[SOURCE: DM | ${jid}]`;\n  const subject = String(parsed?.source_group_name ?? '').trim() || jid;\n  const desc = String(parsed?.source_group_desc ?? '').trim();\n  let stamp = `[SOURCE: ${subject} | ${jid}]`;\n  if (desc) {\n    const shortDesc = desc.length > 200 ? desc.slice(0, 197) + '...' : desc;\n    stamp += '\\nDesc: ' + shortDesc;\n  }\n  return stamp;\n}\n\nfunction stampContent(content, stamp) {\n  const text = String(content ?? '').trim();\n  if (!stamp) return text || null;\n  if (!text) return stamp;\n  if (text.startsWith('[SOURCE:')) return text;\n  return `${stamp}\\n${text}`;\n}\n\nconst raw =\n  res.text ??\n  res.transcript ??\n  res.response ??\n  res.output ??\n  res.data?.text ??\n  res.choices?.[0]?.message?.content ??\n  '';\n\nif (!raw) {\n  return [{ json: { skipped: true, reason: 'No text returned from model', raw: res } }];\n}\n\nconst sourceStamp = resolveSourceStamp(parsed);\nconst stamped = stampContent(raw, sourceStamp);\n\nreturn [{\n  json: {\n    message_id: prep.message_id,\n    owner_email: prep.owner_email ?? parsed.owner_email,\n    owner_phone_num: prep.owner_phone_num ?? parsed.owner_phone_num,\n    transcript: stamped,\n    model_name: 'google/chirp-3',\n    source_stamp: sourceStamp,\n  },\n}];"
+        "jsCode": "const prep = $('Code - prepare Chirp 3 base65').first().json;\nconst parsed = $('Code - parse message & media type3').first().json;\nconst res = $input.first().json;\n\nfunction resolveSourceStamp(parsed) {\n  const existing = String(parsed?.source_stamp ?? '').trim();\n  if (existing) return existing;\n  const jid = String(parsed?.source_chat_jid ?? parsed?.chat_jid ?? '').trim() || 'unknown';\n  if (!parsed?.is_group) return `[SOURCE: DM | ${jid}]`;\n  const subject = String(parsed?.source_group_name ?? '').trim() || jid;\n  const desc = String(parsed?.source_group_desc ?? '').trim();\n  if (desc) return `[SOURCE: ${subject} | ${desc} | ${jid}]`;\n  return `[SOURCE: ${subject} | ${jid}]`;\n}\n\nfunction stampContent(content, stamp) {\n  const text = String(content ?? '').trim();\n  if (!stamp) return text || null;\n  if (!text) return stamp;\n  if (text.startsWith('[SOURCE:')) return text;\n  return `${stamp}\\n${text}`;\n}\n\nconst raw =\n  res.text ??\n  res.transcript ??\n  res.response ??\n  res.output ??\n  res.data?.text ??\n  res.choices?.[0]?.message?.content ??\n  '';\n\nif (!raw) {\n  return [{ json: { skipped: true, reason: 'No text returned from model', raw: res } }];\n}\n\nconst sourceStamp = resolveSourceStamp(parsed);\nconst stamped = stampContent(raw, sourceStamp);\n\nreturn [{\n  json: {\n    message_id: prep.message_id,\n    owner_email: prep.owner_email ?? parsed.owner_email,\n    owner_phone_num: prep.owner_phone_num ?? parsed.owner_phone_num,\n    transcript: stamped,\n    model_name: 'google/chirp-3',\n    source_stamp: sourceStamp,\n  },\n}];"
       },
-      "id": "041c4316-240b-4005-9758-fa168d18f873",
+      "id": "2aa6450e-f985-4d46-935f-ebd9d445ac00",
       "name": "Code - parse Chirp 3 response2",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2048,
-        5392
+        -5760,
+        9568
       ]
     },
     {
@@ -97,13 +97,13 @@
           "queryReplacement": "={{ [$json.transcript, $json.message_id] }}"
         }
       },
-      "id": "c3fce6ec-e2a9-4a9b-9590-b8e3de5dcd06",
+      "id": "030b71d4-ea7e-4fb2-8cc1-1733cde56d41",
       "name": "Postgres - save Chirp 3 transcript2",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -1824,
-        5392
+        -5536,
+        9568
       ],
       "credentials": {
         "postgres": {
@@ -146,13 +146,13 @@
         },
         "options": {}
       },
-      "id": "19e2067d-9cf4-421e-83f2-5b2dc928c4a7",
+      "id": "9363cb6c-2934-4b1f-8c07-cdb0c0c02355",
       "name": "If - is image2",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -2832,
-        5568
+        -6544,
+        9744
       ]
     },
     {
@@ -163,13 +163,13 @@
           "queryReplacement": "={{ [$json.content, $json.model_name, $json.message_id] }}"
         }
       },
-      "id": "d9feb72a-8979-4cf0-8ed5-df76eaee1da2",
+      "id": "c2d41a90-2972-43f7-89eb-2674a7619275",
       "name": "Postgres - save image interpretation2",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -1808,
-        5616
+        -5520,
+        9792
       ],
       "credentials": {
         "postgres": {
@@ -196,13 +196,13 @@
           }
         }
       },
-      "id": "9bc7d6c8-637a-4ae3-85bc-d44b6497a279",
+      "id": "c001e0e1-f9c1-4838-bbec-47ba50a46b2d",
       "name": "Webhook - receive whatsapp3",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        -5584,
-        5488
+        -9296,
+        9664
       ],
       "webhookId": "actionnow-receive-whatsapp"
     },
@@ -288,13 +288,13 @@
           "fallbackOutput": "extra"
         }
       },
-      "id": "b73a712a-a652-49e1-ae8d-e988e9c95030",
+      "id": "d00a6389-3923-4853-b739-aead4dcda258",
       "name": "Switch - message events only3",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        -5152,
-        5552
+        -8864,
+        9728
       ]
     },
     {
@@ -329,13 +329,13 @@
         },
         "options": {}
       },
-      "id": "d2fc00ba-6a24-49f8-bbce-f54911605c09",
+      "id": "3cd36180-8624-400f-8aa7-f583e18e62b1",
       "name": "Set - ignored event3",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -4752,
-        5760
+        -8464,
+        9936
       ]
     },
     {
@@ -346,13 +346,13 @@
           "queryReplacement": "={{ [\n  $('Webhook - receive whatsapp3').item.json.headers?.['x-webhook-secret']\n    ?? $('Webhook - receive whatsapp3').item.json.headers?.['X-Webhook-Secret']\n    ?? '',\n  String($('Webhook - receive whatsapp3').item.json.body?.sessionId ?? $('Webhook - receive whatsapp3').item.json.body?.session_id ?? '')\n] }}"
         }
       },
-      "id": "baa288f4-5976-419e-bc1e-6503f88c2bef",
+      "id": "fe74e6c7-0b00-497f-a5e4-94a1b1a8c27c",
       "name": "Postgres - resolve owner from webhook3",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -4944,
-        5312
+        -8656,
+        9488
       ],
       "credentials": {
         "postgres": {
@@ -366,13 +366,13 @@
       "parameters": {
         "jsCode": "const webhook = $('Webhook - receive whatsapp3').first().json;\nconst conn = $input.first().json ?? {};\n\nif (!conn?.owner_email) {\n  throw new Error('No user_whatsapp_connections row for this webhook (check x-webhook-secret or sessionId)');\n}\n\nconst status = String(conn.status ?? '').toLowerCase();\nif (status !== 'connected') {\n  throw new Error(`WhatsApp session not connected (status: ${conn.status ?? 'unknown'})`);\n}\n\nreturn [{\n  json: {\n    ...webhook,\n    connection: conn,\n    owner_email: conn.owner_email,\n    owner_phone_num: conn.phone_number,\n    api_key: conn.api_key,\n    webhook_secret: conn.webhook_secret,\n  },\n}];"
       },
-      "id": "d0b70d39-556d-4b69-bf99-0f0a4c1682a0",
+      "id": "1a746071-c6e4-4897-b2f3-b02aa3359335",
       "name": "Code - merge webhook owner context3",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -4800,
-        5440
+        -8512,
+        9664
       ]
     },
     {
@@ -383,13 +383,13 @@
           "queryReplacement": "={{ [$('Code - merge webhook owner context3').item.json.owner_email] }}"
         }
       },
-      "id": "c7291984-0478-4049-95c4-a09c5f864d6e",
+      "id": "6e055759-8fa9-42c0-bea9-05cba5711fc5",
       "name": "Postgres - get monitor settings for owner3",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -4688,
-        5312
+        -8400,
+        9488
       ],
       "credentials": {
         "postgres": {
@@ -401,15 +401,15 @@
     },
     {
       "parameters": {
-        "jsCode": "const ctx = $('Code - merge webhook owner context3').first().json;\nconst OWNER_EMAIL = ctx.owner_email;\nconst OWNER_PHONE = ctx.owner_phone_num;\n\nconst input = ctx;\nconst body = input.body ?? input;\nconst event = body.event;\nconst messages = body.data?.messages;\n\nif (!messages) {\n  throw new Error('Missing data.messages in webhook payload');\n}\n\nconst key = messages.key ?? {};\nconst keyId = String(key.id ?? messages.id ?? '').trim();\nif (!keyId) {\n  throw new Error('Missing WhatsApp message id (key.id and messages.id both empty)');\n}\n// WASender may send id in both places; prefer key.id without failing the workflow\nconst altId = messages.id != null ? String(messages.id).trim() : '';\nconst canonicalMessageId = String(key.id ?? altId).trim() || keyId;\n\nfunction unwrapMediaMessage(message) {\n  if (!message || typeof message !== 'object') return {};\n  if (message.ephemeralMessage?.message) return unwrapMediaMessage(message.ephemeralMessage.message);\n  if (message.viewOnceMessage?.message) return unwrapMediaMessage(message.viewOnceMessage.message);\n  if (message.viewOnceMessageV2?.message) return unwrapMediaMessage(message.viewOnceMessageV2.message);\n  if (message.documentWithCaptionMessage?.message) return unwrapMediaMessage(message.documentWithCaptionMessage.message);\n  if (message.imageWithCaptionMessage?.message) return unwrapMediaMessage(message.imageWithCaptionMessage.message);\n  return message;\n}\n\nfunction normalizeMediaKey(mediaKey) {\n  if (mediaKey == null) return null;\n  if (typeof mediaKey === 'string') return mediaKey;\n  if (typeof mediaKey === 'object' && mediaKey.type === 'Buffer' && Array.isArray(mediaKey.data)) {\n    return Buffer.from(mediaKey.data).toString('base64');\n  }\n  if (Array.isArray(mediaKey)) return Buffer.from(mediaKey).toString('base64');\n  return String(mediaKey);\n}\n\nconst DECRYPT_MESSAGE_KEY = {\n  pttMessage: 'audioMessage',\n  audioMessage: 'audioMessage',\n  imageMessage: 'imageMessage',\n  videoMessage: 'videoMessage',\n  documentMessage: 'documentMessage',\n  stickerMessage: 'stickerMessage',\n};\n\nfunction buildDecryptMediaBlock(details) {\n  const keep = [\n    'url', 'mimetype', 'mediaKey', 'fileSha256', 'fileLength', 'fileName',\n    'directPath', 'mediaKeyTimestamp', 'caption', 'height', 'width', 'seconds', 'ptt',\n  ];\n  const out = {};\n  for (const k of keep) {\n    if (details[k] != null && details[k] !== '') out[k] = details[k];\n  }\n  if (out.mediaKey != null) out.mediaKey = normalizeMediaKey(out.mediaKey);\n  return out;\n}\n\nconst msg = unwrapMediaMessage(messages.message ?? {});\nconst isGroup =\n  event === 'messages-group.received' ||\n  String(key.remoteJid || '').endsWith('@g.us');\n\nconst MEDIA_MAP = [\n    ['imageMessage', 'image'],\n ['videoMessage', 'video'],\n  ['audioMessage', 'audio'],\n  ['pttMessage', 'audio'],\n\n  ['documentMessage', 'document'],\n  ['stickerMessage', 'sticker'],\n];\n\nlet contentType = 'text';\nlet mediaKind = 'text';\nlet mediaDetails = null;\nlet messageKey = null;\n\nfor (const [k, kind] of MEDIA_MAP) {\n  if (msg[k]) {\n    messageKey = k;\n    contentType = kind;\n    mediaKind = kind;\n    mediaDetails = msg[k];\n    break;\n  }\n}\n\nconst hasMedia = Boolean(mediaDetails);\n\nfunction normalizeText(v) {\n  if (v == null) return null;\n  const s = String(v).trim();\n  return s === '' ? null : s;\n}\n\nfunction mediaFingerprint(details, kind) {\n  if (!details) return null;\n  const parts = [\n    kind,\n    normalizeMediaKey(details.mediaKey) ?? '',\n    details.url ?? '',\n    details.fileLength != null ? String(details.fileLength) : '',\n    details.fileSha256 ?? '',\n  ].filter(Boolean);\n  if (!parts.length) return null;\n  const raw = parts.join('|');\n  let hash = 0;\n  for (let i = 0; i < raw.length; i++) {\n    hash = ((hash << 5) - hash + raw.charCodeAt(i)) | 0;\n  }\n  return Math.abs(hash).toString(36).padStart(8, '0').slice(0, 8);\n}\n\nconst contentFingerprint = hasMedia ? mediaFingerprint(mediaDetails, mediaKind) : null;\n\nlet whatsappTimestamp = messages.messageTimestamp ?? null;\nif (whatsappTimestamp == null && body.timestamp != null) {\n  const t = Number(body.timestamp);\n  whatsappTimestamp = t > 1e12 ? Math.floor(t / 1000) : t;\n}\n\nconst messageBody =\n  normalizeText(messages.messageBody) ??\n  normalizeText(mediaDetails?.caption) ??\n  null;\n\nconst record = {\n  owner_email: OWNER_EMAIL,\n  owner_phone_num: OWNER_PHONE,\n  event_type: event,\n  whatsapp_timestamp: whatsappTimestamp,\n  message_id: canonicalMessageId,\n  from_me: Boolean(key.fromMe),\n  chat_jid: key.remoteJid,\n  is_group: isGroup,\n  addressing_mode: key.addressingMode ?? null,\n  sender_pn: isGroup ? null : (key.senderPn ?? null),\n  cleaned_sender_pn: isGroup ? null : (key.cleanedSenderPn ?? null),\n  sender_lid: isGroup ? null : (key.senderLid ?? null),\n  participant: isGroup ? (key.participant ?? null) : null,\n  participant_pn: isGroup ? (key.participantPn ?? null) : null,\n  cleaned_participant_pn: isGroup ? (key.cleanedParticipantPn ?? null) : null,\n  participant_lid: isGroup ? (key.participantLid ?? null) : null,\n  sender_phone: key.cleanedParticipantPn ?? key.cleanedSenderPn ?? null,\n  sender_lid_resolved: key.participantLid ?? key.participant ?? key.senderLid ?? null,\n  message_body: messageBody,\n  content_type: contentType,\n  content_fingerprint: contentFingerprint,\n  raw_payload: body,\n  has_media: hasMedia,\n  media_processing_status: hasMedia ? 'pending' : 'none',\n};\n\nlet media_row = null;\nlet decrypt_request = null;\n\nif (hasMedia && messageKey) {\n  media_row = {\n    owner_email: OWNER_EMAIL,\n    owner_phone_num: OWNER_PHONE,\n    message_id: canonicalMessageId,\n    media_kind: mediaKind,\n    mime_type: mediaDetails.mimetype ?? null,\n    file_name: mediaDetails.fileName ?? null,\n    file_size: mediaDetails.fileLength != null ? Number(mediaDetails.fileLength) : null,\n    caption: normalizeText(mediaDetails.caption) ?? normalizeText(messages.messageBody),\n    encrypted_url: mediaDetails.url ?? null,\n    media_key: normalizeMediaKey(mediaDetails.mediaKey),\n    decrypt_status: 'pending',\n  };\n\n  const decryptMessageKey = DECRYPT_MESSAGE_KEY[messageKey] ?? messageKey;\n  const mediaBlock = buildDecryptMediaBlock(mediaDetails);\n\n  if (!mediaBlock.url || !mediaBlock.mediaKey) {\n    throw new Error(`Media missing url or mediaKey for ${messageKey}`);\n  }\n\n  decrypt_request = {\n    data: {\n      messages: {\n        key: {\n          id: canonicalMessageId,\n          remoteJid: key.remoteJid ?? undefined,\n          participant: key.participant ?? undefined,\n        },\n        message: { [decryptMessageKey]: mediaBlock },\n      },\n    },\n  };\n\n  if (body.sessionId) decrypt_request.sessionId = body.sessionId;\n}\n\nfunction arrIds(v) {\n  return Array.isArray(v) ? v.map((x) => String(x).trim()).filter(Boolean) : [];\n}\n\nasync function fetchGroupMetadata(helpers, groupJid, apiKey) {\n  const jid = String(groupJid ?? '').trim();\n  if (!apiKey || !jid.endsWith('@g.us')) return null;\n  try {\n    const res = await helpers.httpRequest({\n      method: 'GET',\n      url: 'https://www.wasenderapi.com/api/groups/' + encodeURIComponent(jid) + '/metadata',\n      headers: {\n        Authorization: 'Bearer ' + apiKey,\n        Accept: 'application/json',\n      },\n      json: true,\n      timeout: 15000,\n    });\n    const data = res?.data ?? res;\n    return {\n      jid: String(data?.jid ?? jid).trim() || jid,\n      subject: String(data?.subject ?? '').trim() || null,\n      desc: String(data?.desc ?? '').trim() || null,\n    };\n  } catch (_err) {\n    return null;\n  }\n}\n\nfunction resolveGroupName(messages, body) {\n  const candidates = [\n    messages?.groupName,\n    messages?.groupSubject,\n    messages?.chatName,\n    messages?.notifyName,\n    body?.data?.group?.name,\n    body?.data?.group?.subject,\n    body?.data?.chat?.name,\n    body?.data?.chat?.subject,\n  ];\n  for (const c of candidates) {\n    const s = String(c ?? '').trim();\n    if (s) return s;\n  }\n  return null;\n}\n\nfunction buildSourceStamp({ is_group, source_group_name, source_group_desc, chat_jid }) {\n  const jid = String(chat_jid ?? '').trim() || 'unknown';\n  if (!is_group) return `[SOURCE: DM | ${jid}]`;\n  const subject = String(source_group_name ?? '').trim() || jid;\n  const desc = String(source_group_desc ?? '').trim();\n  let stamp = `[SOURCE: ${subject} | ${jid}]`;\n  if (desc) {\n    const shortDesc = desc.length > 200 ? desc.slice(0, 197) + '...' : desc;\n    stamp += '\\nDesc: ' + shortDesc;\n  }\n  return stamp;\n}\n\nfunction stampContent(content, stamp) {\n  const text = String(content ?? '').trim();\n  if (!stamp) return text || null;\n  if (!text) return stamp;\n  if (text.startsWith('[SOURCE:')) return text;\n  return `${stamp}\\n${text}`;\n}\n\nconst monitor = $('Postgres - get monitor settings for owner3').first()?.json ?? {};\nconst groupIds = arrIds(monitor.from_group_ids);\nconst contactJids = arrIds(monitor.from_contact_jids);\nconst jid = String(record.chat_jid ?? '').trim();\n\nif (isGroup) {\n  if (!groupIds.length) {\n    return [{\n      json: {\n        skipped: true,\n        reason: 'no subscribed groups in monitor_settings.from_group_ids',\n        chat_jid: jid,\n        owner_email: OWNER_EMAIL,\n        event_type: event,\n      },\n    }];\n  }\n  if (!groupIds.includes(jid)) {\n    return [{\n      json: {\n        skipped: true,\n        reason: 'group not in subscribed from_group_ids',\n        chat_jid: jid,\n        subscribed_groups: groupIds,\n        owner_email: OWNER_EMAIL,\n        event_type: event,\n      },\n    }];\n  }\n} else if (!contactJids.includes(jid)) {\n  return [{\n    json: {\n      skipped: true,\n      reason: contactJids.length\n        ? 'DM not in subscribed from_contact_jids'\n        : 'no subscribed contacts in monitor_settings.from_contact_jids',\n      chat_jid: jid,\n      subscribed_contacts: contactJids,\n      owner_email: OWNER_EMAIL,\n      event_type: event,\n    },\n  }];\n}\n\nconst allowedTypes = arrIds(monitor.what_content_types);\nif (allowedTypes.length && !allowedTypes.includes(contentType)) {\n  return [{\n    json: {\n      skipped: true,\n      reason: 'content_type not in monitor what_content_types',\n      content_type: contentType,\n      owner_email: OWNER_EMAIL,\n      event_type: event,\n    },\n  }];\n}\n\nlet source_group_name = null;\nlet source_group_desc = null;\n\nif (isGroup) {\n  const meta = await fetchGroupMetadata(this.helpers, jid, ctx.api_key);\n  source_group_name = meta?.subject ?? resolveGroupName(messages, body) ?? null;\n  source_group_desc = meta?.desc ?? null;\n}\n\nconst source_stamp = buildSourceStamp({\n  is_group: isGroup,\n  source_group_name: isGroup ? (source_group_name ?? jid) : null,\n  source_group_desc,\n  chat_jid: jid,\n});\n\nrecord.source_group_name = source_group_name;\nrecord.source_group_desc = source_group_desc;\nrecord.source_chat_jid = jid;\nrecord.source_stamp = source_stamp;\n\n// Stamp group/source on whatsapp_messages.message_body and whatsapp_message_media.caption\nif (hasMedia && media_row) {\n  const stamped = stampContent(media_row.caption ?? record.message_body, source_stamp) ?? source_stamp;\n  media_row.caption = stamped;\n  record.message_body = stamped;\n} else {\n  record.message_body = stampContent(record.message_body, source_stamp) ?? source_stamp;\n}\n\nreturn [{\n  json: {\n    ...record,\n    media_row,\n    decrypt_request,\n    monitor_settings: monitor,\n    api_key: ctx.api_key,\n  },\n}];"
+        "jsCode": "const ctx = $('Code - merge webhook owner context3').first().json;\nconst OWNER_EMAIL = ctx.owner_email;\nconst OWNER_PHONE = ctx.owner_phone_num;\n\nconst input = ctx;\nconst body = input.body ?? input;\nconst event = body.event;\nconst messages = body.data?.messages;\n\nif (!messages) {\n  throw new Error('Missing data.messages in webhook payload');\n}\n\nconst key = messages.key ?? {};\nconst keyId = String(key.id ?? messages.id ?? '').trim();\nif (!keyId) {\n  throw new Error('Missing WhatsApp message id (key.id and messages.id both empty)');\n}\n// WASender may send id in both places; prefer key.id without failing the workflow\nconst altId = messages.id != null ? String(messages.id).trim() : '';\nconst canonicalMessageId = String(key.id ?? altId).trim() || keyId;\n\nfunction unwrapMediaMessage(message) {\n  if (!message || typeof message !== 'object') return {};\n  if (message.ephemeralMessage?.message) return unwrapMediaMessage(message.ephemeralMessage.message);\n  if (message.viewOnceMessage?.message) return unwrapMediaMessage(message.viewOnceMessage.message);\n  if (message.viewOnceMessageV2?.message) return unwrapMediaMessage(message.viewOnceMessageV2.message);\n  if (message.documentWithCaptionMessage?.message) return unwrapMediaMessage(message.documentWithCaptionMessage.message);\n  if (message.imageWithCaptionMessage?.message) return unwrapMediaMessage(message.imageWithCaptionMessage.message);\n  return message;\n}\n\nfunction normalizeMediaKey(mediaKey) {\n  if (mediaKey == null) return null;\n  if (typeof mediaKey === 'string') return mediaKey;\n  if (typeof mediaKey === 'object' && mediaKey.type === 'Buffer' && Array.isArray(mediaKey.data)) {\n    return Buffer.from(mediaKey.data).toString('base64');\n  }\n  if (Array.isArray(mediaKey)) return Buffer.from(mediaKey).toString('base64');\n  return String(mediaKey);\n}\n\nconst DECRYPT_MESSAGE_KEY = {\n  pttMessage: 'audioMessage',\n  audioMessage: 'audioMessage',\n  imageMessage: 'imageMessage',\n  videoMessage: 'videoMessage',\n  documentMessage: 'documentMessage',\n  stickerMessage: 'stickerMessage',\n};\n\nfunction buildDecryptMediaBlock(details) {\n  const keep = [\n    'url', 'mimetype', 'mediaKey', 'fileSha256', 'fileLength', 'fileName',\n    'directPath', 'mediaKeyTimestamp', 'caption', 'height', 'width', 'seconds', 'ptt',\n  ];\n  const out = {};\n  for (const k of keep) {\n    if (details[k] != null && details[k] !== '') out[k] = details[k];\n  }\n  if (out.mediaKey != null) out.mediaKey = normalizeMediaKey(out.mediaKey);\n  return out;\n}\n\nconst msg = unwrapMediaMessage(messages.message ?? {});\nconst isGroup =\n  event === 'messages-group.received' ||\n  String(key.remoteJid || '').endsWith('@g.us');\n\nconst MEDIA_MAP = [\n    ['imageMessage', 'image'],\n ['videoMessage', 'video'],\n  ['audioMessage', 'audio'],\n  ['pttMessage', 'audio'],\n\n  ['documentMessage', 'document'],\n  ['stickerMessage', 'sticker'],\n];\n\nlet contentType = 'text';\nlet mediaKind = 'text';\nlet mediaDetails = null;\nlet messageKey = null;\n\nfor (const [k, kind] of MEDIA_MAP) {\n  if (msg[k]) {\n    messageKey = k;\n    contentType = kind;\n    mediaKind = kind;\n    mediaDetails = msg[k];\n    break;\n  }\n}\n\nconst hasMedia = Boolean(mediaDetails);\n\nfunction normalizeText(v) {\n  if (v == null) return null;\n  const s = String(v).trim();\n  return s === '' ? null : s;\n}\n\nfunction mediaFingerprint(details, kind) {\n  if (!details) return null;\n  const parts = [\n    kind,\n    normalizeMediaKey(details.mediaKey) ?? '',\n    details.url ?? '',\n    details.fileLength != null ? String(details.fileLength) : '',\n    details.fileSha256 ?? '',\n  ].filter(Boolean);\n  if (!parts.length) return null;\n  const raw = parts.join('|');\n  let hash = 0;\n  for (let i = 0; i < raw.length; i++) {\n    hash = ((hash << 5) - hash + raw.charCodeAt(i)) | 0;\n  }\n  return Math.abs(hash).toString(36).padStart(8, '0').slice(0, 8);\n}\n\nconst contentFingerprint = hasMedia ? mediaFingerprint(mediaDetails, mediaKind) : null;\n\nlet whatsappTimestamp = messages.messageTimestamp ?? null;\nif (whatsappTimestamp == null && body.timestamp != null) {\n  const t = Number(body.timestamp);\n  whatsappTimestamp = t > 1e12 ? Math.floor(t / 1000) : t;\n}\n\nconst messageBody =\n  normalizeText(messages.messageBody) ??\n  normalizeText(mediaDetails?.caption) ??\n  null;\n\nconst record = {\n  owner_email: OWNER_EMAIL,\n  owner_phone_num: OWNER_PHONE,\n  event_type: event,\n  whatsapp_timestamp: whatsappTimestamp,\n  message_id: canonicalMessageId,\n  from_me: Boolean(key.fromMe),\n  chat_jid: key.remoteJid,\n  is_group: isGroup,\n  addressing_mode: key.addressingMode ?? null,\n  sender_pn: isGroup ? null : (key.senderPn ?? null),\n  cleaned_sender_pn: isGroup ? null : (key.cleanedSenderPn ?? null),\n  sender_lid: isGroup ? null : (key.senderLid ?? null),\n  participant: isGroup ? (key.participant ?? null) : null,\n  participant_pn: isGroup ? (key.participantPn ?? null) : null,\n  cleaned_participant_pn: isGroup ? (key.cleanedParticipantPn ?? null) : null,\n  participant_lid: isGroup ? (key.participantLid ?? null) : null,\n  sender_phone: key.cleanedParticipantPn ?? key.cleanedSenderPn ?? null,\n  sender_lid_resolved: key.participantLid ?? key.participant ?? key.senderLid ?? null,\n  message_body: messageBody,\n  content_type: contentType,\n  content_fingerprint: contentFingerprint,\n  raw_payload: body,\n  has_media: hasMedia,\n  media_processing_status: hasMedia ? 'pending' : 'none',\n};\n\nlet media_row = null;\nlet decrypt_request = null;\n\nif (hasMedia && messageKey) {\n  media_row = {\n    owner_email: OWNER_EMAIL,\n    owner_phone_num: OWNER_PHONE,\n    message_id: canonicalMessageId,\n    media_kind: mediaKind,\n    mime_type: mediaDetails.mimetype ?? null,\n    file_name: mediaDetails.fileName ?? null,\n    file_size: mediaDetails.fileLength != null ? Number(mediaDetails.fileLength) : null,\n    caption: normalizeText(mediaDetails.caption) ?? normalizeText(messages.messageBody),\n    encrypted_url: mediaDetails.url ?? null,\n    media_key: normalizeMediaKey(mediaDetails.mediaKey),\n    decrypt_status: 'pending',\n  };\n\n  const decryptMessageKey = DECRYPT_MESSAGE_KEY[messageKey] ?? messageKey;\n  const mediaBlock = buildDecryptMediaBlock(mediaDetails);\n\n  if (!mediaBlock.url || !mediaBlock.mediaKey) {\n    throw new Error(`Media missing url or mediaKey for ${messageKey}`);\n  }\n\n  decrypt_request = {\n    data: {\n      messages: {\n        key: {\n          id: canonicalMessageId,\n          remoteJid: key.remoteJid ?? undefined,\n          participant: key.participant ?? undefined,\n        },\n        message: { [decryptMessageKey]: mediaBlock },\n      },\n    },\n  };\n\n  if (body.sessionId) decrypt_request.sessionId = body.sessionId;\n}\n\nfunction arrIds(v) {\n  return Array.isArray(v) ? v.map((x) => String(x).trim()).filter(Boolean) : [];\n}\n\nasync function fetchGroupMetadata(helpers, groupJid, apiKey) {\n  const jid = String(groupJid ?? '').trim();\n  if (!apiKey || !jid.endsWith('@g.us')) return null;\n  try {\n    const res = await helpers.httpRequest({\n      method: 'GET',\n      url: 'https://www.wasenderapi.com/api/groups/' + encodeURIComponent(jid) + '/metadata',\n      headers: {\n        Authorization: 'Bearer ' + apiKey,\n        Accept: 'application/json',\n      },\n      json: true,\n      timeout: 15000,\n    });\n    const data = res?.data ?? res;\n    return {\n      jid: String(data?.jid ?? jid).trim() || jid,\n      subject: String(data?.subject ?? '').trim() || null,\n      desc: String(data?.desc ?? '').trim() || null,\n    };\n  } catch (_err) {\n    return null;\n  }\n}\n\nfunction resolveGroupName(messages, body) {\n  const candidates = [\n    messages?.groupName,\n    messages?.groupSubject,\n    messages?.chatName,\n    messages?.notifyName,\n    body?.data?.group?.name,\n    body?.data?.group?.subject,\n    body?.data?.chat?.name,\n    body?.data?.chat?.subject,\n  ];\n  for (const c of candidates) {\n    const s = String(c ?? '').trim();\n    if (s) return s;\n  }\n  return null;\n}\n\nfunction buildSourceStamp({ is_group, source_group_name, source_group_desc, chat_jid }) {\n  const jid = String(chat_jid ?? '').trim() || 'unknown';\n  if (!is_group) return `[SOURCE: DM | ${jid}]`;\n  const subject = String(source_group_name ?? '').trim() || jid;\n  const desc = String(source_group_desc ?? '').trim();\n  // Full group desc inside brackets — never truncate message body or desc\n  if (desc) return `[SOURCE: ${subject} | ${desc} | ${jid}]`;\n  return `[SOURCE: ${subject} | ${jid}]`;\n}\n\nfunction stampContent(content, stamp) {\n  const text = String(content ?? '').trim();\n  if (!stamp) return text || null;\n  if (!text) return stamp;\n  if (text.startsWith('[SOURCE:')) return text;\n  return `${stamp}\\n${text}`;\n}\n\nconst monitor = $('Postgres - get monitor settings for owner3').first()?.json ?? {};\nconst groupIds = arrIds(monitor.from_group_ids);\nconst contactJids = arrIds(monitor.from_contact_jids);\nconst jid = String(record.chat_jid ?? '').trim();\n\nif (isGroup) {\n  if (!groupIds.length) {\n    return [{\n      json: {\n        skipped: true,\n        reason: 'no subscribed groups in monitor_settings.from_group_ids',\n        chat_jid: jid,\n        owner_email: OWNER_EMAIL,\n        event_type: event,\n      },\n    }];\n  }\n  if (!groupIds.includes(jid)) {\n    return [{\n      json: {\n        skipped: true,\n        reason: 'group not in subscribed from_group_ids',\n        chat_jid: jid,\n        subscribed_groups: groupIds,\n        owner_email: OWNER_EMAIL,\n        event_type: event,\n      },\n    }];\n  }\n} else if (!contactJids.includes(jid)) {\n  return [{\n    json: {\n      skipped: true,\n      reason: contactJids.length\n        ? 'DM not in subscribed from_contact_jids'\n        : 'no subscribed contacts in monitor_settings.from_contact_jids',\n      chat_jid: jid,\n      subscribed_contacts: contactJids,\n      owner_email: OWNER_EMAIL,\n      event_type: event,\n    },\n  }];\n}\n\nconst allowedTypes = arrIds(monitor.what_content_types);\nif (allowedTypes.length && !allowedTypes.includes(contentType)) {\n  return [{\n    json: {\n      skipped: true,\n      reason: 'content_type not in monitor what_content_types',\n      content_type: contentType,\n      owner_email: OWNER_EMAIL,\n      event_type: event,\n    },\n  }];\n}\n\nlet source_group_name = null;\nlet source_group_desc = null;\n\nif (isGroup) {\n  const meta = await fetchGroupMetadata(this.helpers, jid, ctx.api_key);\n  source_group_name = meta?.subject ?? resolveGroupName(messages, body) ?? null;\n  source_group_desc = meta?.desc ?? null;\n}\n\nconst source_stamp = buildSourceStamp({\n  is_group: isGroup,\n  source_group_name: isGroup ? (source_group_name ?? jid) : null,\n  source_group_desc,\n  chat_jid: jid,\n});\n\nrecord.source_group_name = source_group_name;\nrecord.source_group_desc = source_group_desc;\nrecord.source_chat_jid = jid;\nrecord.source_stamp = source_stamp;\n\n// Stamp group/source on whatsapp_messages.message_body and whatsapp_message_media.caption\nif (hasMedia && media_row) {\n  const stamped = stampContent(media_row.caption ?? record.message_body, source_stamp) ?? source_stamp;\n  media_row.caption = stamped;\n  record.message_body = stamped;\n} else {\n  record.message_body = stampContent(record.message_body, source_stamp) ?? source_stamp;\n}\n\nreturn [{\n  json: {\n    ...record,\n    media_row,\n    decrypt_request,\n    monitor_settings: monitor,\n    api_key: ctx.api_key,\n  },\n}];"
       },
-      "id": "53ecbb7c-edf8-4c53-aed3-394e88866e5b",
+      "id": "5adaef6a-9a63-42e6-87c4-fc15fb39bb57",
       "name": "Code - parse message & media type3",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -4496,
-        5184
+        -8208,
+        9360
       ]
     },
     {
@@ -436,13 +436,13 @@
         },
         "options": {}
       },
-      "id": "91b4c855-9bad-4285-9679-35b69469f2a4",
+      "id": "9c15a0e3-0d38-4606-b73a-6a0ab94dfaba",
       "name": "If - message in monitor scope3",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -4480,
-        5488
+        -8192,
+        9664
       ]
     },
     {
@@ -483,13 +483,13 @@
         },
         "options": {}
       },
-      "id": "54998f0a-25eb-46c8-8bb1-dbb986b308df",
+      "id": "be0ba582-a23c-49ea-a5ff-f69cd74912b4",
       "name": "Set - skipped monitor scope3",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -4272,
-        5552
+        -7984,
+        9728
       ]
     },
     {
@@ -500,13 +500,13 @@
           "queryReplacement": "={{ [$json.owner_email, $json.owner_phone_num, $json.event_type, String($json.whatsapp_timestamp ?? ''), $json.message_id, $json.from_me, $json.chat_jid, $json.is_group, $json.addressing_mode ?? '', $json.sender_pn ?? '', $json.cleaned_sender_pn ?? '', $json.sender_lid ?? '', $json.participant ?? '', $json.participant_pn ?? '', $json.cleaned_participant_pn ?? '', $json.participant_lid ?? '', $json.sender_phone ?? '', $json.sender_lid_resolved ?? '', $json.message_body ?? '', $json.content_type, $json.content_fingerprint ?? '', JSON.stringify($json.raw_payload), $json.has_media, $json.media_processing_status] }}"
         }
       },
-      "id": "9b4bf098-3327-4634-9cc5-249669cadc8f",
+      "id": "b11aa4cc-558b-4149-9a37-ca390792084a",
       "name": "Postgres - upsert whatsapp_messages2",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -4288,
-        5360
+        -8000,
+        9536
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -541,13 +541,13 @@
         },
         "options": {}
       },
-      "id": "e7f93f0a-fea7-4c09-b46e-c017735cca60",
+      "id": "c052728f-81b8-4feb-a5fd-7d45e57a611f",
       "name": "If - has media3",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -4160,
-        5312
+        -7872,
+        9488
       ]
     },
     {
@@ -558,13 +558,13 @@
           "queryReplacement": "={{ [$('Code - parse message & media type3').item.json.media_row.owner_email, $('Code - parse message & media type3').item.json.media_row.owner_phone_num, $('Code - parse message & media type3').item.json.media_row.message_id, $('Code - parse message & media type3').item.json.media_row.media_kind, $('Code - parse message & media type3').item.json.media_row.mime_type ?? '', $('Code - parse message & media type3').item.json.media_row.file_name ?? '', String($('Code - parse message & media type3').item.json.media_row.file_size ?? ''), $('Code - parse message & media type3').item.json.media_row.caption ?? '', $('Code - parse message & media type3').item.json.media_row.encrypted_url ?? '', $('Code - parse message & media type3').item.json.media_row.media_key ?? ''] }}"
         }
       },
-      "id": "7afd7359-9434-437a-9c7b-364836471acd",
+      "id": "4efcf31e-0a83-477e-a32b-8d8ad6360bd6",
       "name": "Postgres - upsert whatsapp_message_media2",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -3920,
-        5200
+        -7632,
+        9376
       ],
       "credentials": {
         "postgres": {
@@ -598,13 +598,13 @@
           "timeout": 30000
         }
       },
-      "id": "eba2626b-34f2-483c-b522-79f4f8746e5d",
+      "id": "47cdd326-6019-43d2-8ebb-cd44f9e39d59",
       "name": "Wasender - decrypt media3",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -3728,
-        5168
+        -7440,
+        9344
       ],
       "onError": "continueRegularOutput"
     },
@@ -612,13 +612,13 @@
       "parameters": {
         "jsCode": "const parsed = $('Code - parse message & media type3').first().json;\nconst media = parsed.media_row;\nconst decrypt = $input.first().json;\nconst publicUrl = decrypt.publicUrl ?? decrypt.data?.publicUrl ?? null;\nconst decryptError =\n  decrypt.error ??\n  (decrypt.success === false ? (decrypt.message ?? JSON.stringify(decrypt)) : null);\n\nconst extMap = {\n  'image/jpeg': 'jpg',\n  'image/png': 'png',\n  'image/webp': 'webp',\n  'audio/ogg; codecs=opus': 'ogg',\n  'audio/ogg': 'ogg',\n  'audio/mpeg': 'mp3',\n  'audio/mp4': 'm4a',\n  'video/mp4': 'mp4',\n  'application/pdf': 'pdf',\n};\n\nconst mime = media?.mime_type ?? 'application/octet-stream';\nconst extFromName = media?.file_name?.includes('.') ? media.file_name.split('.').pop() : null;\nconst ext = extMap[mime] ?? extFromName ?? 'bin';\nconst phone = String(parsed.owner_phone_num ?? 'unknown').replace(/\\D/g, '');\nconst d = new Date();\n\n// message_id from WhatsApp + media fingerprint (unique per attachment, even with empty caption)\nconst tag = parsed.content_fingerprint ?? parsed.message_id.slice(-8);\nconst storage_path = `${phone}/${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${parsed.message_id}_${tag}.${ext}`;\n\nconst interpretationMap = {\n  audio: ['transcript'],\n  video: ['video_transcript'],\n  image: ['caption', 'ocr'],\n  document: ['document_text'],\n  sticker: ['caption'],\n};\n\nreturn [{\n  json: {\n    message_id: parsed.message_id,\n    public_url: publicUrl,\n    decrypt_error: decryptError,\n    storage_path,\n    storage_bucket: 'action-now',\n    mime_type: mime,\n    media_kind: parsed.content_type,\n    content_fingerprint: parsed.content_fingerprint,\n    owner_email: parsed.owner_email,\n    owner_phone_num: parsed.owner_phone_num,\n    interpretation_types: interpretationMap[parsed.content_type] ?? [],\n  },\n}];"
       },
-      "id": "4e69c512-9c0a-4cef-8117-e4b30ca2339b",
+      "id": "589a1e06-9d8a-4ad7-8410-18153cee82eb",
       "name": "Code - prepare storage & decrypt2",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -3552,
-        5040
+        -7264,
+        9216
       ]
     },
     {
@@ -629,13 +629,13 @@
           "queryReplacement": "={{ [$json.public_url ?? '', $json.message_id, $json.decrypt_error ?? ''] }}"
         }
       },
-      "id": "53435138-d56b-4efe-8a7a-f0fa7c043775",
+      "id": "5da6af51-590e-424a-803c-8c1b49b7fe1d",
       "name": "Postgres - update media decrypt url3",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -3408,
-        5200
+        -7120,
+        9376
       ],
       "credentials": {
         "postgres": {
@@ -669,13 +669,13 @@
         },
         "options": {}
       },
-      "id": "19843d9b-a50b-459e-898a-20255db7603c",
+      "id": "2a254c48-e73f-4b91-b40c-4feb7be598d0",
       "name": "If - decrypt url ready2",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -3200,
-        5152
+        -6912,
+        9328
       ]
     },
     {
@@ -696,13 +696,13 @@
           "timeout": 60000
         }
       },
-      "id": "a7fbcd55-683f-4e04-89d4-8ce52a5f0e47",
+      "id": "378c2707-e101-41a3-a796-c26fe4200861",
       "name": "HTTP - download decrypted media2",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -2960,
-        5072
+        -6672,
+        9248
       ],
       "onError": "continueRegularOutput"
     },
@@ -713,13 +713,13 @@
         "fileName": "={{ $('Code - prepare storage & decrypt2').item.json.storage_path }}",
         "additionalFields": {}
       },
-      "id": "dbfa8851-f3ac-40c4-bfee-6a8ea972bb4b",
+      "id": "1693741c-7107-470a-a18f-232fb1198ca1",
       "name": "S3 - upload to Supabase action-now2",
       "type": "n8n-nodes-base.s3",
       "typeVersion": 1,
       "position": [
-        -2720,
-        5072
+        -6432,
+        9248
       ],
       "credentials": {
         "s3": {
@@ -737,13 +737,13 @@
           "queryReplacement": "={{ [$('Code - prepare storage & decrypt2').item.json.storage_path, 'https://edqhawzttjqhpfflzprb.supabase.co/storage/v1/object/action-now/' + $('Code - prepare storage & decrypt2').item.json.storage_path, $('Code - prepare storage & decrypt2').item.json.message_id] }}"
         }
       },
-      "id": "f2a1b60a-33d0-4de8-b0cf-eb615a636d73",
+      "id": "f37e4ae5-c1ca-4bb3-ba5a-ebd9a8942659",
       "name": "Postgres - update storage path2",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -2480,
-        5072
+        -6192,
+        9248
       ],
       "credentials": {
         "postgres": {
@@ -757,13 +757,13 @@
       "parameters": {
         "jsCode": "const storage = $('Code - prepare storage & decrypt2').first().json;\nconst mediaRow = $('Postgres - upsert whatsapp_message_media2').first().json;\nconst mediaId = mediaRow?.id;\n\nif (!mediaId) {\n  return [];\n}\n\nconst types = storage.interpretation_types ?? [];\n\nreturn types.map((interpretation_type) => ({\n  json: {\n    media_id: mediaId,\n    message_id: storage.message_id,\n    owner_email: storage.owner_email,\n    owner_phone_num: storage.owner_phone_num,\n    interpretation_type,\n    status: 'pending',\n    media_kind: storage.media_kind,\n    storage_path: storage.storage_path,\n  },\n}));"
       },
-      "id": "94303f21-762e-4774-9bc8-88f05da7cbbb",
+      "id": "918e0b00-727c-40a5-9ac2-ac7f2c6207a1",
       "name": "Code - queue interpretation jobs2",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -224,
-        5072
+        -3936,
+        9248
       ]
     },
     {
@@ -774,13 +774,13 @@
           "queryReplacement": "={{ [$json.media_id, $json.message_id, $json.owner_email, $json.owner_phone_num, $json.interpretation_type] }}"
         }
       },
-      "id": "6658fe6f-bc7c-4f37-8229-2e6163097952",
+      "id": "b9d48253-33a8-4272-b778-9647f7b9c454",
       "name": "Postgres - insert interpretation pending2",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        16,
-        5072
+        -3696,
+        9248
       ],
       "credentials": {
         "postgres": {
@@ -834,13 +834,13 @@
         },
         "options": {}
       },
-      "id": "1380e39c-8a8c-4fe2-88f8-6660a25b6343",
+      "id": "e589c639-0582-46a3-b945-5caecd5c9d60",
       "name": "Set - saved response3",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -1280,
-        5312
+        -4992,
+        9488
       ]
     },
     {
@@ -849,27 +849,27 @@
         "responseBody": "={{ $json }}",
         "options": {}
       },
-      "id": "9d494f17-dc5b-42e0-88a3-d5da48c9a7bf",
+      "id": "b8df4563-68bb-4850-86c4-d876aabb1ede",
       "name": "Respond to Webhook9",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        -1040,
-        5520
+        -4752,
+        9696
       ]
     },
     {
       "parameters": {
-        "jsCode": "const INSIGHT_LABELS = {\n  'competitor-intelligence': 'Competitor Intelligence — competitor mentions, product updates, service rollouts.',\n  'project-status-bottlenecks': 'Project Status & Bottlenecks — progress, delays, milestones, blockers.',\n  'financial-risk-opportunity': 'Financial Risk & Opportunity — cost overruns, investment risks, budget impact.',\n  'compliance-safety-risk': 'Compliance & Safety — safety protocols, regulatory references, violations.',\n};\nfunction normalizeMethod(value) {\n  const m = String(value ?? 'keyword').trim().toLowerCase();\n  if (m === 'instructions') return 'instructions';\n  if (m === 'common-insights') return 'common-insights';\n  return 'keyword';\n}\nfunction buildMonitoringCriteria(cfg) {\n  const method = normalizeMethod(cfg.preferred_method ?? cfg.preferredMethod);\n  const keywords = [].concat(cfg.keywords ?? cfg.what_content_keywords ?? []).map((k) => String(k).trim()).filter(Boolean);\n  const insights = [].concat(cfg.insights_suboptions ?? cfg.suboptions ?? []).map((k) => String(k).trim()).filter(Boolean);\n  const instructions = String(cfg.prompt_instructions_template ?? '').trim();\n  if (method === 'instructions' && instructions) {\n    return {\n      method,\n      criteriaLabel: 'Monitoring instructions',\n      criteriaText: instructions,\n      scoreGuidance: 'Score 0–100 by how well the messages match the owner monitoring instructions (100 = strong match).',\n      reportFocus: 'Include only content that matches the owner monitoring instructions.',\n    };\n  }\n  if (method === 'common-insights' && insights.length) {\n    const lines = insights.map((id) => INSIGHT_LABELS[id] ?? id);\n    return {\n      method,\n      criteriaLabel: 'Common summary insights',\n      criteriaText: lines.map((l) => '- ' + l).join('\\n'),\n      scoreGuidance: 'Score 0–100 by relevance to ANY selected insight category below (100 = highly relevant).',\n      reportFocus: 'Group findings by the selected insight categories where possible.',\n    };\n  }\n  const kw = keywords.join(', ') || 'none specified';\n  return {\n    method: 'keyword',\n    criteriaLabel: 'Watch keywords',\n    criteriaText: kw,\n    scoreGuidance: 'Scoring: 100 = nearly all messages relate to keywords/topic; 0 = none relate.',\n    reportFocus: 'Only include messages matching keywords or the monitor topic.',\n  };\n}\nfunction criteriaSnapshotForLog(cfg) {\n  const c = buildMonitoringCriteria(cfg);\n  if (c.method === 'keyword') {\n    return [].concat(cfg.keywords ?? cfg.what_content_keywords ?? []).map((k) => String(k).trim()).filter(Boolean);\n  }\n  if (c.method === 'common-insights') {\n    return [].concat(cfg.insights_suboptions ?? cfg.suboptions ?? []).map((k) => String(k).trim()).filter(Boolean);\n  }\n  const instr = String(cfg.prompt_instructions_template ?? '').trim();\n  return instr ? [instr.slice(0, 200)] : [];\n}\nfunction resolveSourceStamp(parsed) {\n  const existing = String(parsed?.source_stamp ?? '').trim();\n  if (existing) return existing;\n  const jid = String(parsed?.source_chat_jid ?? parsed?.chat_jid ?? '').trim() || 'unknown';\n  if (!parsed?.is_group) return `[SOURCE: DM | ${jid}]`;\n  const subject = String(parsed?.source_group_name ?? '').trim() || jid;\n  const desc = String(parsed?.source_group_desc ?? '').trim();\n  let stamp = `[SOURCE: ${subject} | ${jid}]`;\n  if (desc) {\n    const shortDesc = desc.length > 200 ? desc.slice(0, 197) + '...' : desc;\n    stamp += '\\nDesc: ' + shortDesc;\n  }\n  return stamp;\n}\n\nfunction stampContent(content, stamp) {\n  const text = String(content ?? '').trim();\n  if (!stamp) return text || null;\n  if (!text) return stamp;\n  if (text.startsWith('[SOURCE:')) return text;\n  return stamp + '\\n' + text;\n}\n\nfunction buildMediaMonitorPrompt(monitor, ownerEmail, monitorName, contentTypes, caption, mediaKind, sourceStamp) {\n  const criteria = buildMonitoringCriteria(monitor);\n  const source = String(sourceStamp ?? '').trim() || 'unknown';\n  const header = 'You are an expert alert manager for \"' + monitorName + '\" (owner: ' + ownerEmail + ').\\n'\n    + 'Monitoring mode: ' + criteria.method + '.\\n'\n    + criteria.criteriaLabel + ':\\n' + criteria.criteriaText + '\\n'\n    + 'Content types of interest: ' + contentTypes + '.\\n'\n    + 'Message source (include this exact stamp in your output): ' + source + '\\n'\n    + 'WhatsApp caption/context: ' + (caption || 'n/a') + '\\n';\n  if (mediaKind === 'image') {\n    return header + '\\nAnalyze this WhatsApp image. Be vividly specific. Return plain text with sections:\\nSCENE: what is shown\\nTEXT: visible text (OCR)\\nALERTS: issues matching the monitoring criteria above';\n  }\n  return header + '\\nReturn plain text with sections:\\nSUMMARY: main points\\nKEY TEXT: names, dates, amounts\\nALERTS: items matching the monitoring criteria above';\n}\n\nconst storage = $('Code - prepare storage & decrypt2').first().json;\nconst parsed = $('Code - parse message & media type3').first().json;\nconst monitor = parsed.monitor_settings ?? $('Postgres - get monitor settings for owner3').first()?.json ?? {};\nconst item = $input.first();\n\nif (!item.binary?.data) {\n  return [{ json: { skipped: true, reason: 'No image binary on item — check HTTP download outputPropertyName=data' } }];\n}\n\nconst monitorName = monitor.monitor_name ?? 'monitoring';\nconst contentTypes = (monitor.what_content_types ?? []).filter(Boolean).join(', ') || 'all';\nconst sourceStamp = resolveSourceStamp(parsed);\nconst caption = parsed.message_body ?? '';\nconst llm_prompt = buildMediaMonitorPrompt(monitor, storage.owner_email, monitorName, contentTypes, caption, 'image', sourceStamp);\n\nreturn [{\n  json: {\n    message_id: storage.message_id,\n    owner_email: storage.owner_email,\n    owner_phone_num: storage.owner_phone_num,\n    model_name: 'google/gemini-2.5-flash-preview',\n    llm_prompt,\n    preferred_method: normalizeMethod(monitor.preferred_method),\n  },\n  binary: item.binary,\n}];"
+        "jsCode": "const INSIGHT_LABELS = {\n  'competitor-intelligence': 'Competitor Intelligence — competitor mentions, product updates, service rollouts.',\n  'project-status-bottlenecks': 'Project Status & Bottlenecks — progress, delays, milestones, blockers.',\n  'financial-risk-opportunity': 'Financial Risk & Opportunity — cost overruns, investment risks, budget impact.',\n  'compliance-safety-risk': 'Compliance & Safety — safety protocols, regulatory references, violations.',\n};\nfunction normalizeMethod(value) {\n  const m = String(value ?? 'keyword').trim().toLowerCase();\n  if (m === 'instructions') return 'instructions';\n  if (m === 'common-insights') return 'common-insights';\n  return 'keyword';\n}\nfunction buildMonitoringCriteria(cfg) {\n  const method = normalizeMethod(cfg.preferred_method ?? cfg.preferredMethod);\n  const keywords = [].concat(cfg.keywords ?? cfg.what_content_keywords ?? []).map((k) => String(k).trim()).filter(Boolean);\n  const insights = [].concat(cfg.insights_suboptions ?? cfg.suboptions ?? []).map((k) => String(k).trim()).filter(Boolean);\n  const instructions = String(cfg.prompt_instructions_template ?? '').trim();\n  if (method === 'instructions' && instructions) {\n    return {\n      method,\n      criteriaLabel: 'Monitoring instructions',\n      criteriaText: instructions,\n      scoreGuidance: 'Score 0–100 by how well the messages match the owner monitoring instructions (100 = strong match).',\n      reportFocus: 'Include only content that matches the owner monitoring instructions.',\n    };\n  }\n  if (method === 'common-insights' && insights.length) {\n    const lines = insights.map((id) => INSIGHT_LABELS[id] ?? id);\n    return {\n      method,\n      criteriaLabel: 'Common summary insights',\n      criteriaText: lines.map((l) => '- ' + l).join('\\n'),\n      scoreGuidance: 'Score 0–100 by relevance to ANY selected insight category below (100 = highly relevant).',\n      reportFocus: 'Group findings by the selected insight categories where possible.',\n    };\n  }\n  const kw = keywords.join(', ') || 'none specified';\n  return {\n    method: 'keyword',\n    criteriaLabel: 'Watch keywords',\n    criteriaText: kw,\n    scoreGuidance: 'Scoring: 100 = nearly all messages relate to keywords/topic; 0 = none relate.',\n    reportFocus: 'Only include messages matching keywords or the monitor topic.',\n  };\n}\nfunction criteriaSnapshotForLog(cfg) {\n  const c = buildMonitoringCriteria(cfg);\n  if (c.method === 'keyword') {\n    return [].concat(cfg.keywords ?? cfg.what_content_keywords ?? []).map((k) => String(k).trim()).filter(Boolean);\n  }\n  if (c.method === 'common-insights') {\n    return [].concat(cfg.insights_suboptions ?? cfg.suboptions ?? []).map((k) => String(k).trim()).filter(Boolean);\n  }\n  const instr = String(cfg.prompt_instructions_template ?? '').trim();\n  return instr ? [instr.slice(0, 200)] : [];\n}\nfunction resolveSourceStamp(parsed) {\n  const existing = String(parsed?.source_stamp ?? '').trim();\n  if (existing) return existing;\n  const jid = String(parsed?.source_chat_jid ?? parsed?.chat_jid ?? '').trim() || 'unknown';\n  if (!parsed?.is_group) return `[SOURCE: DM | ${jid}]`;\n  const subject = String(parsed?.source_group_name ?? '').trim() || jid;\n  const desc = String(parsed?.source_group_desc ?? '').trim();\n  if (desc) return `[SOURCE: ${subject} | ${desc} | ${jid}]`;\n  return `[SOURCE: ${subject} | ${jid}]`;\n}\n\nfunction stampContent(content, stamp) {\n  const text = String(content ?? '').trim();\n  if (!stamp) return text || null;\n  if (!text) return stamp;\n  if (text.startsWith('[SOURCE:')) return text;\n  return stamp + '\\n' + text;\n}\n\nfunction buildMediaMonitorPrompt(monitor, ownerEmail, monitorName, contentTypes, caption, mediaKind, sourceStamp) {\n  const criteria = buildMonitoringCriteria(monitor);\n  const source = String(sourceStamp ?? '').trim() || 'unknown';\n  const header = 'You are an expert alert manager for \"' + monitorName + '\" (owner: ' + ownerEmail + ').\\n'\n    + 'Monitoring mode: ' + criteria.method + '.\\n'\n    + criteria.criteriaLabel + ':\\n' + criteria.criteriaText + '\\n'\n    + 'Content types of interest: ' + contentTypes + '.\\n'\n    + 'Message source (include this exact stamp in your output): ' + source + '\\n'\n    + 'WhatsApp caption/context: ' + (caption || 'n/a') + '\\n';\n  if (mediaKind === 'image') {\n    return header + '\\nAnalyze this WhatsApp image. Be vividly specific. Return plain text with sections:\\nSCENE: what is shown\\nTEXT: visible text (OCR)\\nALERTS: issues matching the monitoring criteria above';\n  }\n  return header + '\\nReturn plain text with sections:\\nSUMMARY: main points\\nKEY TEXT: names, dates, amounts\\nALERTS: items matching the monitoring criteria above';\n}\n\nconst storage = $('Code - prepare storage & decrypt2').first().json;\nconst parsed = $('Code - parse message & media type3').first().json;\nconst monitor = parsed.monitor_settings ?? $('Postgres - get monitor settings for owner3').first()?.json ?? {};\nconst item = $input.first();\n\nif (!item.binary?.data) {\n  return [{ json: { skipped: true, reason: 'No image binary on item — check HTTP download outputPropertyName=data' } }];\n}\n\nconst monitorName = monitor.monitor_name ?? 'monitoring';\nconst contentTypes = (monitor.what_content_types ?? []).filter(Boolean).join(', ') || 'all';\nconst sourceStamp = resolveSourceStamp(parsed);\nconst caption = parsed.message_body ?? '';\nconst llm_prompt = buildMediaMonitorPrompt(monitor, storage.owner_email, monitorName, contentTypes, caption, 'image', sourceStamp);\n\nreturn [{\n  json: {\n    message_id: storage.message_id,\n    owner_email: storage.owner_email,\n    owner_phone_num: storage.owner_phone_num,\n    model_name: 'google/gemini-2.5-flash-preview',\n    llm_prompt,\n    preferred_method: normalizeMethod(monitor.preferred_method),\n  },\n  binary: item.binary,\n}];"
       },
       "name": "Code - pass image binary to LLM2",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2512,
-        5648
+        -6224,
+        9824
       ],
-      "id": "bfeb8068-6642-4072-ad6b-7d9d180c97f0"
+      "id": "04a02c97-e95e-4a5f-b75d-afcbf33af24f"
     },
     {
       "parameters": {
@@ -880,10 +880,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
-        -2320,
-        5808
+        -6032,
+        9984
       ],
-      "id": "620050b4-3d28-40d1-85f5-2f29d717ba9d",
+      "id": "a7684f3b-0a74-4c42-abbe-7b1d29d86dc2",
       "credentials": {
         "openRouterApi": {
           "id": "nAlpBNfBlWL7VyhH",
@@ -909,35 +909,35 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.6,
       "position": [
-        -2320,
-        5632
+        -6032,
+        9808
       ],
-      "id": "5072506b-6a9e-44f4-a7bd-30030dfa819e"
+      "id": "febeebce-562e-4be9-8780-c054e415ae99"
     },
     {
       "parameters": {
-        "jsCode": "const prep = $('Code - pass image binary to LLM2').first().json;\nconst parsed = $('Code - parse message & media type3').first().json;\nconst res = $input.first().json;\n\nfunction resolveSourceStamp(parsed) {\n  const existing = String(parsed?.source_stamp ?? '').trim();\n  if (existing) return existing;\n  const jid = String(parsed?.source_chat_jid ?? parsed?.chat_jid ?? '').trim() || 'unknown';\n  if (!parsed?.is_group) return `[SOURCE: DM | ${jid}]`;\n  const subject = String(parsed?.source_group_name ?? '').trim() || jid;\n  const desc = String(parsed?.source_group_desc ?? '').trim();\n  let stamp = `[SOURCE: ${subject} | ${jid}]`;\n  if (desc) {\n    const shortDesc = desc.length > 200 ? desc.slice(0, 197) + '...' : desc;\n    stamp += '\\nDesc: ' + shortDesc;\n  }\n  return stamp;\n}\n\nfunction stampContent(content, stamp) {\n  const text = String(content ?? '').trim();\n  if (!stamp) return text || null;\n  if (!text) return stamp;\n  if (text.startsWith('[SOURCE:')) return text;\n  return `${stamp}\\n${text}`;\n}\n\nconst raw =\n  res.text ??\n  res.transcript ??\n  res.response ??\n  res.output ??\n  res.data?.text ??\n  res.choices?.[0]?.message?.content ??\n  '';\n\nif (!raw) {\n  return [{ json: { skipped: true, reason: 'No text returned from model', raw: res } }];\n}\n\nconst sourceStamp = resolveSourceStamp(parsed);\nconst stamped = stampContent(raw, sourceStamp);\n\nreturn [{\n  json: {\n    message_id: prep.message_id,\n    owner_email: prep.owner_email ?? parsed.owner_email,\n    owner_phone_num: prep.owner_phone_num ?? parsed.owner_phone_num,\n    content: stamped,\n    model_name: prep.model_name,\n    source_stamp: sourceStamp,\n  },\n}];"
+        "jsCode": "const prep = $('Code - pass image binary to LLM2').first().json;\nconst parsed = $('Code - parse message & media type3').first().json;\nconst res = $input.first().json;\n\nfunction resolveSourceStamp(parsed) {\n  const existing = String(parsed?.source_stamp ?? '').trim();\n  if (existing) return existing;\n  const jid = String(parsed?.source_chat_jid ?? parsed?.chat_jid ?? '').trim() || 'unknown';\n  if (!parsed?.is_group) return `[SOURCE: DM | ${jid}]`;\n  const subject = String(parsed?.source_group_name ?? '').trim() || jid;\n  const desc = String(parsed?.source_group_desc ?? '').trim();\n  if (desc) return `[SOURCE: ${subject} | ${desc} | ${jid}]`;\n  return `[SOURCE: ${subject} | ${jid}]`;\n}\n\nfunction stampContent(content, stamp) {\n  const text = String(content ?? '').trim();\n  if (!stamp) return text || null;\n  if (!text) return stamp;\n  if (text.startsWith('[SOURCE:')) return text;\n  return `${stamp}\\n${text}`;\n}\n\nconst raw =\n  res.text ??\n  res.transcript ??\n  res.response ??\n  res.output ??\n  res.data?.text ??\n  res.choices?.[0]?.message?.content ??\n  '';\n\nif (!raw) {\n  return [{ json: { skipped: true, reason: 'No text returned from model', raw: res } }];\n}\n\nconst sourceStamp = resolveSourceStamp(parsed);\nconst stamped = stampContent(raw, sourceStamp);\n\nreturn [{\n  json: {\n    message_id: prep.message_id,\n    owner_email: prep.owner_email ?? parsed.owner_email,\n    owner_phone_num: prep.owner_phone_num ?? parsed.owner_phone_num,\n    content: stamped,\n    model_name: prep.model_name,\n    source_stamp: sourceStamp,\n  },\n}];"
       },
       "name": "Code - parse image response2",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2016,
-        5632
+        -5728,
+        9808
       ],
-      "id": "78ca2496-d023-4167-8be2-22225704a7ca"
+      "id": "9b380f77-ee48-4629-a06b-e97e4ff3a169"
     },
     {
       "parameters": {
         "jsCode": "const storage = $('Code - prepare storage & decrypt2').first().json;\nconst parsed = $('Code - parse message & media type3').first().json;\nconst item = $input.first();\n\nif (!item.binary?.data) {\n  return [{ json: { skipped: true, reason: 'No document binary — check HTTP download outputPropertyName=data' } }];\n}\n\nconst mime = (storage.mime_type ?? 'application/octet-stream').toLowerCase();\nconst fileName = parsed.media_row?.file_name ?? 'document.bin';\nconst model_name = 'google/gemini-2.5-flash-preview';\n\nconst base = {\n  message_id: storage.message_id,\n  owner_email: storage.owner_email,\n  owner_phone_num: storage.owner_phone_num,\n  file_name: fileName,\n  mime_type: mime,\n  model_name,\n};\n\nconst isPlainText =\n  mime.startsWith('text/') ||\n  mime === 'application/json' ||\n  /\\.(txt|csv|md|json|log)$/i.test(fileName);\n\nif (isPlainText) {\n  const buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\n  const plain_text = buffer.toString('utf8').trim();\n  if (!plain_text) {\n    return [{ json: { ...base, skipped: true, reason: 'Text file is empty' } }];\n  }\n  return [{ json: { ...base, plain_text, needs_extract: false, source: 'utf8' } }];\n}\n\nreturn [{\n  json: { ...base, needs_extract: true, source: 'binary' },\n  binary: item.binary,\n}];"
       },
-      "id": "150c838a-7d17-4aa4-bcc0-76aa2a8a4d6e",
+      "id": "721d1952-32d5-4256-ac0f-7203804d684a",
       "name": "Code - read document text2",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2912,
-        6608
+        -6624,
+        10784
       ]
     },
     {
@@ -964,13 +964,13 @@
         },
         "options": {}
       },
-      "id": "2adab567-3752-4999-a6fe-556b34f6f1cb",
+      "id": "27a8f77b-c825-4d0d-a94c-f84c2f940fe7",
       "name": "If - needs PDF extract2",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -2672,
-        6608
+        -6384,
+        10784
       ]
     },
     {
@@ -978,26 +978,26 @@
         "operation": "pdf",
         "options": {}
       },
-      "id": "10787b48-e294-4e6f-addb-1f11d8bb89c9",
+      "id": "cf9f2a40-b9c5-407e-9343-cd0edbb5773f",
       "name": "Extract From File - document2",
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1,
       "position": [
-        -2432,
-        6512
+        -6144,
+        10688
       ]
     },
     {
       "parameters": {
-        "jsCode": "const INSIGHT_LABELS = {\n  'competitor-intelligence': 'Competitor Intelligence — competitor mentions, product updates, service rollouts.',\n  'project-status-bottlenecks': 'Project Status & Bottlenecks — progress, delays, milestones, blockers.',\n  'financial-risk-opportunity': 'Financial Risk & Opportunity — cost overruns, investment risks, budget impact.',\n  'compliance-safety-risk': 'Compliance & Safety — safety protocols, regulatory references, violations.',\n};\nfunction normalizeMethod(value) {\n  const m = String(value ?? 'keyword').trim().toLowerCase();\n  if (m === 'instructions') return 'instructions';\n  if (m === 'common-insights') return 'common-insights';\n  return 'keyword';\n}\nfunction buildMonitoringCriteria(cfg) {\n  const method = normalizeMethod(cfg.preferred_method ?? cfg.preferredMethod);\n  const keywords = [].concat(cfg.keywords ?? cfg.what_content_keywords ?? []).map((k) => String(k).trim()).filter(Boolean);\n  const insights = [].concat(cfg.insights_suboptions ?? cfg.suboptions ?? []).map((k) => String(k).trim()).filter(Boolean);\n  const instructions = String(cfg.prompt_instructions_template ?? '').trim();\n  if (method === 'instructions' && instructions) {\n    return {\n      method,\n      criteriaLabel: 'Monitoring instructions',\n      criteriaText: instructions,\n      scoreGuidance: 'Score 0–100 by how well the messages match the owner monitoring instructions (100 = strong match).',\n      reportFocus: 'Include only content that matches the owner monitoring instructions.',\n    };\n  }\n  if (method === 'common-insights' && insights.length) {\n    const lines = insights.map((id) => INSIGHT_LABELS[id] ?? id);\n    return {\n      method,\n      criteriaLabel: 'Common summary insights',\n      criteriaText: lines.map((l) => '- ' + l).join('\\n'),\n      scoreGuidance: 'Score 0–100 by relevance to ANY selected insight category below (100 = highly relevant).',\n      reportFocus: 'Group findings by the selected insight categories where possible.',\n    };\n  }\n  const kw = keywords.join(', ') || 'none specified';\n  return {\n    method: 'keyword',\n    criteriaLabel: 'Watch keywords',\n    criteriaText: kw,\n    scoreGuidance: 'Scoring: 100 = nearly all messages relate to keywords/topic; 0 = none relate.',\n    reportFocus: 'Only include messages matching keywords or the monitor topic.',\n  };\n}\nfunction criteriaSnapshotForLog(cfg) {\n  const c = buildMonitoringCriteria(cfg);\n  if (c.method === 'keyword') {\n    return [].concat(cfg.keywords ?? cfg.what_content_keywords ?? []).map((k) => String(k).trim()).filter(Boolean);\n  }\n  if (c.method === 'common-insights') {\n    return [].concat(cfg.insights_suboptions ?? cfg.suboptions ?? []).map((k) => String(k).trim()).filter(Boolean);\n  }\n  const instr = String(cfg.prompt_instructions_template ?? '').trim();\n  return instr ? [instr.slice(0, 200)] : [];\n}\nfunction resolveSourceStamp(parsed) {\n  const existing = String(parsed?.source_stamp ?? '').trim();\n  if (existing) return existing;\n  const jid = String(parsed?.source_chat_jid ?? parsed?.chat_jid ?? '').trim() || 'unknown';\n  if (!parsed?.is_group) return `[SOURCE: DM | ${jid}]`;\n  const subject = String(parsed?.source_group_name ?? '').trim() || jid;\n  const desc = String(parsed?.source_group_desc ?? '').trim();\n  let stamp = `[SOURCE: ${subject} | ${jid}]`;\n  if (desc) {\n    const shortDesc = desc.length > 200 ? desc.slice(0, 197) + '...' : desc;\n    stamp += '\\nDesc: ' + shortDesc;\n  }\n  return stamp;\n}\n\nfunction stampContent(content, stamp) {\n  const text = String(content ?? '').trim();\n  if (!stamp) return text || null;\n  if (!text) return stamp;\n  if (text.startsWith('[SOURCE:')) return text;\n  return stamp + '\\n' + text;\n}\n\nfunction buildMediaMonitorPrompt(monitor, ownerEmail, monitorName, contentTypes, caption, mediaKind, sourceStamp) {\n  const criteria = buildMonitoringCriteria(monitor);\n  const source = String(sourceStamp ?? '').trim() || 'unknown';\n  const header = 'You are an expert alert manager for \"' + monitorName + '\" (owner: ' + ownerEmail + ').\\n'\n    + 'Monitoring mode: ' + criteria.method + '.\\n'\n    + criteria.criteriaLabel + ':\\n' + criteria.criteriaText + '\\n'\n    + 'Content types of interest: ' + contentTypes + '.\\n'\n    + 'Message source (include this exact stamp in your output): ' + source + '\\n'\n    + 'WhatsApp caption/context: ' + (caption || 'n/a') + '\\n';\n  if (mediaKind === 'image') {\n    return header + '\\nAnalyze this WhatsApp image. Be vividly specific. Return plain text with sections:\\nSCENE: what is shown\\nTEXT: visible text (OCR)\\nALERTS: issues matching the monitoring criteria above';\n  }\n  return header + '\\nReturn plain text with sections:\\nSUMMARY: main points\\nKEY TEXT: names, dates, amounts\\nALERTS: items matching the monitoring criteria above';\n}\n\nconst reader = $('Code - read document text2').first().json;\nconst parsed = $('Code - parse message & media type3').first().json;\nconst monitor = parsed.monitor_settings ?? $('Postgres - get monitor settings for owner3').first()?.json ?? {};\nconst item = $input.first().json;\n\nlet plain_text = reader.plain_text ?? '';\nif (reader.needs_extract) {\n  plain_text = String(item.text ?? item.data ?? '').trim();\n}\nif (!plain_text) {\n  return [{\n    json: {\n      skipped: true,\n      reason: 'No text extracted — PDF may be scanned/image-only; try OpenRouter file fallback or OCR',\n      message_id: reader.message_id,\n      file_name: reader.file_name,\n    },\n  }];\n}\n\nconst monitorName = monitor.monitor_name ?? 'monitoring';\nconst contentTypes = (monitor.what_content_types ?? []).filter(Boolean).join(', ') || 'all';\nconst sourceStamp = resolveSourceStamp(parsed);\nconst caption = parsed.message_body ?? '';\nconst llm_prompt = buildMediaMonitorPrompt(monitor, reader.owner_email, monitorName, contentTypes, caption, 'document', sourceStamp)\n  + '\\n\\n--- DOCUMENT ---\\n' + stampContent(plain_text, sourceStamp);\n\nreturn [{\n  json: {\n    message_id: reader.message_id,\n    owner_email: reader.owner_email,\n    owner_phone_num: reader.owner_phone_num,\n    plain_text,\n    model_name: reader.model_name,\n    source: reader.source,\n    llm_prompt,\n    preferred_method: normalizeMethod(monitor.preferred_method),\n  },\n}];"
+        "jsCode": "const INSIGHT_LABELS = {\n  'competitor-intelligence': 'Competitor Intelligence — competitor mentions, product updates, service rollouts.',\n  'project-status-bottlenecks': 'Project Status & Bottlenecks — progress, delays, milestones, blockers.',\n  'financial-risk-opportunity': 'Financial Risk & Opportunity — cost overruns, investment risks, budget impact.',\n  'compliance-safety-risk': 'Compliance & Safety — safety protocols, regulatory references, violations.',\n};\nfunction normalizeMethod(value) {\n  const m = String(value ?? 'keyword').trim().toLowerCase();\n  if (m === 'instructions') return 'instructions';\n  if (m === 'common-insights') return 'common-insights';\n  return 'keyword';\n}\nfunction buildMonitoringCriteria(cfg) {\n  const method = normalizeMethod(cfg.preferred_method ?? cfg.preferredMethod);\n  const keywords = [].concat(cfg.keywords ?? cfg.what_content_keywords ?? []).map((k) => String(k).trim()).filter(Boolean);\n  const insights = [].concat(cfg.insights_suboptions ?? cfg.suboptions ?? []).map((k) => String(k).trim()).filter(Boolean);\n  const instructions = String(cfg.prompt_instructions_template ?? '').trim();\n  if (method === 'instructions' && instructions) {\n    return {\n      method,\n      criteriaLabel: 'Monitoring instructions',\n      criteriaText: instructions,\n      scoreGuidance: 'Score 0–100 by how well the messages match the owner monitoring instructions (100 = strong match).',\n      reportFocus: 'Include only content that matches the owner monitoring instructions.',\n    };\n  }\n  if (method === 'common-insights' && insights.length) {\n    const lines = insights.map((id) => INSIGHT_LABELS[id] ?? id);\n    return {\n      method,\n      criteriaLabel: 'Common summary insights',\n      criteriaText: lines.map((l) => '- ' + l).join('\\n'),\n      scoreGuidance: 'Score 0–100 by relevance to ANY selected insight category below (100 = highly relevant).',\n      reportFocus: 'Group findings by the selected insight categories where possible.',\n    };\n  }\n  const kw = keywords.join(', ') || 'none specified';\n  return {\n    method: 'keyword',\n    criteriaLabel: 'Watch keywords',\n    criteriaText: kw,\n    scoreGuidance: 'Scoring: 100 = nearly all messages relate to keywords/topic; 0 = none relate.',\n    reportFocus: 'Only include messages matching keywords or the monitor topic.',\n  };\n}\nfunction criteriaSnapshotForLog(cfg) {\n  const c = buildMonitoringCriteria(cfg);\n  if (c.method === 'keyword') {\n    return [].concat(cfg.keywords ?? cfg.what_content_keywords ?? []).map((k) => String(k).trim()).filter(Boolean);\n  }\n  if (c.method === 'common-insights') {\n    return [].concat(cfg.insights_suboptions ?? cfg.suboptions ?? []).map((k) => String(k).trim()).filter(Boolean);\n  }\n  const instr = String(cfg.prompt_instructions_template ?? '').trim();\n  return instr ? [instr.slice(0, 200)] : [];\n}\nfunction resolveSourceStamp(parsed) {\n  const existing = String(parsed?.source_stamp ?? '').trim();\n  if (existing) return existing;\n  const jid = String(parsed?.source_chat_jid ?? parsed?.chat_jid ?? '').trim() || 'unknown';\n  if (!parsed?.is_group) return `[SOURCE: DM | ${jid}]`;\n  const subject = String(parsed?.source_group_name ?? '').trim() || jid;\n  const desc = String(parsed?.source_group_desc ?? '').trim();\n  if (desc) return `[SOURCE: ${subject} | ${desc} | ${jid}]`;\n  return `[SOURCE: ${subject} | ${jid}]`;\n}\n\nfunction stampContent(content, stamp) {\n  const text = String(content ?? '').trim();\n  if (!stamp) return text || null;\n  if (!text) return stamp;\n  if (text.startsWith('[SOURCE:')) return text;\n  return stamp + '\\n' + text;\n}\n\nfunction buildMediaMonitorPrompt(monitor, ownerEmail, monitorName, contentTypes, caption, mediaKind, sourceStamp) {\n  const criteria = buildMonitoringCriteria(monitor);\n  const source = String(sourceStamp ?? '').trim() || 'unknown';\n  const header = 'You are an expert alert manager for \"' + monitorName + '\" (owner: ' + ownerEmail + ').\\n'\n    + 'Monitoring mode: ' + criteria.method + '.\\n'\n    + criteria.criteriaLabel + ':\\n' + criteria.criteriaText + '\\n'\n    + 'Content types of interest: ' + contentTypes + '.\\n'\n    + 'Message source (include this exact stamp in your output): ' + source + '\\n'\n    + 'WhatsApp caption/context: ' + (caption || 'n/a') + '\\n';\n  if (mediaKind === 'image') {\n    return header + '\\nAnalyze this WhatsApp image. Be vividly specific. Return plain text with sections:\\nSCENE: what is shown\\nTEXT: visible text (OCR)\\nALERTS: issues matching the monitoring criteria above';\n  }\n  return header + '\\nReturn plain text with sections:\\nSUMMARY: main points\\nKEY TEXT: names, dates, amounts\\nALERTS: items matching the monitoring criteria above';\n}\n\nconst reader = $('Code - read document text2').first().json;\nconst parsed = $('Code - parse message & media type3').first().json;\nconst monitor = parsed.monitor_settings ?? $('Postgres - get monitor settings for owner3').first()?.json ?? {};\nconst item = $input.first().json;\n\nlet plain_text = reader.plain_text ?? '';\nif (reader.needs_extract) {\n  plain_text = String(item.text ?? item.data ?? '').trim();\n}\nif (!plain_text) {\n  return [{\n    json: {\n      skipped: true,\n      reason: 'No text extracted — PDF may be scanned/image-only; try OpenRouter file fallback or OCR',\n      message_id: reader.message_id,\n      file_name: reader.file_name,\n    },\n  }];\n}\n\nconst monitorName = monitor.monitor_name ?? 'monitoring';\nconst contentTypes = (monitor.what_content_types ?? []).filter(Boolean).join(', ') || 'all';\nconst sourceStamp = resolveSourceStamp(parsed);\nconst caption = parsed.message_body ?? '';\nconst llm_prompt = buildMediaMonitorPrompt(monitor, reader.owner_email, monitorName, contentTypes, caption, 'document', sourceStamp)\n  + '\\n\\n--- DOCUMENT ---\\n' + stampContent(plain_text, sourceStamp);\n\nreturn [{\n  json: {\n    message_id: reader.message_id,\n    owner_email: reader.owner_email,\n    owner_phone_num: reader.owner_phone_num,\n    plain_text,\n    model_name: reader.model_name,\n    source: reader.source,\n    llm_prompt,\n    preferred_method: normalizeMethod(monitor.preferred_method),\n  },\n}];"
       },
-      "id": "cb2cfed4-2b21-4755-b7ba-16b1bf4b806b",
+      "id": "b8738dab-3fd4-4382-bb0c-a04e02e11710",
       "name": "Code - pass document text to LLM2",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2192,
-        6608
+        -5904,
+        10784
       ]
     },
     {
@@ -1005,13 +1005,13 @@
         "model": "google/gemini-2.5-flash",
         "options": {}
       },
-      "id": "d5d0c28e-7d33-4cba-bd3c-6b8a8e4cfd44",
+      "id": "9c4aaf13-8f56-4419-b3c6-4c394cd5c934",
       "name": "OpenRouter Chat Model (document)2",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
-        -2000,
-        6768
+        -5712,
+        10944
       ],
       "credentials": {
         "openRouterApi": {
@@ -1025,13 +1025,13 @@
         "promptType": "define",
         "text": "={{ $json.llm_prompt }}"
       },
-      "id": "8437fd18-30cc-4034-b261-522abd197a26",
+      "id": "caedf662-6aa5-49ee-9730-29ed5e97d6f4",
       "name": "Basic LLM Chain - analyze document2",
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.6,
       "position": [
-        -2000,
-        6592
+        -5712,
+        10768
       ]
     },
     {
@@ -1058,26 +1058,26 @@
         },
         "options": {}
       },
-      "id": "9f7d0ba8-eb56-47b2-af8d-1c896cb6ff3c",
+      "id": "166df6e1-cd96-4412-bf27-a29470de69af",
       "name": "If - is document2",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -3152,
-        6592
+        -6864,
+        10768
       ]
     },
     {
       "parameters": {
-        "jsCode": "const prep = $('Code - pass document text to LLM2').first().json;\nconst parsed = $('Code - parse message & media type3').first().json;\nconst res = $input.first().json;\n\nfunction resolveSourceStamp(parsed) {\n  const existing = String(parsed?.source_stamp ?? '').trim();\n  if (existing) return existing;\n  const jid = String(parsed?.source_chat_jid ?? parsed?.chat_jid ?? '').trim() || 'unknown';\n  if (!parsed?.is_group) return `[SOURCE: DM | ${jid}]`;\n  const subject = String(parsed?.source_group_name ?? '').trim() || jid;\n  const desc = String(parsed?.source_group_desc ?? '').trim();\n  let stamp = `[SOURCE: ${subject} | ${jid}]`;\n  if (desc) {\n    const shortDesc = desc.length > 200 ? desc.slice(0, 197) + '...' : desc;\n    stamp += '\\nDesc: ' + shortDesc;\n  }\n  return stamp;\n}\n\nfunction stampContent(content, stamp) {\n  const text = String(content ?? '').trim();\n  if (!stamp) return text || null;\n  if (!text) return stamp;\n  if (text.startsWith('[SOURCE:')) return text;\n  return `${stamp}\\n${text}`;\n}\n\nconst raw =\n  res.text ??\n  res.transcript ??\n  res.response ??\n  res.output ??\n  res.data?.text ??\n  res.choices?.[0]?.message?.content ??\n  '';\n\nif (!raw) {\n  return [{ json: { skipped: true, reason: 'No text returned from model', raw: res } }];\n}\n\nconst sourceStamp = resolveSourceStamp(parsed);\nconst stamped = stampContent(raw, sourceStamp);\n\nreturn [{\n  json: {\n    message_id: prep.message_id,\n    owner_email: prep.owner_email ?? parsed.owner_email,\n    owner_phone_num: prep.owner_phone_num ?? parsed.owner_phone_num,\n    content: stamped,\n    model_name: prep.model_name,\n    source_stamp: sourceStamp,\n  },\n}];"
+        "jsCode": "const prep = $('Code - pass document text to LLM2').first().json;\nconst parsed = $('Code - parse message & media type3').first().json;\nconst res = $input.first().json;\n\nfunction resolveSourceStamp(parsed) {\n  const existing = String(parsed?.source_stamp ?? '').trim();\n  if (existing) return existing;\n  const jid = String(parsed?.source_chat_jid ?? parsed?.chat_jid ?? '').trim() || 'unknown';\n  if (!parsed?.is_group) return `[SOURCE: DM | ${jid}]`;\n  const subject = String(parsed?.source_group_name ?? '').trim() || jid;\n  const desc = String(parsed?.source_group_desc ?? '').trim();\n  if (desc) return `[SOURCE: ${subject} | ${desc} | ${jid}]`;\n  return `[SOURCE: ${subject} | ${jid}]`;\n}\n\nfunction stampContent(content, stamp) {\n  const text = String(content ?? '').trim();\n  if (!stamp) return text || null;\n  if (!text) return stamp;\n  if (text.startsWith('[SOURCE:')) return text;\n  return `${stamp}\\n${text}`;\n}\n\nconst raw =\n  res.text ??\n  res.transcript ??\n  res.response ??\n  res.output ??\n  res.data?.text ??\n  res.choices?.[0]?.message?.content ??\n  '';\n\nif (!raw) {\n  return [{ json: { skipped: true, reason: 'No text returned from model', raw: res } }];\n}\n\nconst sourceStamp = resolveSourceStamp(parsed);\nconst stamped = stampContent(raw, sourceStamp);\n\nreturn [{\n  json: {\n    message_id: prep.message_id,\n    owner_email: prep.owner_email ?? parsed.owner_email,\n    owner_phone_num: prep.owner_phone_num ?? parsed.owner_phone_num,\n    content: stamped,\n    model_name: prep.model_name,\n    source_stamp: sourceStamp,\n  },\n}];"
       },
-      "id": "ebb1cb01-a31b-45cc-8318-b3284f0acdc3",
+      "id": "776e9b1c-9685-4386-9b04-9a18a4f06467",
       "name": "Code - parse document response2",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1728,
-        6592
+        -5440,
+        10768
       ]
     },
     {
@@ -1088,13 +1088,13 @@
           "queryReplacement": "={{ [$json.content, $json.model_name, $json.message_id] }}"
         }
       },
-      "id": "4d7c4bb7-2ada-4c52-aa6d-2ced82d64d75",
+      "id": "42c748bc-ade4-4f56-a015-fa760f3f251c",
       "name": "Postgres - save document interpretation2",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -1520,
-        6592
+        -5232,
+        10768
       ],
       "credentials": {
         "postgres": {
@@ -1112,11 +1112,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        -3152,
-        6480
+        -6864,
+        10656
       ],
       "typeVersion": 1,
-      "id": "d18d1657-aec6-4171-a0cb-68c972936478",
+      "id": "6abc1264-79cf-4b2d-a763-957e5d09b3b6",
       "name": "Sticky Note11"
     },
     {
@@ -1127,11 +1127,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        -2832,
-        5728
+        -6544,
+        9904
       ],
       "typeVersion": 1,
-      "id": "0b8ed058-9551-4d8b-a994-9adf2035573a",
+      "id": "58a8d8ef-9ed5-4b72-9b23-7bb2d158a46c",
       "name": "Sticky Note12"
     },
     {
@@ -1142,11 +1142,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        -2720,
-        5280
+        -6432,
+        9456
       ],
       "typeVersion": 1,
-      "id": "78876b56-3773-4741-918e-3f9f8ffc9bd8",
+      "id": "8073b006-fc6f-47de-8cd8-947e2d7e1824",
       "name": "Sticky Note13"
     },
     {
@@ -1157,11 +1157,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        -2752,
-        4976
+        -6464,
+        9152
       ],
       "typeVersion": 1,
-      "id": "78a81e4d-9e13-4dbb-8fe9-a2c1ae22d516",
+      "id": "d8a960ee-ad08-4609-ab35-c8ef0827419a",
       "name": "Sticky Note14"
     },
     {
@@ -1172,11 +1172,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        -5168,
-        5104
+        -8880,
+        9280
       ],
       "typeVersion": 1,
-      "id": "f5ac9726-9fed-4fc7-b7d6-037d794005de",
+      "id": "e2da3549-e0ad-4da8-8558-145429a5ad3c",
       "name": "Sticky Note15"
     },
     {
@@ -1184,10 +1184,10 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -2592,
-        5504
+        -6304,
+        9680
       ],
-      "id": "fd230a9f-7091-4440-95a4-f93a1fc53353",
+      "id": "88d05990-27db-4fcc-99ce-d2bc8269886f",
       "name": "No Operation, do nothing"
     },
     {
@@ -1195,10 +1195,10 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -2832,
-        6912
+        -6544,
+        11088
       ],
-      "id": "aedcce99-2a22-4738-a55f-ace08e3fe458",
+      "id": "b14c927a-c9ff-4375-b4d1-9074d296a19b",
       "name": "No Operation, do nothing1"
     }
   ],
