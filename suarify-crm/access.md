@@ -11,21 +11,24 @@
 | **SSH User** | `root` |
 | **SSH Port** | `22` |
 | **OS** | Debian 13 (trixie) |
-| **URL** | `http://crm.suarify.my` |
+| **URL** | `https://crm.suarify.my` |
 | **Server Config Path** | `/opt/twenty/` |
 
 ## Twenty CRM
 
 | Variable | Value |
 |----------|-------|
-| **SERVER_URL** | `http://crm.suarify.my` |
+| **SERVER_URL** | `https://crm.suarify.my` |
 | **PG_DATABASE_PASSWORD** | `emKJlyqBhcRcNQzDMckh` |
 | **ENCRYPTION_KEY** | `MNTulImNrBg1xMwCA73Xs6GD8T9K5Du/w4ZRFGS+NPM=` |
 | **TAG** | `latest` |
 | **STORAGE_TYPE** | `local` |
 | **Internal Port** | `3001` (host) → `3000` (container) |
+| **HTTPS** | ✅ Let's Encrypt via Caddy (auto-managed) |
 
 > **Do not lose `ENCRYPTION_KEY`** — losing it means losing access to all OAuth tokens, application variables, TOTP secrets, and sensitive config stored in the database.
+
+> **Changing env vars:** after editing `.env`, use `docker compose up -d --force-recreate server worker` (NOT `restart`) so the containers pick up the new values.
 
 ## Container Stack
 
@@ -44,7 +47,7 @@ All files located at `/opt/twenty/`:
 
 ## Reverse Proxy (Caddy)
 
-Caddy routes `crm.suarify.my:80` → `127.0.0.1:3001`
+Caddy routes `crm.suarify.my` → `127.0.0.1:3001` with automatic HTTPS (Let's Encrypt cert).
 
 Config: `/etc/caddy/Caddyfile`
 
