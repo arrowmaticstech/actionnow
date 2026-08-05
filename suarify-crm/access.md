@@ -1,14 +1,18 @@
 # Twenty CRM - Access & Configuration
 
+> **NOTE:** The SSH connection and reverse proxy were set up via the NAT IP `72.60.104.84` (which forwards to this server), but the server's real public IP is `76.13.214.174`. Use `76.13.214.174` for DNS records.
+
 ## Server
 
 | Key | Value |
 |-----|-------|
-| **Host** | `72.60.104.84` |
+| **Host** | `76.13.214.174` (real IP) |
+| **NAT SSH Host** | `72.60.104.84` |
 | **SSH User** | `root` |
 | **SSH Port** | `22` |
 | **OS** | Debian 13 (trixie) |
 | **URL** | `http://crm.suarify.my` |
+| **Server Config Path** | `/opt/twenty/` |
 
 ## Twenty CRM
 
@@ -48,11 +52,13 @@ Config: `/etc/caddy/Caddyfile`
 
 Port `3001` added to both `INPUT` (line 3) and `DOCKER-USER` (line 1) iptables chains. Rules persisted via `iptables-persistent`.
 
-## DNS (Cloudflare)
+## DNS (Netlify)
 
 | Type | Name | Content |
 |------|------|---------|
-| A | `crm` | `72.60.104.84` |
+| A | `crm` | `76.13.214.174` |
+
+> **IMPORTANT:** The IP must be `76.13.214.174` (the server's real public IP). The old IP `72.60.104.84` hits a different service (returns 308 redirect) and is NOT this server.
 
 ## Useful Commands
 
