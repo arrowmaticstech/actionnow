@@ -1,0 +1,122 @@
+import { defineObject, FieldType } from 'twenty-sdk/define';
+
+import {
+  QUOTE_TEMPLATE_BODY_FIELD_UNIVERSAL_IDENTIFIER,
+  QUOTE_TEMPLATE_COMPANY_ADDRESS_FIELD_UNIVERSAL_IDENTIFIER,
+  QUOTE_TEMPLATE_COMPANY_EMAIL_FIELD_UNIVERSAL_IDENTIFIER,
+  QUOTE_TEMPLATE_COMPANY_NAME_FIELD_UNIVERSAL_IDENTIFIER,
+  QUOTE_TEMPLATE_COMPANY_PHONE_FIELD_UNIVERSAL_IDENTIFIER,
+  QUOTE_TEMPLATE_FOOTER_FIELD_UNIVERSAL_IDENTIFIER,
+  QUOTE_TEMPLATE_LOGO_FIELD_UNIVERSAL_IDENTIFIER,
+  QUOTE_TEMPLATE_NAME_FIELD_UNIVERSAL_IDENTIFIER,
+  QUOTE_TEMPLATE_OBJECT_UNIVERSAL_IDENTIFIER,
+  QUOTE_TEMPLATE_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
+  QUOTE_TEMPLATE_TYPE_INVOICE,
+  QUOTE_TEMPLATE_TYPE_OPTION_INVOICE_UNIVERSAL_IDENTIFIER,
+  QUOTE_TEMPLATE_TYPE_OPTION_QUOTE_UNIVERSAL_IDENTIFIER,
+  QUOTE_TEMPLATE_TYPE_QUOTE,
+} from 'src/constants/universal-identifiers';
+
+export default defineObject({
+  universalIdentifier: QUOTE_TEMPLATE_OBJECT_UNIVERSAL_IDENTIFIER,
+  nameSingular: 'quoteTemplate',
+  namePlural: 'quoteTemplates',
+  labelSingular: 'Quote/Invoice template',
+  labelPlural: 'Quote/Invoice templates',
+  description:
+    'A reusable quote or invoice layout: your company info, a {{placeholder}} body, and a footer.',
+  icon: 'IconFileText',
+  labelIdentifierFieldMetadataUniversalIdentifier:
+    QUOTE_TEMPLATE_NAME_FIELD_UNIVERSAL_IDENTIFIER,
+  fields: [
+    {
+      universalIdentifier: QUOTE_TEMPLATE_NAME_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'name',
+      label: 'Name',
+      description: 'Template name, e.g. "Standard Quote" or "Monthly Invoice".',
+      icon: 'IconAbc',
+    },
+    {
+      universalIdentifier: QUOTE_TEMPLATE_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.SELECT,
+      name: 'documentType',
+      label: 'Type',
+      description: 'Whether this template produces a Quote or an Invoice.',
+      icon: 'IconTarget',
+      defaultValue: `'${QUOTE_TEMPLATE_TYPE_QUOTE}'`,
+      options: [
+        {
+          id: QUOTE_TEMPLATE_TYPE_OPTION_QUOTE_UNIVERSAL_IDENTIFIER,
+          value: QUOTE_TEMPLATE_TYPE_QUOTE,
+          label: 'Quote',
+          color: 'blue',
+          position: 0,
+        },
+        {
+          id: QUOTE_TEMPLATE_TYPE_OPTION_INVOICE_UNIVERSAL_IDENTIFIER,
+          value: QUOTE_TEMPLATE_TYPE_INVOICE,
+          label: 'Invoice',
+          color: 'green',
+          position: 1,
+        },
+      ],
+    },
+    {
+      universalIdentifier: QUOTE_TEMPLATE_COMPANY_NAME_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'companyName',
+      label: 'Your company name',
+      description: 'Shown in the document header.',
+      icon: 'IconBuildingSkyscraper',
+    },
+    {
+      universalIdentifier: QUOTE_TEMPLATE_COMPANY_ADDRESS_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'companyAddress',
+      label: 'Your company address',
+      description: 'Shown in the document header.',
+      icon: 'IconMap',
+    },
+    {
+      universalIdentifier: QUOTE_TEMPLATE_COMPANY_EMAIL_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'companyEmail',
+      label: 'Your company email',
+      icon: 'IconMail',
+    },
+    {
+      universalIdentifier: QUOTE_TEMPLATE_COMPANY_PHONE_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'companyPhone',
+      label: 'Your company phone',
+      icon: 'IconPhone',
+    },
+    {
+      universalIdentifier: QUOTE_TEMPLATE_LOGO_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.FILES,
+      name: 'logo',
+      label: 'Logo',
+      description: 'Optional logo shown in the document header.',
+      icon: 'IconPhoto',
+      universalSettings: { maxNumberOfValues: 1 },
+    },
+    {
+      universalIdentifier: QUOTE_TEMPLATE_BODY_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.RICH_TEXT,
+      name: 'body',
+      label: 'Body',
+      description:
+        'Template body. Type {{placeholders}} such as {{company.name}} or {{customer.name.firstName}}. The line-items table is added automatically on generation.',
+      icon: 'IconFileText',
+    },
+    {
+      universalIdentifier: QUOTE_TEMPLATE_FOOTER_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'footer',
+      label: 'Footer',
+      description: 'Small print at the bottom of the document.',
+      icon: 'IconText',
+    },
+  ],
+});
