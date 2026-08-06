@@ -11,7 +11,7 @@
   "packageManager": "yarn@4.13.0",
   "scripts": {
     "twenty": "twenty",
-    "postinstall": "node scripts/patch-sdk.js",
+    "postinstall": "node -e \"if(process.platform==='win32'){try{require('./scripts/patch-sdk.js')}catch(e){console.log('patch skipped:',e.message)}}\"",
     "lint": "oxlint -c .oxlintrc.json .",
     "lint:fix": "oxlint --fix -c .oxlintrc.json .",
     "typecheck": "tsgo --noEmit -p tsconfig.spec.json",
