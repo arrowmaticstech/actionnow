@@ -3,6 +3,7 @@ import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import { Response } from 'twenty-sdk/logic-function';
 
 import { VIEW_QUOTE_DOCUMENT_ROUTE_UNIVERSAL_IDENTIFIER } from 'src/constants/universal-identifiers';
+import { resolveAccentColor } from 'src/logic-functions/utils/accent-color';
 import { documentHtmlPage } from 'src/utils/render-document';
 
 const htmlResponse = (html: string, status = 200): Response =>
@@ -30,7 +31,7 @@ const handler = async (event: RoutePayload): Promise<Response> => {
     quoteDocuments: {
       __args: { filter: { id: { eq: documentId } }, first: 1 },
       edges: {
-        node: { id: true, name: true, content: true },
+        node: { id: true, name: true, content: true, accentColor: true },
       },
     },
   });
@@ -45,7 +46,11 @@ const handler = async (event: RoutePayload): Promise<Response> => {
   }
 
   return htmlResponse(
-    documentHtmlPage(document.name ?? 'Quote/Invoice', document.content ?? ''),
+    documentHtmlPage(
+      document.name ?? 'Quote/Invoice',
+      document.content ?? '',
+      resolveAccentColor(document.accentColor),
+    ),
   );
 };
 

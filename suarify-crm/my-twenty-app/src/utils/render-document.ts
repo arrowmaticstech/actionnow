@@ -31,7 +31,7 @@ markdown.use({
 export const documentContentToHtml = (content: string): string =>
   markdown.parse(content) as string;
 
-export const DOCUMENT_PAPER_CSS = `
+export const DOCUMENT_PAPER_CSS = (accent = '#1961ed'): string => `
   .doc-paper {
     color: #1f2430;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;
@@ -49,12 +49,19 @@ export const DOCUMENT_PAPER_CSS = `
   .doc-body p { margin: 0 0 16px; }
   .doc-body ul, .doc-body ol { margin: 0 0 16px; padding-left: 24px; }
   .doc-body li { margin: 4px 0; }
-  .doc-body a { color: #1961ed; text-decoration: none; }
+  .doc-body a { color: ${accent}; text-decoration: none; }
   .doc-body a:hover { text-decoration: underline; }
   .doc-body blockquote {
-    margin: 16px 0; padding: 4px 20px; border-left: 3px solid #1961ed;
+    margin: 16px 0; padding: 4px 20px; border-left: 3px solid ${accent};
     color: #47506a; background: #f6f8fd;
   }
+  .doc-body table {
+    border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 13px;
+  }
+  .doc-body th, .doc-body td {
+    border: 1px solid #e6e9f2; padding: 8px 12px; text-align: left;
+  }
+  .doc-body th { background: ${accent}14; color: #10152a; }
   .doc-body code {
     font-family: 'SFMono-Regular', Menlo, monospace; font-size: 0.9em;
     background: #f1f3f9; padding: 2px 6px; border-radius: 4px;
@@ -66,7 +73,7 @@ export const DOCUMENT_PAPER_CSS = `
   }
 `;
 
-export const documentPaperHtml = (content: string): string =>
+export const documentPaperHtml = (content: string, accent?: string): string =>
   `<article class="doc-paper">
       <div class="doc-body">
         ${documentContentToHtml(content)}
@@ -82,15 +89,15 @@ const PAGE_BODY_CSS = `
   }
 `;
 
-export const documentHtmlPage = (title: string, content: string): string => `<!doctype html>
+export const documentHtmlPage = (title: string, content: string, accent?: string): string => `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${escapeHtml(title)}</title>
-    <style>${PAGE_BODY_CSS}${DOCUMENT_PAPER_CSS}</style>
+    <style>${PAGE_BODY_CSS}${DOCUMENT_PAPER_CSS(accent)}</style>
   </head>
   <body>
-    ${documentPaperHtml(content)}
+    ${documentPaperHtml(content, accent)}
   </body>
 </html>`;

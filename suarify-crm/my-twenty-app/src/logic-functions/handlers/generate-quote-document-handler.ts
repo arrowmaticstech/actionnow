@@ -7,6 +7,7 @@ import {
   QUOTE_TEMPLATE_TYPE_INVOICE,
 } from 'src/constants/universal-identifiers';
 import { generateDocumentPdf } from 'src/logic-functions/utils/generate-document-pdf';
+import { resolveAccentColor } from 'src/logic-functions/utils/accent-color';
 import {
   flattenRecord,
   formatMoney,
@@ -28,8 +29,9 @@ const attachGeneratedPdf = async (
   documentId: string,
   documentName: string,
   content: string,
+  accentHex?: string | null,
 ): Promise<void> => {
-  const bytes = await generateDocumentPdf(content);
+  const bytes = await generateDocumentPdf(content, accentHex);
   const fileName = toPdfFileName(documentName);
 
   const uploaded = await new MetadataApiClient().uploadFile(
@@ -204,6 +206,7 @@ export const generateQuoteDocumentHandler = async (
           id: true,
           name: true,
           type: true,
+          accentColor: true,
           companyName: true,
           companyAddress: true,
           companyEmail: true,
@@ -262,6 +265,7 @@ export const generateQuoteDocumentHandler = async (
           status: QUOTE_DOCUMENT_STATUS_GENERATED,
           content: renderedContent,
           totalAmount: total || null,
+          accentColor: template.accentColor ?? undefined,
           templateId: template.id,
         },
       },
@@ -315,7 +319,13 @@ export const generateQuoteDocumentHandler = async (
   // shouldn't discard it — surface a warning instead.
   let message = `Generated "${createQuoteDocument.name}".`;
   try {
-    await attachGeneratedPdf(client, createQuoteDocument.id, createQuoteDocument.name ?? documentName, renderedContent);
+    await attachGeneratedPdf(
+      client,
+      createQuoteDocument.id,
+      createQuoteDocument.name ?? documentName,
+      renderedContent,
+      resolveAccentColor(template.accentColor),
+    );
   } catch (error) {
     console.warn('[quote-document-generator] PDF attachment failed:', error);
     message += ' (PDF file could not be attached)';

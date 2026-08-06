@@ -7,13 +7,15 @@ import {
   StandardFonts,
 } from 'pdf-lib';
 
+import { hexToRgb } from 'src/logic-functions/utils/accent-color';
+
 const PAGE_WIDTH = 595.28; // A4
 const PAGE_HEIGHT = 841.89;
 const MARGIN = 64;
 const BODY_SIZE = 11;
 const LINE_HEIGHT = 16;
 
-const ACCENT = rgb(0.098, 0.38, 0.929); // #1961ED
+const DEFAULT_ACCENT = rgb(0.098, 0.38, 0.929); // #1961ED
 const INK = rgb(0.06, 0.08, 0.16);
 const MUTED = rgb(0.28, 0.31, 0.42);
 
@@ -30,6 +32,7 @@ type Ctx = {
   page: PDFPage;
   y: number;
   fonts: Fonts;
+  accent: ReturnType<typeof rgb>;
 };
 
 type Run = { text: string; bold: boolean; italic: boolean; code: boolean; link: boolean };
@@ -122,7 +125,7 @@ const drawRuns = (
 
   for (const run of runs) {
     const font = pickFont(ctx.fonts, run);
-    const color = run.link ? ACCENT : run.code ? MUTED : INK;
+    const color = run.link ? ctx.accent : run.code ? MUTED : INK;
     const segments = run.text.split('\n');
 
     segments.forEach((segment, index) => {
@@ -236,7 +239,7 @@ const drawBlocks = (ctx: Ctx, tokens: Token[], indent = 0) => {
               y: barBottom,
               width: 3,
               height: barTop - barBottom,
-              color: ACCENT,
+              color: ctx.accent,
             });
           }
         }
@@ -278,7 +281,10 @@ const drawBlocks = (ctx: Ctx, tokens: Token[], indent = 0) => {
   }
 };
 
-export const generateDocumentPdf = async (content: string): Promise<Uint8Array> => {
+export const generateDocumentPdf = async (
+  content: string,
+  accentHex?: string | null,
+): Promise<Uint8Array> => {
   const pdf = await PDFDocument.create();
   const fonts: Fonts = {
     regular: await pdf.embedFont(StandardFonts.Helvetica),
@@ -288,7 +294,8 @@ export const generateDocumentPdf = async (content: string): Promise<Uint8Array> 
     mono: await pdf.embedFont(StandardFonts.Courier),
   };
 
-  const ctx: Ctx = { pdf, page: pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]), y: 0, fonts };
+  const accentRgb = accentHex ? rgb(hexToRgb(accentHex).r, hexToRgb(accentHex).g, hexToRgb(accentHex).b) : DEFAULT_ACCENT;
+  const ctx: Ctx = { pdf, page: pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]), y: 0, fonts, accent: accentRgb };
 
   ctx.y = PAGE_HEIGHT - MARGIN;
   drawBlocks(ctx, marked.lexer(content, { breaks: true, gfm: true }));
