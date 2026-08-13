@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { margin:0; padding:0; overflow:hidden; background:#000; font-family:sans-serif; display:flex; flex-direction:column; }
+    video { width:100%; height:100%; display:block; object-fit: cover; transform: scaleX(-1); }
+    canvas { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
+    .title-bar {
+      background:#222; color:#fff; padding:2px 4px; display:flex; align-items:center;
+      user-select:none; -webkit-user-select:none; height:26px; font-size:11px; flex:0 0 auto;
+      -webkit-app-region: drag;
+    }
+    .title-bar .title {
+      flex:1; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; margin:0 4px 0 0; font-size:11px;
+    }
+    .title-bar .controls { display:flex; gap:1px; }
+    .title-bar .controls button {
+      width:20px; height:20px; background:none; border:none; color:#fff; font-size:11px;
+      cursor:pointer; border-radius:3px; transition:background 0.2s;
+      display:flex; align-items:center; justify-content:center; -webkit-app-region: no-drag;
+    }
+    .title-bar .controls button:hover { background:#444; }
+    .title-bar .controls button:active { background:#555; }
+    .content-pane { position:relative; flex:1 1 auto; width:100%; }
+    .settings-btn {
+      position:absolute; top:4px; right:4px; width:26px; height:26px; background:#3366cc; color:#fff;
+      border:none; border-radius:13px; cursor:pointer; font-size:14px; display:flex; align-items:center;
+      justify-content:center; z-index:40;
+    }
+    .settings-btn:hover { background:#265aaa; }
+    .settings-btn:active { background:#1a4d99; }
+    #settings-panel {
+      position:absolute; top:0; left:0; right:0; bottom:0; background:#161616; color:#fff; padding:12px;
+      border:none; display:none; font-size:12px; z-index:35; overflow-y:auto; min-height:450px;
+    }
+    #settings-panel.active { display:block; }
+    #settings-panel .panel-head {
+      display:flex; align-items:center; margin-bottom:8px;
+    }
+    #settings-panel .panel-head .ptitle { flex:1; font-size:13px; font-weight:bold; }
+    #settings-panel .panel-head .pclose {
+      width:24px; height:24px; background:#444; color:#fff; border:none; border-radius:4px; cursor:pointer;
+    }
+    #settings-panel .panel-head .pclose:hover { background:#666; }
+    #settings-panel label { display:block; margin:8px 0 2px; font-size:11px; color:#bbb; }
+    #settings-panel select {
+      width:100%; padding:6px; margin-top:2px; background:#2a2a2a; color:#fff; border:1px solid #555; border-radius:4px;
+      font-size:12px;
+    }
+    #settings-panel .btn {
+      width:100%; padding:8px; margin-top:10px; background:#0066cc; color:#fff; border:none; border-radius:4px;
+      cursor:pointer; font-size:12px;
+    }
+    #settings-panel .btn:hover { background:#0055aa; }
+    #settings-panel .btn.perm { background:#22aa44; }
+    #settings-panel .btn.perm:hover { background:#1a8838; }
+    #audio-visualizer { width:100%; height:30px; background:#333; margin-top:4px; border-radius:3px; overflow:hidden; }
+    #audio-level { height:100%; background:#00cc66; width:0%; transition:width 0.1s; }
+    #status-msg {
+      position:absolute; top:34px; left:8px; right:8px; background:#550000; color:#ffcccc;
+      padding:6px; border-radius:4px; font-size:11px; display:none; z-index:30;
+    }
+    #status-msg.ok { background:#004400; color:#ccffcc; }
+    #status-msg.show { display:block; }
+    #debug-log {
+      position:absolute; left:4px; bottom:4px; right:4px; max-height:40%;
+      overflow:auto; background:rgba(0,0,0,0.78); color:#7CFC00; border:1px solid #444;
+      border-radius:4px; padding:4px; font:10px monospace; white-space:pre-wrap;
+      display:none; z-index:60;
+    }
+    #debug-log.show { display:block; }
+  </style>
+</head>
+  <body>
+  <!-- MediaPipe Hands (local UMD global build) + pure gesture logic -->
+  <script src="./mediapipe/hands.js"></script>
+  <script src="./gestures.js"></script>
+
+  <div class="title-bar">
+    <span class="title">Hand Control</span>
+    <div class="controls">
+      <button class="minimize" onclick="send('minimize')">_</button>
+      <button class="maximize" onclick="send('maximize')">□</button>
+      <button class="close" onclick="send('close')">×</button>
+    </div>
+  </div>
+
+  <div class="content-pane">
+    <video id="video" autoplay muted playsinline></video>
+    <canvas id="canvas"></canvas>
+
+    <div id="status-msg"></div>
+    <div id="debug-log"></div>
+
+    <button class="settings-btn" onclick="toggleSettings()">⚙</button>
+
+    <div id="settings-panel">
+      <div class="panel-head">
+        <span class="ptitle">Settings</span>
+        <button class="pclose" onclick="toggleSettings()">×</button>
+      </div>
+      <button class="btn perm" onclick="requestPermissions()">Grant Camera &amp; Mic</button>
+      <label>Select Webcam:</label>
+      <select id="webcam-select"><option>Loading...</option></select>
+      <label>Select Microphone:</label>
+      <select id="mic-select"><option>Loading...</option></select>
+      <label>Output Device:</label>
+      <select id="output-select"><option>Loading...</option></select>
+      <div style="margin-top:8px; font-size:11px; color:#bbb;">Audio Levels:</div>
+      <div id="audio-visualizer"><div id="audio-level"></div></div>
+      <button class="btn" onclick="testAudio()">Test Mic</button>
+      <button class="btn perm" onclick="applySettings()">Save</button>
+    </div>
+  </div>
+
+  <script>
+    const ipc = require('electron').ipcRenderer;
+    let settingsVisible = false;
+    let audioCtx = null;
+    let audioStream = null;
+
+    // ---- Debug logger (visible on screen) ----
+    const _logEl = document.getElementById('debug-log');
+    function appendLog(msg) {
+      const line = document.createElement('div');
+      line.textContent = msg;
+      _logEl.appendChild(line);
+      while (_logEl.childNodes.length > 60) _logEl.removeChild(_logEl.firstChild);
+      _logEl.scrollTop = _logEl.scrollHeight;
+    }
+    window.log = (...args) => {
+      const t = args.map(a => (a && a.message) ? a.message : (a && a.stack) ? a.stack : String(a)).join(' ');
+      appendLog(t);
+      try { ipc.send('log', t); } catch (e) {}
+    };
+    // Route console through the on-screen logger too
+    ['log', 'error', 'warn', 'info'].forEach((k) => {
+      const orig = console[k];
+      console[k] = (...a) => { try { window.log('[' + k + ']', ...a); } catch (e) {} orig.apply(console, a); };
+    });
+    // Toggle debug log with the 'L' key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'l' || e.key === 'L') _logEl.classList.toggle('show');
+    });
+    window.log('Logger ready. Press L to toggle this log.');
+
+    // ---- Load self-test ----
+    function selfTest() {
+      const ids = ['video', 'canvas', 'settings-panel', 'webcam-select', 'mic-select', 'output-select', 'debug-log', 'settings-btn'];
+      let ok = 0;
+      ids.forEach(id => { const el = document.getElementById(id); if (el) ok++; else window.log('SELFTEST FAIL: missing #' + id); });
+      window.log('SELFTEST: ' + ok + '/' + ids.length + ' core elements present');
+      if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+        window.log('SELFTEST: navigator.mediaDevices available');
+      } else {
+        window.log('SELFTEST FAIL: navigator.mediaDevices NOT available');
+      }
+    }
+
+    function send(action) { ipc.send(action); }
+
+    function showStatus(msg, ok) {
+      const el = document.getElementById('status-msg');
+      el.textContent = msg;
+      el.className = 'show' + (ok ? ' ok' : '');
+      setTimeout(() => { el.className = el.className.replace('show', '').trim(); }, 4000);
+    }
+
+    function toggleSettings() {
+      settingsVisible = !settingsVisible;
+      const panel = document.getElementById('settings-panel');
+      if (settingsVisible) { panel.classList.add('active'); populateDevices(); }
+      else panel.classList.remove('active');
+    }
+
+    async function populateDevices() {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const webcams = devices.filter(d => d.kind === 'videoinput');
+        const mics = devices.filter(d => d.kind === 'audioinput');
+        const outputs = devices.filter(d => d.kind === 'audiooutput');
+
+        const fill = (id, arr) => {
+          const sel = document.getElementById(id);
+          sel.innerHTML = '';
+          if (arr.length === 0) {
+            const opt = document.createElement('option');
+            opt.text = 'None found';
+            sel.appendChild(opt);
+            return;
+          }
+          arr.forEach((d, i) => {
+            const opt = document.createElement('option');
+            opt.value = d.deviceId; opt.text = d.label || (id + ' ' + (i+1));
+            sel.appendChild(opt);
+          });
+        };
+        fill('webcam-select', webcams);
+        fill('mic-select', mics);
+        fill('output-select', outputs);
+      } catch (err) {
+        console.error('Enumerate error:', err);
+        showStatus('Could not list devices: ' + err.message, false);
+      }
+    }
+
+    async function requestPermissions() {
+      // Drop always-on-top so the OS permission dialog isn't hidden behind us
+      ipc.send('set-always-on-top', false);
+      try {
+        audioStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: 640, height: 480 },
+          audio: { echoCancellation: true, noiseSuppression: true }
+        });
+        const video = document.getElementById('video');
+        video.srcObject = audioStream;
+        video.play().catch(() => {});
+        showStatus('Camera & mic granted', true);
+        await populateDevices();
+        setupAudioMeter(audioStream);
+      } catch (err) {
+        console.error('Permission error:', err);
+        let hint = 'Permission denied.';
+        if (err && err.name === 'NotAllowedError')
+          hint = 'Blocked. Open Windows Settings -> Privacy -> Camera/Microphone and allow this app, then click Grant again.';
+        showStatus(hint, false);
+      } finally {
+        ipc.send('set-always-on-top', true);
+      }
+    }
+
+    function setupAudioMeter(stream) {
+      try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const src = audioCtx.createMediaStreamSource(stream);
+        const proc = audioCtx.createScriptProcessor(256, 1, 1);
+        const data = new Float32Array(256);
+        proc.onaudioprocess = (e) => {
+          e.inputBuffer.copyFromChannel(data, 0);
+          let peak = 0;
+          for (let i = 0; i < data.length; i++) peak = Math.max(peak, Math.abs(data[i]));
+          document.getElementById('audio-level').style.width = Math.min(100, peak * 200) + '%';
+        };
+        src.connect(proc);
+        proc.connect(audioCtx.destination);
+      } catch (e) { console.error('Audio meter error', e); }
+    }
+
+    function testAudio() {
+      ipc.send('test-audio');
+      showStatus('Mic test running - watch the bar', true);
+    }
+
+    async function applySettings() {
+      const camId = document.getElementById('webcam-select').value;
+      const micId = document.getElementById('mic-select').value;
+      const outId = document.getElementById('output-select').value;
+      try {
+        if (audioStream) audioStream.getTracks().forEach(t => t.stop());
+        audioStream = await navigator.mediaDevices.getUserMedia({
+          video: camId && camId !== 'None found'
+            ? { deviceId: { exact: camId }, width: 640, height: 480 }
+            : { facingMode: 'user', width: 640, height: 480 },
+          audio: micId && micId !== 'None found'
+            ? { deviceId: { exact: micId }, echoCancellation: true, noiseSuppression: true }
+            : { echoCancellation: true, noiseSuppression: true }
+        });
+        const video = document.getElementById('video');
+        video.srcObject = audioStream;
+        video.play().catch(() => {});
+        if (outId && video.setSinkId) {
+          try { await video.setSinkId(outId); } catch (e) { console.error('Sink error', e); }
+        }
+        setupAudioMeter(audioStream);
+        showStatus('Settings applied', true);
+      } catch (err) {
+        console.error('Apply error:', err);
+        showStatus('Failed to apply: ' + err.message, false);
+      }
+    }
+
+    // Populate the device list on load (works even before granting, labels may be blank)
+    document.addEventListener('DOMContentLoaded', () => {
+      selfTest();
+      populateDevices();
+    });
+  </script>
+
+  <!-- MediaPipe hand-tracking controller (loads Hands, runs the feed loop) -->
+  <script src="./renderer.js"></script>
+</body>
+</html>
