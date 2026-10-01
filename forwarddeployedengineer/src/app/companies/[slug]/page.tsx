@@ -1,0 +1,29 @@
+import { companies } from '../../../data/directory';
+
+export function generateStaticParams() {
+  return companies.map(c => ({ slug: c.slug }));
+}
+
+export function generateMetadata({ params }: { params: { slug: string } }) {
+  const c = companies.find(x => x.slug === params.slug);
+  return {
+    title: `${c?.name} Forward Deployed Engineer Jobs, Salary, Interview | forwarddeployedengineer`,
+    description: `${c?.name} FDE: ${c?.salary}, range ${c?.range}. Jobs, interview decomposition, locations. Keywords: ${c?.keywords.join(', ')}`,
+  };
+}
+
+export default function CompanyPage({ params }: { params: { slug: string } }) {
+  const c = companies.find(x => x.slug === params.slug) ?? companies[0];
+  return (
+    <div className="container section">
+      <div className="mono meta">{c.keywords.join(' • ')}</div>
+      <h1>{c.name} Forward Deployed Engineer</h1>
+      <p>{c.description}</p>
+      <div className="grid-3">
+        <div className="card"><h3>Salary</h3><div className="mono fde-salary">{c.salary}</div><div>{c.range}</div></div>
+        <div className="card"><h3>Locations</h3><div>{c.location}</div></div>
+        <div className="card"><h3>Interview</h3><p className="meta">Decomposition + coding + client sim. See /interview/{c.slug}</p></div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,40 @@
+:root{
+  /* Primitive */
+  --color-deploy-blue:#1A4DFF;
+  --color-deploy-dark:#0F33B3;
+  --color-field-orange:#FF5C00;
+  --color-terminal-green:#00E5A0;
+  --color-ink:#0E131A;
+  --color-paper:#FAFAF8;
+  --color-surface:#FFFFFF;
+  --color-border:#E6E8EE;
+  --color-muted:#5B6472;
+
+  /* Semantic */
+  --color-primary:var(--color-deploy-blue);
+  --color-primary-hover:var(--color-deploy-dark);
+  --color-accent:var(--color-field-orange);
+  --color-background:var(--color-paper);
+  --color-foreground:var(--color-ink);
+
+  /* Type */
+  --font-heading:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,monospace;
+
+  /* Component */
+  --button-bg:var(--color-primary);
+  --button-fg:#fff;
+  --button-radius:8px;
+  --card-bg:var(--color-surface);
+  --card-border:var(--color-border);
+  --card-radius:12px;
+}
+
+/* WordPress helpers - paste into Customizer > Additional CSS */
+.fde-badge{font-family:var(--font-mono);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;background:var(--color-ink);color:#fff;padding:4px 10px;border-radius:9999px}
+.fde-badge--live{background:var(--color-field-orange)}
+.fde-salary{font-family:var(--font-mono);font-weight:700}
+.fde-btn-primary{background:var(--color-primary);color:#fff;border-radius:var(--button-radius);padding:14px 24px;font-weight:600}
+.fde-btn-employer{background:var(--color-accent);color:#fff;border-radius:8px;padding:14px 24px;font-weight:600}
+.fde-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--card-radius);padding:24px}
