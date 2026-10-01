@@ -9,6 +9,7 @@ export function generateMetadata({ params }: { params: { company: string } }) {
   return {
     title: `${params.company} FDE Interview: Decomposition, Questions | forwarddeployedengineer`,
     description: `Forward deployed engineer interview at ${params.company}: 5 stages, decomposition case (911/ER), client sim, coding. 30+ questions.`,
+    keywords: [`${params.company} forward deployed engineer interview`, 'forward deployed engineer interview questions', 'fde decomposition round'],
   };
 }
 

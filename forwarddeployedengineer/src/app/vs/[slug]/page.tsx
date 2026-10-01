@@ -10,6 +10,7 @@ export function generateMetadata({ params }: { params: { slug: string } }) {
   return {
     title: `${v?.a} vs ${v?.b} 2026 | forwarddeployedengineer`,
     description: `${v?.summary} FDE coding 75 vs SA/SE 35. Quota, ownership, salary.`,
+    keywords: [...(v?.keywords ?? []), 'forward deployed engineer vs', 'hire forward deployed engineer'],
   };
 }
 

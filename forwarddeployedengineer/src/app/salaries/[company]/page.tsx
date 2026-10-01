@@ -10,6 +10,7 @@ export function generateMetadata({ params }: { params: { company: string } }) {
   return {
     title: `${params.company} Forward Deployed Engineer Salary 2026 | forwarddeployedengineer`,
     description: `Forward deployed engineer salary at ${params.company}: median, range, equity, levels. Keyword: ${params.company} fde salary.`,
+    keywords: [`${params.company} forward deployed engineer salary`, 'forward deployed engineer salary', 'fde total compensation'],
   };
 }
 

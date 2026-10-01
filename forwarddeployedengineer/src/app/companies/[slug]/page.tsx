@@ -10,6 +10,7 @@ export function generateMetadata({ params }: { params: { slug: string } }) {
   return {
     title: `${c?.name} Forward Deployed Engineer Jobs, Salary, Interview | forwarddeployedengineer`,
     description: `${c?.name} FDE: ${c?.salary}, range ${c?.range}. Jobs, interview decomposition, locations. Keywords: ${c?.keywords.join(', ')}`,
+    keywords: [...(c?.keywords ?? []), 'forward deployed engineer jobs', 'forward deployed engineer salary'],
   };
 }
 

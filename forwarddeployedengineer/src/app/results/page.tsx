@@ -8,6 +8,7 @@ import { headlineStats, forresterBars, results, malaysiaStats, malaysiaMaturity,
 export const metadata: Metadata = {
   title: 'FDE Results: ROI, Savings, Compliance Wins by Industry | forwarddeployedengineer',
   description: 'Real deployment outcomes: 315% ROI, Airbus +33%, bank copilots, MY adoption stats with charts. Savings, returns, compliance and risk cuts by industry.',
+  keywords: ['forward deployed engineer ROI', 'FDE case studies', 'Palantir Foundry ROI', 'AI deployment savings', 'FDE Malaysia results'],
 };
 
 export default function ResultsPage() {

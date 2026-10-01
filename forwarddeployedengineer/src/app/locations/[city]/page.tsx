@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { locations } from '../../../data/directory';
 import { malaysiaStats, malaysiaMaturity } from '../../../data/results';
 import { StatCards, HBarChart } from '../../../components/ResultCharts';
+import { FlagMY, FlagSG } from '../../../components/Flags';
 import Reveal from '../../../components/Reveal';
 
 export function generateStaticParams() {
@@ -12,6 +13,7 @@ export function generateMetadata({ params }: { params: { city: string } }) {
   return {
     title: `Forward Deployed Engineer ${params.city} Jobs + Salary | forwarddeployedengineer`,
     description: `FDE jobs in ${params.city}. Hiring hubs, salary bands, travel expectations.`,
+    keywords: [`forward deployed engineer ${params.city}`, `fde jobs ${params.city}`, `fde salary ${params.city}`, 'hire forward deployed engineer'],
   };
 }
 
@@ -21,7 +23,7 @@ export default function LocationPage({ params }: { params: { city: string } }) {
     <div className="page-white">
       <div className="page-hero">
         <div className="container-narrow">
-          <Reveal><span className="page-kicker">FDE hub • {l.name}</span></Reveal>
+          <Reveal><span className="page-kicker">FDE hub • {l.name} {(params.city === 'malaysia' || params.city === 'kuala-lumpur') && <FlagMY />} {params.city === 'singapore' && <FlagSG />}</span></Reveal>
           <Reveal delay={0.08}><h1>FDE in <span className="grad">{l.name}</span></h1></Reveal>
           <Reveal delay={0.16}><p className="sub">{l.note}</p></Reveal>
         </div>

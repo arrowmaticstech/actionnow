@@ -5,6 +5,7 @@ import WaveDivider from '../components/WaveDivider';
 import { companies, comparisons, locations, faqs, malaysiaContext } from '../data/directory';
 import { headlineStats, forresterBars } from '../data/results';
 import { usecases } from '../data/usecases';
+import { FlagMY } from '../components/Flags';
 import { StatCards, HBarChart } from '../components/ResultCharts';
 
 export default function Home() {
@@ -94,7 +95,7 @@ export default function Home() {
 
       <section className="section">
         <div className="container">
-          <h2>{malaysiaContext.title}</h2>
+          <h2><FlagMY /> {malaysiaContext.title}</h2>
           {malaysiaContext.body.map(p => <p key={p.slice(0, 24)} style={{ maxWidth: 760 }}>{p}</p>)}
           <div className="pill-row">
             <Link className="kbd-link" href="/locations/malaysia">FDE Malaysia guide →</Link>

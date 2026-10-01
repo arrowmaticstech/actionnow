@@ -6,6 +6,7 @@ import Reveal from '../../components/Reveal';
 export const metadata: Metadata = {
   title: 'Forward Deployed Engineer Jobs - Live Board | forwarddeployedengineer',
   description: 'Live Forward Deployed Engineer jobs at Palantir, OpenAI, Anthropic, Anduril, Scale AI. Contact us for quotations and matches.',
+  keywords: ['forward deployed engineer jobs', 'fde hiring', 'palantir jobs', 'openai forward deployed engineer jobs', 'fde jobs malaysia singapore'],
 };
 
 const jobs = [

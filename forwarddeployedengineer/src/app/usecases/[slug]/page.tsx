@@ -14,6 +14,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   return {
     title: `${u?.title} | forwarddeployedengineer`,
     description: u?.intro.slice(0, 155),
+    keywords: [...(u?.keywords ?? []), 'forward deployed engineer use cases', 'hire fde malaysia'],
   };
 }
 

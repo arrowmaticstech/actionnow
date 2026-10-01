@@ -6,6 +6,7 @@ import { usecases } from '../../data/usecases';
 export const metadata: Metadata = {
   title: 'FDE Use Cases: RAG, Evals, HITL, Hardening, MY Deployments | forwarddeployedengineer',
   description: 'Deep deployment playbooks: RAG failure modes, eval harnesses, regulator-accepted human review, webhook hardening, AI SLIs, BNM-ready copilots, Bahasa evals.',
+  keywords: ['RAG production deployment', 'LLM eval harness', 'human in the loop AI banking', 'AI SLI SLO', 'Bahasa Malaysia LLM eval', 'BNM AI deployment'],
 };
 
 export default function UsecasesPage() {
