@@ -3,6 +3,9 @@ import EmailCapture from '../components/EmailCapture';
 import GradientHero from '../components/GradientHero';
 import WaveDivider from '../components/WaveDivider';
 import { companies, comparisons, locations, faqs, malaysiaContext } from '../data/directory';
+import { headlineStats, forresterBars } from '../data/results';
+import { usecases } from '../data/usecases';
+import { StatCards, HBarChart } from '../components/ResultCharts';
 
 export default function Home() {
   const jsonLd = {
@@ -21,7 +24,7 @@ export default function Home() {
             <span className="fde-badge fde-badge--live">● 2,400+ roles tracked</span>
             <span className="fde-badge">PALANTIR • OPENAI • ANTHROPIC • MALAYSIA HUB</span>
           </div>
-          <h1>Every <span className="grad">Forward Deployed Engineer</span> job, salary & interview — in one place.</h1>
+          <h1>Every <span className="grad">Forward Deployed Engineer</span> job, salary & interview - in one place.</h1>
           <p className="sub">FDE = the engineer embedded with customers who ships production AI on their data. Median $174K base, Palantir $215K TC, OpenAI $555K. Including FDE vs SA vs SE vs Consultant breakdowns and the Malaysia / KL track.</p>
           <div style={{ marginTop: 28, maxWidth: 640 }}><EmailCapture source="hero" /></div>
           <div className="hero-stats">
@@ -72,6 +75,25 @@ export default function Home() {
 
       <section className="section">
         <div className="container">
+          <h2>What deployed AI actually returns</h2>
+          <p className="meta">Field results from production FDE-style deployments, not pilot slides. Sources: Forrester TEI on Foundry, Palantir Impact, OpenAI customer stories.</p>
+          <StatCards stats={headlineStats} />
+          <div className="grid-2" style={{ marginTop: 18 }}>
+            <div className="card">
+              <h3>Where the $345M comes from (3-yr, $M)</h3>
+              <HBarChart data={forresterBars} unit="M" />
+            </div>
+            <div className="card">
+              <h3>Why it matters for Malaysia</h3>
+              <p>MY adopters report +19% revenue and 72% productivity gains, yet 73% stay at basic use. The gap between chatbot habit and production deployment is exactly the FDE job.</p>
+              <Link href="/results">See all results with Malaysia angles →</Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="container">
           <h2>{malaysiaContext.title}</h2>
           {malaysiaContext.body.map(p => <p key={p.slice(0, 24)} style={{ maxWidth: 760 }}>{p}</p>)}
           <div className="pill-row">
@@ -88,7 +110,17 @@ export default function Home() {
           <div className="grid-3">
             <div className="card"><h3>Companies</h3>{companies.map(c => <div key={c.slug}><Link href={`/companies/${c.slug}`}>{c.name} FDE</Link> · <Link href={`/interview/${c.slug}`}>interview</Link> · <Link href={`/salaries/${c.slug}`}>salary</Link></div>)}</div>
             <div className="card"><h3>Cities</h3>{locations.map(l => <div key={l.slug}><Link href={`/locations/${l.slug}`}>FDE {l.name}</Link></div>)}</div>
-            <div className="card"><h3>Start here</h3><div><Link href="/jobs">All FDE jobs →</Link></div><div><Link href="/vs/forward-deployed-engineer-vs-solutions-architect-vs-sales-engineer-vs-consultant">Mega comparison →</Link></div></div>
+            <div className="card"><h3>Start here</h3><div><Link href="/jobs">All FDE jobs →</Link></div><div><Link href="/usecases">Deep use-case playbooks →</Link></div><div><Link href="/vs/forward-deployed-engineer-vs-solutions-architect-vs-sales-engineer-vs-consultant">Mega comparison →</Link></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="container">
+          <h2>Deployment playbooks, engineered deep</h2>
+          <p className="meta">Loop engineering plus production hardening, with Malaysia angles. Built from 16 years across dev, testing, SRE, platform, architecture and AI.</p>
+          <div className="kbd-list">
+            {usecases.map(u => <Link key={u.slug} className="kbd-link" href={`/usecases/${u.slug}`}>{u.title}</Link>)}
           </div>
         </div>
       </section>

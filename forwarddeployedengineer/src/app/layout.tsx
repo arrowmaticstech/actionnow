@@ -4,7 +4,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 
 export const metadata: Metadata = {
-  title: 'forwarddeployedengineer — All FDE Jobs, Salaries, Interviews',
+  title: 'forwarddeployedengineer - All FDE Jobs, Salaries, Interviews',
   description: 'Find, become, hire a Forward Deployed Engineer. Live jobs, Palantir/OpenAI/Anthropic salaries, FDE vs SA vs SE vs Consultant, Malaysia hub.',
   metadataBase: new URL('https://forwarddeployedengineer.com'),
 };

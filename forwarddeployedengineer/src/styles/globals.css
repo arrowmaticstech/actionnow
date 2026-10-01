@@ -17,7 +17,7 @@ a:hover{text-decoration:underline}
 .page-body{background:#fff;padding:56px 0 72px}
 .page-body .card{margin-bottom:16px}
 
-/* Header — glass dark */
+/* Header - glass dark */
 .site-header{position:sticky;top:0;z-index:50;background:rgba(7,11,20,.78);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.08)}
 .site-header-inner{display:flex;align-items:center;justify-content:space-between;height:72px}
 .logo{font-weight:800;font-size:20px;color:#fff;letter-spacing:-.03em}
@@ -31,7 +31,7 @@ a:hover{text-decoration:underline}
 .btn-employer{background:linear-gradient(135deg,#FF5C00,#FF9A3D);color:#fff;box-shadow:0 8px 30px rgba(255,92,0,.4)}
 .btn-secondary{background:transparent;color:#fff;border-color:rgba(255,255,255,.25)}
 
-/* Hero — 11labs / alicloud / chatgpt vibe */
+/* Hero - 11labs / alicloud / chatgpt vibe */
 .hero{position:relative;overflow:hidden;background:#070B14;color:#fff;padding:110px 0 90px}
 .hero h1{font-size:clamp(44px,7vw,84px);line-height:.98;margin:0 0 20px;letter-spacing:-.045em;font-weight:800}
 .hero h1 .grad{background:linear-gradient(92deg,#7AA2FF 0%,#B48CFF 35%,#FF8A3D 70%,#00E5A0 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -53,6 +53,8 @@ a:hover{text-decoration:underline}
 .section h2{font-size:clamp(30px,4vw,48px);margin:0 0 14px;letter-spacing:-.035em;font-weight:800;line-height:1.05}
 .section-dark .meta{color:#5B6472}
 .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+@media(max-width:900px){.grid-2{grid-template-columns:1fr}}
 @media(max-width:900px){.grid-3{grid-template-columns:1fr}.nav{display:none}.header-ctas .btn-employer{display:none}}
 .card{background:var(--card-bg);border:none;border-radius:20px;padding:28px 30px;box-shadow:0 12px 40px rgba(14,19,26,.1),0 2px 8px rgba(14,19,26,.06)}
 .section-dark .card{background:#ffffff;border:none;box-shadow:0 14px 44px rgba(26,77,255,.1),0 2px 8px rgba(14,19,26,.06)}

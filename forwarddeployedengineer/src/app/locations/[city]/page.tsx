@@ -1,4 +1,7 @@
+import Link from 'next/link';
 import { locations } from '../../../data/directory';
+import { malaysiaStats, malaysiaMaturity } from '../../../data/results';
+import { StatCards, HBarChart } from '../../../components/ResultCharts';
 import Reveal from '../../../components/Reveal';
 
 export function generateStaticParams() {
@@ -28,9 +31,26 @@ export default function LocationPage({ params }: { params: { city: string } }) {
           <Reveal>
             <div className="card">
               <h3>Hiring signal</h3>
-              <p className="meta">Look for postings mentioning customer-embedded delivery, on-site deployment weeks, and production ownership — that&apos;s the real FDE loop, whatever the title says.</p>
+              <p className="meta">Look for postings mentioning customer-embedded delivery, on-site deployment weeks, and production ownership. That is the real FDE loop, whatever the title says.</p>
             </div>
           </Reveal>
+          {params.city === 'malaysia' && (
+            <>
+              <Reveal>
+                <div className="card">
+                  <h3>MY adoption stats (AWS, BNM, CPA)</h3>
+                  <StatCards stats={malaysiaStats} />
+                </div>
+              </Reveal>
+              <Reveal>
+                <div className="card">
+                  <h3>MY maturity split (% of adopters)</h3>
+                  <HBarChart data={malaysiaMaturity} unit="%" />
+                  <div style={{ marginTop: 12 }}><Link href="/results">Full results with Malaysia angles →</Link></div>
+                </div>
+              </Reveal>
+            </>
+          )}
         </div>
       </div>
     </div>

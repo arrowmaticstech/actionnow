@@ -42,7 +42,7 @@ export default function EmailCapture({ source = 'hero' }: { source?: string }) {
             {status === 'sending' ? 'Joining…' : 'Get weekly FDE jobs + salary data'}
           </button>
           <span className="meta">Free Salary Report PDF. No spam.</span>
-          {status === 'error' && <span className="meta" style={{ color: '#DC2626' }}>Failed — try again.</span>}
+          {status === 'error' && <span className="meta" style={{ color: '#DC2626' }}>Failed - try again.</span>}
         </form>
       )}
     </div>

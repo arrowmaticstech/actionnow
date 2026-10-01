@@ -4,7 +4,7 @@ import ContactButton from '../../components/ContactButton';
 import Reveal from '../../components/Reveal';
 
 export const metadata: Metadata = {
-  title: 'Forward Deployed Engineer Jobs — Live Board | forwarddeployedengineer',
+  title: 'Forward Deployed Engineer Jobs - Live Board | forwarddeployedengineer',
   description: 'Live Forward Deployed Engineer jobs at Palantir, OpenAI, Anthropic, Anduril, Scale AI. Contact us for quotations and matches.',
 };
 
@@ -20,9 +20,9 @@ export default function JobsPage() {
     <div className="page-white">
       <div className="page-hero">
         <div className="container-narrow">
-          <Reveal><span className="page-kicker">● Live board — updated weekly</span></Reveal>
+          <Reveal><span className="page-kicker">● Live board - updated weekly</span></Reveal>
           <Reveal delay={0.08}><h1>Forward Deployed <span className="grad">Engineer jobs</span></h1></Reveal>
-          <Reveal delay={0.16}><p className="sub">Palantir, OpenAI, Anthropic, Anduril, Scale AI — who&apos;s hiring FDEs right now, where, and for how much.</p></Reveal>
+          <Reveal delay={0.16}><p className="sub">Palantir, OpenAI, Anthropic, Anduril, Scale AI - who&apos;s hiring FDEs right now, where, and for how much.</p></Reveal>
         </div>
       </div>
       <div className="page-body">
@@ -40,8 +40,8 @@ export default function JobsPage() {
           <Reveal>
             <div className="card">
               <h3>Need FDEs or a deployment quote?</h3>
-              <p className="meta">Tell us your needs — get instant quotations and match in 2 days.</p>
-              <ContactButton label="Contact" source="jobs-page" />
+              <p className="meta">Tell us your needs - get instant quotations and match in 2 days.</p>
+              <ContactButton label="Find FDE" source="jobs-page" />
             </div>
           </Reveal>
           <div style={{ marginTop: 24 }}><EmailCapture source="jobs" /></div>

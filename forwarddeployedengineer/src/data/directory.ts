@@ -24,7 +24,7 @@ export const comparisons = [
   { slug: 'forward-deployed-engineer-vs-software-engineer', a: 'Forward Deployed Engineer', b: 'Software Engineer', keywords: ['forward deployed engineer vs software engineer'], summary: 'SWE builds product at HQ. FDE builds last-mile on customer data, permissions, and politics.' },
   { slug: 'forward-deployed-engineer-vs-consultant', a: 'Forward Deployed Engineer', b: 'Consultant', keywords: ['forward deployed engineer vs consultant', 'fde vs implementation consultant'], summary: 'Consultant bills hours against an SOW. FDE ships product that must run at customer #2. Meter is license/retention, not utilization. FDE can say no to bespoke that will not generalize.' },
   { slug: 'solutions-architect-vs-consultant', a: 'Solutions Architect', b: 'Consultant', keywords: ['solutions architect vs consultant'], summary: 'SA owns design quality and time-to-value. Consultant owns scoped deliverable acceptance. Both hand off; FDE stays paged.' },
-  { slug: 'forward-deployed-engineer-vs-solutions-architect-vs-sales-engineer-vs-consultant', a: 'Forward Deployed Engineer', b: 'SA vs SE vs Consultant', keywords: ['fde vs sa vs se vs consultant'], summary: 'Lifecycle test: SE pre-signature, SA design decision, Consultant SOW delivery, FDE until workflow runs. Check reporting line + comp plan — titles lie.' },
+  { slug: 'forward-deployed-engineer-vs-solutions-architect-vs-sales-engineer-vs-consultant', a: 'Forward Deployed Engineer', b: 'SA vs SE vs Consultant', keywords: ['fde vs sa vs se vs consultant'], summary: 'Lifecycle test: SE pre-signature, SA design decision, Consultant SOW delivery, FDE until workflow runs. Check reporting line + comp plan - titles lie.' },
 ];
 
 export const locations = [
@@ -33,7 +33,7 @@ export const locations = [
   { slug: 'london', name: 'London', note: 'UK government + Palantir Delta hub.' },
   { slug: 'singapore', name: 'Singapore', note: 'OpenAI FDE hub, hybrid 3 days in office, 50% APAC travel.' },
   { slug: 'kuala-lumpur', name: 'Kuala Lumpur', note: 'Growing MY hub: fintech, telco, government AI pilots. Remote-first for SG/MY accounts, on-site for bank/government deployments.' },
-  { slug: 'malaysia', name: 'Malaysia', note: 'FDE in Malaysia: banks, telcos, and public sector need last-mile AI deployment — RAG on Bahasa Malaysia + English docs, PDPA compliance, on-prem/VPC patterns. Most roles remote with KL/Singapore travel.' },
+  { slug: 'malaysia', name: 'Malaysia', note: 'FDE in Malaysia: banks, telcos, and public sector need last-mile AI deployment - RAG on Bahasa Malaysia + English docs, PDPA compliance, on-prem/VPC patterns. Most roles remote with KL/Singapore travel.' },
 ];
 
 export const malaysiaContext = {
@@ -49,6 +49,6 @@ export const malaysiaContext = {
 export const faqs = [
   { q: 'What is a Forward Deployed Engineer?', a: 'Software engineer embedded with customers to scope, build, and run production software in the customer environment. Coding 75-80, sales 15, owns prod outcome until renewal/expansion.' },
   { q: 'How much does a Forward Deployed Engineer make?', a: 'Palantir ~$215K TC median, OpenAI ~$555K, Anthropic $350K-$550K. Entry $140K-$250K. Staff $630K+. Malaysia/Singapore bands lower cash, equity varies by stage.' },
-  { q: 'FDE vs Solutions Architect vs Sales Engineer vs Consultant?', a: 'SE sells pre-deal (quota 70/30). SA designs and hands off. Consultant delivers SOW on utilization. FDE writes prod code post-sale and stays paged until the customer workflow runs — comp base+equity, no quota, no utilization target.' },
-  { q: 'Is there Forward Deployed Engineer work in Malaysia?', a: 'Yes — KL banks, telcos, and public-sector AI pilots need PDPA-compliant RAG and agent deployments on VPC/on-prem, often covering Singapore travel. See /locations/malaysia.' },
+  { q: 'FDE vs Solutions Architect vs Sales Engineer vs Consultant?', a: 'SE sells pre-deal (quota 70/30). SA designs and hands off. Consultant delivers SOW on utilization. FDE writes prod code post-sale and stays paged until the customer workflow runs - comp base+equity, no quota, no utilization target.' },
+  { q: 'Is there Forward Deployed Engineer work in Malaysia?', a: 'Yes - KL banks, telcos, and public-sector AI pilots need PDPA-compliant RAG and agent deployments on VPC/on-prem, often covering Singapore travel. See /locations/malaysia.' },
 ];

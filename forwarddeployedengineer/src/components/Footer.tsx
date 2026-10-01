@@ -13,6 +13,8 @@ export default function Footer() {
             <div>
               <div className="mono meta">CAREER</div>
               <div><Link href="/jobs">Jobs</Link></div>
+              <div><Link href="/results">Results</Link></div>
+              <div><Link href="/usecases">Use cases</Link></div>
               <div><Link href="/salaries/palantir">Salaries</Link></div>
               <div><Link href="/interview/palantir">Interview</Link></div>
             </div>
@@ -24,7 +26,7 @@ export default function Footer() {
             </div>
           </div>
         </div>
-        <p className="meta" style={{ marginTop: 24 }}>© 2026 forwarddeployedengineer. Research for inspiration — don&apos;t copy listings.</p>
+        <p className="meta" style={{ marginTop: 24 }}>© 2026 forwarddeployedengineer. Research for inspiration - don&apos;t copy listings.</p>
       </div>
     </footer>
   );

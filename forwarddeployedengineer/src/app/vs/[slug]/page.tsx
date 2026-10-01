@@ -31,11 +31,11 @@ export default function VsPage({ params }: { params: { slug: string } }) {
               <thead><tr><th>Dimension</th><th>{v.a}</th><th>{v.b}</th></tr></thead>
               <tbody>
                 <tr><td>Lifecycle</td><td>FDE: post-sale until workflow runs</td><td>SE pre-sale / SA design / Consultant SOW</td></tr>
-                <tr><td>Writes prod code at customer</td><td>Yes — primary output</td><td>Rarely / demo / scoped only</td></tr>
+                <tr><td>Writes prod code at customer</td><td>Yes - primary output</td><td>Rarely / demo / scoped only</td></tr>
                 <tr><td>Coding intensity</td><td className="mono">75-80</td><td className="mono">35 (SA/SE), 45 (Impl)</td></tr>
                 <tr><td>Sales / quota / utilization</td><td className="mono">15, no quota, no utilization</td><td className="mono">SE 75 quota 70/30, SA 65, Consultant 70-80% util</td></tr>
-                <tr><td>Owns prod outcome / paged</td><td>Yes — them</td><td>No — hands off</td></tr>
-                <tr><td>Scales by</td><td>Product — ships to customer #2</td><td>Demos / reference arch / headcount</td></tr>
+                <tr><td>Owns prod outcome / paged</td><td>Yes - them</td><td>No - hands off</td></tr>
+                <tr><td>Scales by</td><td>Product - ships to customer #2</td><td>Demos / reference arch / headcount</td></tr>
                 <tr><td>Reports to</td><td>Engineering / Product</td><td>Sales / Services P&amp;L</td></tr>
               </tbody>
             </table>

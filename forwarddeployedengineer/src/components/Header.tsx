@@ -17,7 +17,7 @@ export default function Header() {
         </nav>
         <div className="header-ctas">
           <Link href="#signup" className="btn btn-primary">Find jobs</Link>
-          <ContactButton label="Contact" source="header" />
+          <ContactButton label="Find FDE" source="header" />
         </div>
       </div>
     </header>
