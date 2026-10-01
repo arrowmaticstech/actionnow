@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import EmailCapture from '../components/EmailCapture';
 import GradientHero from '../components/GradientHero';
+import WaveDivider from '../components/WaveDivider';
 import { companies, comparisons, locations, faqs, malaysiaContext } from '../data/directory';
 
 export default function Home() {
@@ -51,7 +52,8 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="section section-dark">
+      <WaveDivider fill="#EEF2FF" />
+      <section className="section section-dark" style={{ paddingTop: 24 }}>
         <div className="container">
           <h2>FDE vs SA vs SE vs Consultant</h2>
           <p className="meta">Titles lie. Check reporting line + comp plan. FDE: coding 75-80, sales 15, no quota. SA/SE: coding 35, sales 65-75. Consultant: utilization 70-80%.</p>
@@ -60,12 +62,13 @@ export default function Home() {
               <div key={v.slug} className="card">
                 <div className="mono meta">{v.keywords[0]}</div>
                 <h3><Link href={`/vs/${v.slug}`}>{v.a} vs {v.b}</Link></h3>
-                <p className="meta" style={{ color: '#C7CDD8' }}>{v.summary}</p>
+                <p className="meta">{v.summary}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
+      <WaveDivider flip fill="#FFF4EA" />
 
       <section className="section">
         <div className="container">

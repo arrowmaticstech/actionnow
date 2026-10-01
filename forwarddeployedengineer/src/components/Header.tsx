@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import ContactButton from './ContactButton';
 
 export default function Header() {
   return (
@@ -16,7 +17,7 @@ export default function Header() {
         </nav>
         <div className="header-ctas">
           <Link href="#signup" className="btn btn-primary">Find jobs</Link>
-          <Link href="/jobs#post" className="btn btn-employer">Post a job $299</Link>
+          <ContactButton label="Contact" source="header" />
         </div>
       </div>
     </header>

@@ -1,0 +1,12 @@
+# forwarddeployedengineer · Cloudflare deployment (mirrors cemas-app.toml)
+# Serves the Next.js static export (./dist) at fde.callremind.my
+# and forwarddeployedengineer.my, with pretty-URL + SPA fallback via worker.js.
+# Deploy:  npx wrangler deploy --config fde-app.toml
+name = "fde"
+main = "./worker.js"
+compatibility_date = "2024-10-01"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"

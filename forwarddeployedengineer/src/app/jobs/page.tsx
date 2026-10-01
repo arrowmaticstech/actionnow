@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import EmailCapture from '../../components/EmailCapture';
+import ContactButton from '../../components/ContactButton';
+import Reveal from '../../components/Reveal';
 
 export const metadata: Metadata = {
   title: 'Forward Deployed Engineer Jobs — Live Board | forwarddeployedengineer',
-  description: 'Live Forward Deployed Engineer jobs at Palantir, OpenAI, Anthropic, Anduril, Scale AI. Post a job $299, get weekly alerts.',
+  description: 'Live Forward Deployed Engineer jobs at Palantir, OpenAI, Anthropic, Anduril, Scale AI. Contact us for quotations and matches.',
 };
 
 const jobs = [
@@ -16,26 +17,36 @@ const jobs = [
 
 export default function JobsPage() {
   return (
-    <div className="container section">
-      <span className="fde-badge fde-badge--live">● LIVE</span>
-      <h1>Forward Deployed Engineer jobs</h1>
-      <p className="meta">Keywords: forward deployed engineer jobs, fde hiring, palantir openai anthropic hiring</p>
-      <div className="grid-3">
-        {jobs.map(j => (
-          <div key={j.id} className="card">
-            <div className="mono meta">{j.company} • {j.tag}</div>
-            <h3>{j.title}</h3>
-            <div>{j.loc}</div>
-            <div className="mono fde-salary">{j.tc}</div>
-          </div>
-        ))}
+    <div className="page-white">
+      <div className="page-hero">
+        <div className="container-narrow">
+          <Reveal><span className="page-kicker">● Live board — updated weekly</span></Reveal>
+          <Reveal delay={0.08}><h1>Forward Deployed <span className="grad">Engineer jobs</span></h1></Reveal>
+          <Reveal delay={0.16}><p className="sub">Palantir, OpenAI, Anthropic, Anduril, Scale AI — who&apos;s hiring FDEs right now, where, and for how much.</p></Reveal>
+        </div>
       </div>
-      <div id="post" style={{ marginTop: 24 }} className="card">
-        <h3>Employers: post a job $299</h3>
-        <p className="meta">Reach FDE candidates. Featured for 30 days + newsletter.</p>
-        <Link href="#signup" className="btn btn-employer">Post a job</Link>
+      <div className="page-body">
+        <div className="container-narrow">
+          {jobs.map((j, i) => (
+            <Reveal key={j.id} delay={Math.min(i * 0.06, 0.3)}>
+              <div className="card">
+                <div className="mono meta">{j.company} • {j.tag}</div>
+                <h3>{j.title}</h3>
+                <div>{j.loc}</div>
+                <div className="mono fde-salary">{j.tc}</div>
+              </div>
+            </Reveal>
+          ))}
+          <Reveal>
+            <div className="card">
+              <h3>Need FDEs or a deployment quote?</h3>
+              <p className="meta">Tell us your needs — get instant quotations and match in 2 days.</p>
+              <ContactButton label="Contact" source="jobs-page" />
+            </div>
+          </Reveal>
+          <div style={{ marginTop: 24 }}><EmailCapture source="jobs" /></div>
+        </div>
       </div>
-      <div style={{ marginTop: 24 }}><EmailCapture source="jobs" /></div>
     </div>
   );
 }
